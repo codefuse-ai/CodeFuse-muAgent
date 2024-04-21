@@ -1,0 +1,24 @@
+{
+  "messages": [
+    {
+      "chat_index": null,
+      "role_name": "human",
+      "role_type": "user",
+      "role_prompt": null,
+      "input_query": "为\"com.theokanning.openai.OpenAiApi\"生成可执行的测例 ",
+      "datetime": "2024-03-27 16:21:00",
+      "role_content": "为\"com.theokanning.openai.OpenAiApi\"生成可执行的测例 ",
+      "step_content": null,
+      "parsed_output": {},
+      "spec_parsed_output": {},
+      "parsed_output_list": [],
+      "task": null,
+      "db_docs": [],
+      "code_docs": [],
+      "search_docs": [],
+      "phase_name": null,
+      "chain_name": null,
+      "customed_kargs": {}
+    }
+  ]
+}

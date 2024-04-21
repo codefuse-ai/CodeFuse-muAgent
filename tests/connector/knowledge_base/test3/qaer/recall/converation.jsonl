@@ -1,0 +1,23 @@
+{
+  "messages": [
+    {
+      "chat_index": "test3",
+      "role_name": "user",
+      "role_type": "user",
+      "role_prompt": "",
+      "input_query": "[导入pandas、numpy、matplotlib，生成正弦函数的值，画出正弦函数]",
+      "role_content": "[导入pandas、numpy、matplotlib，生成正弦函数的值，画出正弦函数]",
+      "step_content": "",
+      "parsed_output": {},
+      "spec_parsed_output": {},
+      "parsed_output_list": [],
+      "task": null,
+      "db_docs": [],
+      "code_docs": [],
+      "search_docs": [],
+      "customed_kargs": {},
+      "phase_name": null,
+      "chain_name": null
+    }
+  ]
+}

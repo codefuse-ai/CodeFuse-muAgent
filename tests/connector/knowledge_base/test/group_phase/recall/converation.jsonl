@@ -1,0 +1,24 @@
+{
+  "messages": [
+    {
+      "chat_index": null,
+      "role_name": "user",
+      "role_type": "user",
+      "role_prompt": null,
+      "input_query": "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图",
+      "datetime": "2024-03-26 13:57:00",
+      "role_content": "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图",
+      "step_content": null,
+      "parsed_output": {},
+      "spec_parsed_output": {},
+      "parsed_output_list": [],
+      "task": null,
+      "db_docs": [],
+      "code_docs": [],
+      "search_docs": [],
+      "phase_name": null,
+      "chain_name": null,
+      "customed_kargs": {}
+    }
+  ]
+}

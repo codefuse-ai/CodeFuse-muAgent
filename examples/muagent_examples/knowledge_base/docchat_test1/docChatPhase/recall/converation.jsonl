@@ -1,0 +1,94 @@
+{
+  "messages": [
+    {
+      "chat_index": "docchat_test1",
+      "role_name": "human",
+      "role_type": "user",
+      "role_prompt": "",
+      "input_query": "langchain有哪些模块",
+      "role_content": "langchain有哪些模块",
+      "step_content": "",
+      "parsed_output": {},
+      "spec_parsed_output": {},
+      "parsed_output_list": [],
+      "task": null,
+      "db_docs": [
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "入门文档\n\n模块\nLangChain 提供了对几个主要模块的支持。\n针对每个模块，我们提供一些入门示例、指南、参考文档和概念指南。\n这些模块按照逐渐增加的复杂性排列如下：\n\n模型（models）\n: LangChain 支持的各种模型类型和模型集成。\n\n提示（prompts）\n: 包括提示管理、提示优化和提示序列化。\n\n内存（memory）\n: 内存是在链/代理调用之间保持状态的概念。LangChain 提供了一个标准的内存接口、一组内存实现及使用内存的链/代理示例。\n\n索引（indexes）\n: 与您自己的文本数据结合使用时，语言模型往往更加强大——此模块涵盖了执行此操作的最佳实践。\n\n链（chains）\n: 链不仅仅是单个 LLM 调用，还包括一系列调用（无论是调用 LLM 还是不同的实用工具）。LangChain 提供了一种标准的链接口、许多与其他工具的集成。LangChain 提供了用于常见应用程序的端到端的链调用。",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 0
+        },
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "构建语言模型应用程序: LLM\n现在我们已经安装了 LangChain 并设置了我们的环境，我们可以开始构建我们的语言模型应用程序了。\nLangChain 提供了许多可用于构建语言模型应用程序的模块。\n模块可以组合起来创建更复杂的应用程序，或者单独用于简单的应用程序。\nLLM: 从语言模型中获取预测\nLangChain 最基本的构建块是对某些输入调用 LLM。\n让我们来看一个简单的例子。\n我们假设我们正在构建一个基于公司产品生成公司名称的服务。\n为此，我们首先需要导入 LLM 包装器。\n\n```code\nfrom langchain.llms import OpenAI\n```\n\nLLM初始化和调用\n然后我们可以用任何参数初始化包装器。\n在这个例子中，我们可能希望输出更加随机，所以我们将以温度（temperature）初始化它。\n\n```code\nllm = OpenAI(temperature=0.9)\n```\n\n我们现在可以根据一些输入调用它！",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 1
+        },
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "快速入门指南开始\n\n快速入门指南\n本教程将简要介绍如何使用 LangChain 构建端到端语言模型应用程序。\n安装\n首先，使用以下命令安装 LangChain:\n\n```code\npip install langchain\n# or\nconda install langchain -c conda-forge\n```\n\n环境设定\n使用 LangChain 通常需要与一个或多个模型提供程序、数据存储、 API 等集成。\n对于这个例子，我们将使用 OpenAI 的 API，所以我们首先需要安装他们的 SDK:\n\n```code\npip install openai\n```\n\n然后我们需要在终端设置环境变量。\n\n```code\nexport OPENAI_API_KEY=\"...\"\n```\n\n或者，你可以在 Jupiter 教程(或 Python 脚本)内部完成:\n\n```code\nimport os\nos.environ[\"OPENAI_API_KEY\"] = \"...\"\n```",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 2
+        }
+      ],
+      "code_docs": [],
+      "search_docs": [],
+      "customed_kargs": {},
+      "phase_name": null,
+      "chain_name": null
+    },
+    {
+      "chat_index": "docchat_test1",
+      "role_name": "qaer",
+      "role_type": "assistant",
+      "role_prompt": "",
+      "input_query": "langchain有哪些模块",
+      "role_content": "**Action Status:** Continued\n**Answer:** LangChain提供了对模型、提示、内存、索引和链等几个主要模块的支持。每个模块都有入门示例、指南、参考文档和概念指南。",
+      "step_content": "**Action Status:** Continued\n**Answer:** LangChain提供了对模型、提示、内存、索引和链等几个主要模块的支持。每个模块都有入门示例、指南、参考文档和概念指南。",
+      "parsed_output": {
+        "Action Status": "Continued",
+        "Answer": "LangChain提供了对模型、提示、内存、索引和链等几个主要模块的支持。每个模块都有入门示例、指南、参考文档和概念指南。"
+      },
+      "spec_parsed_output": {
+        "Action Status": "Continued",
+        "Answer": "LangChain提供了对模型、提示、内存、索引和链等几个主要模块的支持。每个模块都有入门示例、指南、参考文档和概念指南。"
+      },
+      "parsed_output_list": [
+        {
+          "Action Status": "Continued",
+          "Answer": "LangChain提供了对模型、提示、内存、索引和链等几个主要模块的支持。每个模块都有入门示例、指南、参考文档和概念指南。"
+        }
+      ],
+      "task": null,
+      "db_docs": [
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "入门文档\n\n模块\nLangChain 提供了对几个主要模块的支持。\n针对每个模块，我们提供一些入门示例、指南、参考文档和概念指南。\n这些模块按照逐渐增加的复杂性排列如下：\n\n模型（models）\n: LangChain 支持的各种模型类型和模型集成。\n\n提示（prompts）\n: 包括提示管理、提示优化和提示序列化。\n\n内存（memory）\n: 内存是在链/代理调用之间保持状态的概念。LangChain 提供了一个标准的内存接口、一组内存实现及使用内存的链/代理示例。\n\n索引（indexes）\n: 与您自己的文本数据结合使用时，语言模型往往更加强大——此模块涵盖了执行此操作的最佳实践。\n\n链（chains）\n: 链不仅仅是单个 LLM 调用，还包括一系列调用（无论是调用 LLM 还是不同的实用工具）。LangChain 提供了一种标准的链接口、许多与其他工具的集成。LangChain 提供了用于常见应用程序的端到端的链调用。",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 0
+        },
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "构建语言模型应用程序: LLM\n现在我们已经安装了 LangChain 并设置了我们的环境，我们可以开始构建我们的语言模型应用程序了。\nLangChain 提供了许多可用于构建语言模型应用程序的模块。\n模块可以组合起来创建更复杂的应用程序，或者单独用于简单的应用程序。\nLLM: 从语言模型中获取预测\nLangChain 最基本的构建块是对某些输入调用 LLM。\n让我们来看一个简单的例子。\n我们假设我们正在构建一个基于公司产品生成公司名称的服务。\n为此，我们首先需要导入 LLM 包装器。\n\n```code\nfrom langchain.llms import OpenAI\n```\n\nLLM初始化和调用\n然后我们可以用任何参数初始化包装器。\n在这个例子中，我们可能希望输出更加随机，所以我们将以温度（temperature）初始化它。\n\n```code\nllm = OpenAI(temperature=0.9)\n```\n\n我们现在可以根据一些输入调用它！",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 1
+        },
+        {
+          "title": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "snippet": "快速入门指南开始\n\n快速入门指南\n本教程将简要介绍如何使用 LangChain 构建端到端语言模型应用程序。\n安装\n首先，使用以下命令安装 LangChain:\n\n```code\npip install langchain\n# or\nconda install langchain -c conda-forge\n```\n\n环境设定\n使用 LangChain 通常需要与一个或多个模型提供程序、数据存储、 API 等集成。\n对于这个例子，我们将使用 OpenAI 的 API，所以我们首先需要安装他们的 SDK:\n\n```code\npip install openai\n```\n\n然后我们需要在终端设置环境变量。\n\n```code\nexport OPENAI_API_KEY=\"...\"\n```\n\n或者，你可以在 Jupiter 教程(或 Python 脚本)内部完成:\n\n```code\nimport os\nos.environ[\"OPENAI_API_KEY\"] = \"...\"\n```",
+          "link": "D:\\project\\gitlab\\llm\\external\\ant_code\\muagent\\examples\\muagent_examples\\knowledge_base\\example_test\\content\\langchain_text_10.jsonl",
+          "index": 2
+        }
+      ],
+      "code_docs": [],
+      "search_docs": [],
+      "customed_kargs": {
+        "code_content": null,
+        "tool_params": {}
+      },
+      "phase_name": null,
+      "chain_name": null
+    }
+  ]
+}
