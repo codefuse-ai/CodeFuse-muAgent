@@ -2,14 +2,14 @@
     <a href="README_zh.md">中文</a>&nbsp ｜ &nbsp<a>English&nbsp </a>
 </p>
 
-# <p align="center">MuAgent: A Multi-Agent FrameWork For Faster Build Agents</p>
+# <p align="center">CodeFuse-muAgent: A Multi-Agent FrameWork For Faster Build Agents</p>
 
 <p align="center">
     <a href="README.md"><img src="https://img.shields.io/badge/文档-中文版-yellow.svg" alt="ZH doc"></a>
     <a href="README_en.md"><img src="https://img.shields.io/badge/document-English-yellow.svg" alt="EN doc"></a>
-    <img src="https://img.shields.io/github/license/codefuse-ai/muagent" alt="License">
-    <a href="https://github.com/codefuse-ai/muagent/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/muagent" />
+    <img src="https://img.shields.io/github/license/codefuse-ai/CodeFuse-muAgent" alt="License">
+    <a href="https://github.com/codefuse-ai/CodeFuse-muAgent/issues">
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/CodeFuse-muAgent" />
     </a>
     <br><br>
 </p>
@@ -17,7 +17,7 @@
 
 
 ## 🔔 News
-- [2024.04.01] muagent is now open source, featuring functionalities such as knowledge base, code library, tool usage, code interpreter, and more
+- [2024.04.01] codefuse-muagent is now open source, featuring functionalities such as knowledge base, code library, tool usage, code interpreter, and more
 
 ## 📜 Contents
 - [🤝 Introduction](#-Introduction)
@@ -28,17 +28,17 @@
 
 
 ## 🤝 Introduction
-Developed by the Ant CodeFuse Team, muagent is a Multi-Agent framework whose primary goal is to streamline the Standard Operating Procedure (SOP) orchestration for agents. muagent integrates a rich collection of toolkits, code libraries, knowledge bases, and sandbox environments, enabling users to rapidly construct complex Multi-Agent interactive applications in any field. This framework allows for the efficient execution and handling of multi-layered and multi-dimensional complex tasks.
+Developed by the Ant CodeFuse Team, CodeFuse-muAgent is a Multi-Agent framework whose primary goal is to streamline the Standard Operating Procedure (SOP) orchestration for agents. muagent integrates a rich collection of toolkits, code libraries, knowledge bases, and sandbox environments, enabling users to rapidly construct complex Multi-Agent interactive applications in any field. This framework allows for the efficient execution and handling of multi-layered and multi-dimensional complex tasks.
 
 ![](docs/resources/agent_runtime.png)
 
 ## 🚀 快速使用
-For complete documentation, see: [muagent](docs/overview/o1.muagent.md)
+For complete documentation, see: [CodeFuse-muAgent](docs/overview/o1.muagent.md)
 For more [demos](docs/overview/o3.quick-start.md)
 
 1. Installation
 ```
-pip install muagent
+pip install codefuse-muagent
 ```
 
 2. Code answer Prepare related llm and embedding model configurations
@@ -70,6 +70,7 @@ embed_config = EmbedConfig(
 
 Initialize the codebase
 ```
+from muagent.base_configs.env_config import CB_ROOT_PATH
 codebase_name = 'client_local'
 code_path = "D://chromeDownloads/devopschat-bot/client_v2/client"
 
@@ -89,6 +90,15 @@ phase_name = "codeChatPhase"
 phase = BasePhase(
     phase_name, embed_config=embed_config, llm_config=llm_config,
 )
+# 
+query_content = "what does the remove' function?"
+query = Message(
+    role_name="user", role_type="human", input_query=query_content,
+    code_engine_name=codebase_name, score_threshold=1.0, top_k=3, cb_search_type="tag",
+    local_graph_path=CB_ROOT_PATH, use_nh=False
+    )
+output_message3, output_memory3 = phase.step(query)
+print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output_list"))
 ```
 
 ## Key Technologies

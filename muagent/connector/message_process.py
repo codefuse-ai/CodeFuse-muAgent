@@ -1,5 +1,5 @@
 import re, traceback, uuid, copy, json, os
-from typing import Union
+from typing import Union, Tuple
 from loguru import logger
 
 from langchain.schema import BaseRetriever
@@ -162,24 +162,22 @@ class MessageUtils:
                                       use_nh=use_nh, local_graph_path=local_graph_path)
         
         message.code_docs = [CodeDoc(**doc) for doc in code_docs] 
-
-        # related_nodes = [doc.get_related_node() for idx, doc in enumerate(message.code_docs) if idx==0],
-        # history_node_list.extend([node[0] for node in related_nodes]) 
         return message
     
     def get_tool_retrieval(self, message: Message) -> Message:
         return message
     
-    def step_router(self, message: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None) -> tuple[Message, ...]:
+    def step_router(self, message: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str = "") -> Tuple[Message, ...]:
         ''''''
+        chat_index = message.chat_index or chat_index or str(uuid.uuid4())
         if LogVerboseEnum.ge(LogVerboseEnum.Log1Level, self.log_verbose):
             logger.info(f"message.action_status: {message.action_status}")
             
         observation_message = None
         if message.action_status == ActionStatus.CODE_EXECUTING:
-            message, observation_message = self.code_step(message)
+            message, observation_message = self.code_step(message, chat_index)
         elif message.action_status == ActionStatus.TOOL_USING:
-            message, observation_message = self.tool_step(message)
+            message, observation_message = self.tool_step(message, chat_index)
         elif message.action_status == ActionStatus.CODING2FILE:
             self.save_code2file(message, self.jupyter_work_path)
         elif message.action_status == ActionStatus.CODE_RETRIEVAL:
@@ -189,79 +187,70 @@ class MessageUtils:
         
         return message, observation_message
 
-    def code_step(self, message: Message) -> Message:
+    def code_step(self, message: Message, chat_index: str) -> Message:
         '''execute code'''
-        # logger.debug(f"message.role_content: {message.role_content}, message.code_content: {message.code_content}")
-        code_answer = self.codebox.chat('```python\n{}```'.format(message.code_content))
+        # code_answer = self.codebox.chat('```python\n{}```'.format(message.code_content))
+        code_answer = self.codebox.chat('```python\n{}```'.format(message.customed_kargs.get("code_content", "")))
         code_prompt = f"The return error after executing the above code is {code_answer.code_exe_response}，need to recover.\n" \
                     if code_answer.code_exe_type == "error" else f"The return information after executing the above code is {code_answer.code_exe_response}.\n"
         
         observation_message = Message(
+                chat_index=chat_index,
                 user_name=message.user_name,
                 role_name="observation",
                 role_type="function", #self.role.role_type,
                 role_content="",
                 step_content="",
-                input_query=message.code_content,
+                # input_query=message.code_content,
+                input_query=message.customed_kargs.get("code_content", ""),
                 )
         uid = str(uuid.uuid1())
         if code_answer.code_exe_type == "image/png":
             message.figures[uid] = code_answer.code_exe_response
-            message.code_answer = f"\n**Observation:**: The return figure name is {uid} after executing the above code.\n"
-            message.observation = f"\n**Observation:**: The return figure name is {uid} after executing the above code.\n"
             message.step_content += f"\n**Observation:**: The return figure name is {uid} after executing the above code.\n"
-            # message.role_content += f"\n**Observation:**:执行上述代码后生成一张图片, 图片名为{uid}\n"
             observation_message.role_content = f"\n**Observation:**: The return figure name is {uid} after executing the above code.\n"
             observation_message.parsed_output = {"Observation": f"The return figure name is {uid} after executing the above code.\n"}
         else:
-            message.code_answer = code_answer.code_exe_response
-            message.observation = code_answer.code_exe_response
             message.step_content += f"\n**Observation:**: {code_prompt}\n"
-            # message.role_content += f"\n**Observation:**: {code_prompt}\n"
             observation_message.role_content = f"\n**Observation:**: {code_prompt}\n"
             observation_message.parsed_output = {"Observation": f"{code_prompt}\n"}
         
         if LogVerboseEnum.ge(LogVerboseEnum.Log1Level, self.log_verbose):
-            logger.info(f"**Observation:** {message.action_status}, {message.observation}")
+            logger.info(f"**Observation:** {message.action_status}, {observation_message.role_content}")
         return message, observation_message
 
-    def tool_step(self, message: Message) -> Message:
+    def tool_step(self, message: Message, chat_index: str) -> Message:
         '''execute tool'''
         observation_message = Message(
+                chat_index=chat_index,
                 user_name=message.user_name,
                 role_name="observation",
                 role_type="function", #self.role.role_type,
                 role_content="\n**Observation:** there is no tool can execute\n",
                 step_content="",
-                input_query=str(message.tool_params),
+                input_query=str(message.customed_kargs.get("tool_params", {})),
                 tools=message.tools,
                 )
         if LogVerboseEnum.ge(LogVerboseEnum.Log1Level, self.log_verbose):
-            logger.info(f"message: {message.action_status}, {message.tool_params}")
+            logger.info(f"message: {message.action_status}, {message.customed_kargs.get('tool_params', '')}")
 
         tool_names = [tool.name for tool in message.tools]
-        if message.tool_name not in tool_names:
-            message.tool_answer = "\n**Observation:** there is no tool can execute.\n"    
-            message.observation = "\n**Observation:** there is no tool can execute.\n"    
-            # message.role_content += f"\n**Observation:**: 不存在可以执行的tool\n"
+        if message.customed_kargs.get("tool_name", "") not in tool_names:
             message.step_content += f"\n**Observation:** there is no tool can execute.\n"
             observation_message.role_content = f"\n**Observation:** there is no tool can execute.\n"
             observation_message.parsed_output = {"Observation": "there is no tool can execute.\n"}
         
         # logger.debug(message.tool_params)
         for tool in message.tools:
-            if tool.name == message.tool_params.get("tool_name", ""):
-                tool_res = tool.func(**message.tool_params.get("tool_params", {}))
-                message.tool_answer = tool_res    
-                message.observation = tool_res
-                # message.role_content += f"\n**Observation:**: {tool_res}\n"
+            if tool.name == message.customed_kargs.get("tool_params", {}).get("tool_name", ""):
+                tool_res = tool.func(**message.customed_kargs.get("tool_params", {}).get("tool_params", {}))
                 message.step_content += f"\n**Observation:** {tool_res}.\n"
                 observation_message.role_content = f"\n**Observation:** {tool_res}.\n"
                 observation_message.parsed_output = {"Observation": f"{tool_res}.\n"}
                 break
 
         if LogVerboseEnum.ge(LogVerboseEnum.Log1Level, self.log_verbose):
-            logger.info(f"**Observation:** {message.action_status}, {message.observation}")
+            logger.info(f"**Observation:** {message.action_status}, {observation_message.role_content}")
         return message, observation_message
 
     def parser(self, message: Message) -> Message:
@@ -279,12 +268,12 @@ class MessageUtils:
         if action_value == 'tool_using':
             tool_params_value = spec_parsed_dict.get('json')
         else:
-            tool_params_value = None
+            tool_params_value = {}
 
         # add parse value to message
         message.action_status = action_value or "default"
-        message.code_content = code_content_value
-        message.tool_params = tool_params_value
+        message.customed_kargs["code_content"] = code_content_value
+        message.customed_kargs["tool_params"] = tool_params_value
         message.parsed_output = parsed_dict
         message.spec_parsed_output = spec_parsed_dict
         return message

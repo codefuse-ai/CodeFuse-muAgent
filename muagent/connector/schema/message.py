@@ -1,51 +1,51 @@
 from pydantic import BaseModel, root_validator
 from loguru import logger
-
+import uuid
 from muagent.utils.common_utils import getCurrentDatetime
 from .general_schema import *
 
 
 class Message(BaseModel):
-    chat_index: str = None
+    chat_index: str = "" # 会话ID，某一轮会话
+    message_index: str = "" # 会话消息ID，某轮会话里第几个会话记录
     user_name: str = "default"
     role_name: str
     role_type: str
-    role_prompt: str = None
-    input_query: str = None
-    # origin_query: str = None
-    datetime: str = getCurrentDatetime()
+    role_prompt: str = ""
+    input_query: str = ""
+    start_datetime: str = None
+    end_datetime: str = None
 
     # llm output
-    role_content: str = None
-    step_content: str = None
+    role_content: str = ""
+    step_content: str = ""
 
     # llm parsed information
-    plans: List[str] = None
-    code_content: str = None
-    code_filename: str = None
-    tool_params: str = None
-    tool_name: str = None
+    # code_content: str = None
+    # tool_params: str = None
+    # tool_name: str = None
     parsed_output: dict = {}
     spec_parsed_output: dict = {}
     parsed_output_list: List[Dict] = []
 
     # llm\tool\code executre information
     action_status: str = "default"
-    agent_index: int = None
-    code_answer: str = None
-    tool_answer: str = None
-    observation: str = None
+    # code_answer: str = None
+    # tool_answer: str = None
+    # observation: str = None
     figures: Dict[str, str] = {}
 
     # prompt support information
-    tools: List[BaseTool] = []
     task: Task = None
     db_docs: List['Doc'] = []
     code_docs: List['CodeDoc'] = []
     search_docs: List['Doc'] = []
-    agents: List = []
+    # user's customed kargs for init or end action
+    customed_kargs: dict = {}
 
     # phase input
+    agents: List = []
+    tools: List[BaseTool] = []
     phase_name: str = None
     chain_name: str = None
     do_search: bool = False
@@ -61,8 +61,6 @@ class Message(BaseModel):
     do_code_retrieval: bool = False
     do_tool_retrieval: bool = False
     history_node_list: List[str] = []
-    # user's customed kargs for init or end action
-    customed_kargs: dict = {}
 
 
     @root_validator(pre=True)
@@ -75,6 +73,38 @@ class Message(BaseModel):
             values["role_content"] = input_query
         return values
     
+    @root_validator(pre=True)
+    def check_datetime(cls, values):
+        start_datetime = values.get("start_datetime")
+        end_datetime = values.get("end_datetime")
+        if start_datetime is None:
+            values["start_datetime"] = getCurrentDatetime()
+        if end_datetime is None:
+            values["end_datetime"] = getCurrentDatetime()
+        return values
+
+    @root_validator(pre=True)
+    def check_message_index(cls, values):
+        message_index = values.get("message_index")
+        chat_index = values.get("chat_index")
+        if message_index is None or message_index == "":
+            values["message_index"] = str(uuid.uuid4())
+
+        if chat_index is None or chat_index == "":
+            values["chat_index"] = str(uuid.uuid4())
+        return values
+    
+
+    def update_attribute(self, key: str, value):
+        if hasattr(self, key):
+            setattr(self, key, value)
+            self.end_datetime = getCurrentDatetime()
+        else:
+            raise AttributeError(f"{key} is not a valid property of {self.__class__.__name__}")
+
+    def get_attribute_type(self, key):
+        return type(getattr(self, key, None))
+
     # @root_validator(pre=True)
     # def check_card_number_omitted(cls, values):
     #     input_query = values.get("input_query")

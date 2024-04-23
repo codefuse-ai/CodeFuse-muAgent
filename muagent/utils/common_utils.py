@@ -33,7 +33,7 @@ def timestampToDateformat(ts, interval=1000, dateformat=DATE_FORMAT):
 
 def datefromatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间格式转换未标准时间戳'''
-    return datetime.strptime(dt, dateformat).timestamp()*interval
+    return int(datetime.strptime(dt, dateformat).timestamp()*interval)
 
 
 def func_timer():

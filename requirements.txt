@@ -14,4 +14,7 @@ nebula3-python==3.1.0
 Pyarrow
 python-magic-bin; sys_platform == 'win32'
 SQLAlchemy==2.0.19
+docker
+redis==5.0.1
+pydantic<=1.10.14
 # duckduckgo-search

@@ -1,6 +1,7 @@
 from typing import List, Tuple, Union
 from loguru import logger
 import copy, os
+import uuid
 
 from langchain.schema import BaseRetriever
 
@@ -55,32 +56,32 @@ class BaseChain:
         # all memory created by agent until instance deleted
         self.global_memory = Memory(messages=[])
 
-    def step(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None) -> Tuple[Message, Memory]:
+    def step(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str = "") -> Tuple[Message, Memory]:
         '''execute chain'''
-        for output_message, local_memory in self.astep(query, history, background, memory_manager):
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
+        for output_message, local_memory in self.astep(query, history, background, memory_manager, chat_index):
             pass
         return output_message, local_memory
 
-    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None) -> Message:
+    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str="") -> Message:
         '''execute chain'''
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
         for agent in self.agents:
             agent.pre_print(query, history, background=background, memory_manager=memory_manager)
     
-    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None) -> Tuple[Message, Memory]:
+    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str = "") -> Tuple[Message, Memory]:
         '''execute chain'''
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
         local_memory = Memory(messages=[])
         input_message = copy.deepcopy(query)
         step_nums = copy.deepcopy(self.chat_turn)
         check_message = None
 
-        # if input_message not in memory_manager:
-        #     memory_manager.append(input_message)
-
         self.global_memory.append(input_message)
         # local_memory.append(input_message)
         while step_nums > 0:
             for agent in self.agents:
-                for output_message in agent.astep(input_message, history, background=background, memory_manager=memory_manager):
+                for output_message in agent.astep(input_message, history, background=background, memory_manager=memory_manager, chat_index=chat_index):
                     # logger.debug(f"local_memory {local_memory + output_message}")
                     yield output_message, local_memory + output_message
                 output_message = self.messageUtils.inherit_extrainfo(input_message, output_message)
@@ -100,7 +101,7 @@ class BaseChain:
                 break
 
             if self.do_checker and self.chat_turn > 1:
-                for check_message in self.checker.astep(query, background=local_memory, memory_manager=memory_manager):
+                for check_message in self.checker.astep(query, background=local_memory, memory_manager=memory_manager, chat_index=chat_index):
                     pass
                 check_message = self.messageUtils.parser(check_message)
                 check_message = self.messageUtils.inherit_extrainfo(output_message, check_message)

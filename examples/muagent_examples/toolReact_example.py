@@ -1,17 +1,21 @@
-import os, sys, json
+import os
 from loguru import logger
 
 try:
+    import os, sys
     src_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
     import test_config
+    from test_config import BgeBaseChineseEmbeddings
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
     embed_model = os.environ["embed_model"]
     embed_model_path = os.environ["embed_model_path"]
+    
+    embeddings = BgeBaseChineseEmbeddings()
 except Exception as e:
     # set your config
     api_key = ""
@@ -19,9 +23,13 @@ except Exception as e:
     model_name = ""
     embed_model = ""
     embed_model_path = ""
+    embeddings = None
     logger.error(f"{e}")
 
-
+src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+sys.path.append(src_dir)
 from muagent.tools import toLangchainTools, TOOL_DICT, TOOL_SETS
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.connector.phase import BasePhase
@@ -33,9 +41,15 @@ llm_config = LLMConfig(
     model_name=model_name, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
 )
 
-embed_config = EmbedConfig(
-    embed_engine="model", embed_model=embed_model, embed_model_path=embed_model_path
-)
+if embeddings:
+    embed_config = EmbedConfig(
+        embed_model="default",
+        langchain_embeddings=embeddings
+    )
+else:
+    embed_config = EmbedConfig(
+        embed_engine="model", embed_model=embed_model, embed_model_path=embed_model_path
+    )
 
 
 # log-level，print prompt和llm predict

@@ -23,6 +23,11 @@ except Exception as e:
     embed_model_path = ""
     logger.error(f"{e}")
 
+src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+print(src_dir)
+sys.path.append(src_dir)
 from muagent.connector.memory_manager import LocalMemoryManager, Message
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 
@@ -38,19 +43,19 @@ embed_config = EmbedConfig(
 
 # prepare your message
 message1 = Message(
-    role_name="test1", role_type="user", role_content="hello",
+    chat_index="default", role_name="test1", role_type="user", role_content="hello",
     parsed_output_list=[{"input": "hello"}], user_name="default"
 )
 
 text = "hi! how can I help you?"
 message2 = Message(
-    role_name="test2", role_type="assistant", role_content=text, parsed_output_list=[{"answer": text}],
+    chat_index="shuimo", role_name="test2", role_type="assistant", role_content=text, parsed_output_list=[{"answer": text}],
     user_name="shuimo"
 )
 
 text = "they say hello and hi to each other"
 message3 = Message(
-    role_name="test3", role_type="summary", role_content=text, 
+    chat_index="shanshi", role_name="test3", role_type="summary", role_content=text, 
     parsed_output_list=[{"summary": text}],
     user_name="shanshi"
     )
@@ -63,25 +68,25 @@ local_memory_manager.append(message=message2)
 local_memory_manager.append(message=message3)
 # 
 # local_memory_manager = LocalMemoryManager(embed_config=None, llm_config=None, do_init=False)
-local_memory_manager = LocalMemoryManager(user_name="shanshi", embed_config=embed_config, llm_config=llm_config, do_init=False)
+local_memory_manager = LocalMemoryManager(embed_config=embed_config, llm_config=llm_config, do_init=False)
 local_memory_manager.load()
 print(local_memory_manager.get_memory_pool("default").messages)
-print(local_memory_manager.get_memory_pool("shanshi").messages)
 print(local_memory_manager.get_memory_pool("shuimo").messages)
+print(local_memory_manager.get_memory_pool("shanshi").messages)
 
 # embedding retrieval test
 text = "say hi to each other, i want some help"
 # retrieval_type=datetime => retrieval from datetime and jieba
-print(local_memory_manager.router_retrieval(user_name="shanshi", text=text, datetime="2024-03-12 17:48:00", n=4, top_k=5, retrieval_type= "datetime"))
+print(local_memory_manager.router_retrieval(chat_index="shanshi", text=text, datetime="2024-03-12 17:48:00", n=4, top_k=5, retrieval_type= "datetime"))
 # retrieval_type=eembedding => retrieval from embedding
-print(local_memory_manager.router_retrieval(user_name="shanshi", text=text, top_k=5, retrieval_type= "embedding"))
+print(local_memory_manager.router_retrieval(chat_index="shanshi", text=text, top_k=5, retrieval_type= "embedding"))
 # retrieval_type=text => retrieval from jieba
-print(local_memory_manager.router_retrieval(user_name="shanshi", text=text, top_k=5, retrieval_type= "text"))
+print(local_memory_manager.router_retrieval(chat_index="shanshi", text=text, top_k=5, retrieval_type= "text"))
 
 # recursive_summary test
-print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("shanshi").messages, split_n=1))
+print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("shanshi").messages, split_n=1, chat_index="shanshi"))
 
-print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("shuimo").messages, split_n=1))
+print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("shuimo").messages, split_n=1, chat_index="shanshi"))
 
-print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("default").messages, split_n=1))
+print(local_memory_manager.recursive_summary(local_memory_manager.get_memory_pool("default").messages, split_n=1, chat_index="shanshi"))
 

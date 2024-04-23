@@ -24,11 +24,11 @@ except Exception as e:
     embed_model_path = ""
     logger.error(f"{e}")
 
-src_dir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+# src_dir = os.path.join(
+#     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# )
 
-sys.path.append(src_dir)
+# sys.path.append(src_dir)
 from muagent.connector.agents import BaseAgent, ReactAgent, ExecutorAgent, SelectorAgent
 from muagent.connector.schema import Role, Message
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
@@ -45,7 +45,7 @@ embed_config = EmbedConfig(
 )
 
 # log-level，print prompt和llm predict
-os.environ["log_verbose"] = "2"
+os.environ["log_verbose"] = "0"
 
 tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])[:3]
 
@@ -70,13 +70,13 @@ tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])[:3
 # )
 
 # query = Message(
-#     user_name="test", role_type="user", role_name="user", input_query="hello!",
+#     chat_index="test1", user_name="test", role_type="user", role_name="user", input_query="hello!",
 #     tools=tools,
 # )
 # # base_agent.pre_print(query)
 # output_message = base_agent.step(query)
-# print(output_message.role_content)
 # print(output_message.input_query)
+# print(output_message.role_content)
 
 
 
@@ -100,7 +100,7 @@ tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])[:3
 
 # question = "帮我确认下127.0.0.1这个服务器的在10点是否存在异常，请帮我判断一下"
 # query = Message(
-#     user_name="test", role_type="user", role_name="user", input_query=question,
+#     chat_index="test2", user_name="test", role_type="user", role_name="user", input_query=question,
 #     tools=tools,
 # )
 # # base_agent.pre_print(query)
@@ -127,7 +127,7 @@ tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])[:3
 
 # question = "[导入pandas、numpy、matplotlib，生成正弦函数的值，画出正弦函数]"
 # query = Message(
-#     user_name="test", role_type="user", role_name="user", input_query=question,
+#     chat_index="test3", user_name="test", role_type="user", role_name="user", input_query=question,
 #     tools=tools,
 # )
 # # base_agent.pre_print(query)
@@ -156,7 +156,6 @@ from muagent.connector.configs.prompts import REACT_CODE_PROMPT, REACT_TOOL_PROM
 tool_role = Role(role_type="assistant", role_name="tool_reacter", prompt=REACT_TOOL_PROMPT)
 tool_react_agent = ReactAgent(
     role=tool_role,
-    task="",
     chat_turn=3,
     focus_agents=[],
     focus_message_keys=[],
@@ -167,7 +166,6 @@ tool_react_agent = ReactAgent(
 code_role = Role(role_type="assistant", role_name="code_reacter", prompt=REACT_CODE_PROMPT)
 code_react_agent = ReactAgent(
     role=code_role,
-    task="",
     chat_turn=3,
     focus_agents=[],
     focus_message_keys=[],
@@ -178,7 +176,6 @@ code_react_agent = ReactAgent(
 role = Role(role_type="assistant", role_name="qaer", prompt=prompt)
 base_agent = SelectorAgent(
     role=role,
-    task="",
     chat_turn=3,
     focus_agents=[],
     focus_message_keys=[],
@@ -188,7 +185,7 @@ base_agent = SelectorAgent(
 
 question = "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图"
 query = Message(
-    user_name="test", role_type="user", role_name="user", input_query=question,
+    chat_index="agent_test", user_name="test", role_type="user", role_name="user", input_query=question,
     tools=tools,
 )
 # base_agent.pre_print(query)

@@ -210,7 +210,6 @@ class PromptManager:
 
         # update all title's description and function_value
         title_values = {}
-        # logger.debug(f"{self.star_output_titles}")
         for forth_title, forth_value in self.forth_titles.items():
             handler = getattr(self, forth_value["function"])
             kwargs.update({"title_key": forth_title})
@@ -251,45 +250,17 @@ class PromptManager:
         prompt_values.append("## BEGIN!!!")
         prompt_values = self._process_title_values(title_values, prompt_values, 
                                                    title_type="function_value", is_pre_print=is_pre_print)
-        # 返回完整的提示，移除尾部的空行
-        # logger.debug('\n'.join(prompt_values).rstrip('\n'))
+
         # logger.debug(prompt_values)
         if not any([i=="#### RESPONSE OUTPUT" for i in prompt_values]):
             prompt_values.append("#### RESPONSE OUTPUT")
-
-        return '\n'.join(prompt_values).rstrip('\n')
-        
-        # 先处理上下文字段
-        for field_name in self.context_order:
-            handler = self.context_handlers[field_name]
-            processed_prompt = handler(**kwargs)
-            # Check if the field should be omitted when empty
-            if self.omit_if_empty_flags.get(field_name, False) and not processed_prompt and not is_pre_print:
-                continue  # Skip this field
-            title_or_description = self.field_descriptions.get(field_name, f"#### {field_name.replace('_', ' ').title()}\n\n")
-            context_prompts.append(title_or_description + processed_prompt + '\n\n')
-
-        # 处理普通字段，同时查找 context_placeholder 的位置
-        for field_name in self.field_order:
-            if field_name == 'context_placeholder':
-                # 在 context_placeholder 的位置插入上下文数据
-                full_prompt.append(self.context_title)  # 添加上下文部分的大标题
-                full_prompt.extend(context_prompts)  # 添加收集的上下文内容
-            else:
-                handler = self.field_handlers[field_name]
-                processed_prompt = handler(**kwargs)
-                # Check if the field should be omitted when empty
-                if self.omit_if_empty_flags.get(field_name, False) and not processed_prompt and not is_pre_print:
-                    continue  # Skip this field
-                title_or_description = self.field_descriptions.get(field_name, f"### {field_name.replace('_', ' ').title()}\n\n")
-                full_prompt.append(title_or_description + processed_prompt + '\n\n')
-
         # 返回完整的提示，移除尾部的空行
-        return ''.join(full_prompt).rstrip('\n')
+        return '\n'.join(prompt_values).rstrip('\n')
 
     def _process_title_values(self, title_values, prompt_values, title_type="description", is_pre_print=False):
         '''process title values to prompt'''
         response_omit_flag = False
+        key_placeholder = {}
         for forth_title in title_values.keys():
             forth_title_value = title_values[forth_title]
             func_values = {k: [i["function_value"] for i in forth_title_value[k]] 
@@ -314,7 +285,6 @@ class PromptManager:
                 prompt_values.append(f"#### {forth_title.replace(' FORMAT', '')}\n{ forth_title_value['function_value'] }")
 
             # ### title
-            key_placeholder = {}
             for key in ['agent_values', 'info_values', 'context_values', 'star_output_values', 'star_input_values']:
                 values = forth_title_value[key]
                 str_template = '### {}\n{}' if key not in ['star_output_values', 'star_input_values'] else "**{}:** {}"

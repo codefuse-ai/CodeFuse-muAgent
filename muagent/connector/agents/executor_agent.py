@@ -1,5 +1,6 @@
 from typing import List, Union
 import copy
+import uuid
 from loguru import logger
 
 from langchain.schema import BaseRetriever
@@ -9,9 +10,9 @@ from muagent.connector.schema import (
 )
 from muagent.connector.memory_manager import BaseMemoryManager
 from muagent.llm_models import LLMConfig, EmbedConfig
-from muagent.connector.memory_manager import LocalMemoryManager
 from muagent.connector.configs.prompts import PLAN_EXECUTOR_PROMPT
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
+from muagent.utils.tbase_util import TbaseHandler
 
 from .base_agent import BaseAgent
 
@@ -47,23 +48,27 @@ class ExecutorAgent(BaseAgent):
             doc_retrieval: Union[BaseRetriever] = None,
             code_retrieval = None,
             search_retrieval = None,
-            log_verbose: str = "0"
+            log_verbose: str = "0",
+            tbase_handler: TbaseHandler = None
             ):
         role.task_context_level = 1
         role.output_template = executor_output_template
 
         super().__init__(role, prompt_config, prompt_manager_type, task, memory, chat_turn,
                          focus_agents, focus_message_keys, llm_config, embed_config, sandbox_server,
-                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval, log_verbose
+                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval, 
+                         log_verbose, tbase_handler
                          )
         self.do_all_task = True # run all tasks
 
-    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None) -> Message:
+    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str = "") -> Message:
         '''agent reponse from multi-message'''
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
         # insert query into memory
         task_executor_memory = Memory(messages=[])
         # insert query
         output_message = Message(
+                chat_index=chat_index,
                 user_name=query.user_name,
                 role_name=self.role.role_name,
                 role_type="assistant", #self.role.role_type,
@@ -77,7 +82,7 @@ class ExecutorAgent(BaseAgent):
         
         memory_manager = self.init_memory_manager(memory_manager)
         memory_manager.append(query)
-        memory_pool = memory_manager.get_memory_pool(query.user_name)
+        memory_pool = memory_manager.get_memory_pool(chat_index)
         # acquire the input_query
         input_query = query.role_content or query.input_query
         prompt = PLAN_EXECUTOR_PROMPT.format(**{"content": input_query.replace("*", "")})
@@ -85,6 +90,7 @@ class ExecutorAgent(BaseAgent):
         # logger.debug(f"prompt={prompt}")
         # logger.debug(f"content={content}")
         plan_message = Message(
+                chat_index=chat_index,
                 user_name=query.user_name,
                 role_name="plan_extracter",
                 role_type="assistant", #self.role.role_type,
@@ -98,13 +104,14 @@ class ExecutorAgent(BaseAgent):
         plans = plan_message.parsed_output.get("PLAN", [input_query])
         # logger.debug(f"plans={plans}, plan_step={plan_step}")
 
-        def _execute_line(task_content, output_message, task_executor_memory, plan_step):
+        def _execute_line(task_content, output_message, task_executor_memory, plan_step, chat_index):
             '''task execute line'''
             query_c = copy.deepcopy(query)
             query_c.parsed_output = {"CURRENT_STEP": task_content}
             query_c = self.start_action_step(query_c)
             task_executor_memory.append(query_c)
-            for output_message, task_executor_memory in self._arun_step(output_message, query_c, self.memory, history, background, memory_pool, task_executor_memory):
+            for output_message, task_executor_memory in self._arun_step(
+                        output_message, query_c, self.memory, history, background, memory_pool, task_executor_memory, chat_index):
                 pass
             output_message.parsed_output.update({"PLAN_STEP": plan_step})
 
@@ -112,11 +119,11 @@ class ExecutorAgent(BaseAgent):
             # run all tasks step by step
             for idx, task_content in enumerate(plans[plan_step:]):
                 # create your llm prompt
-                _execute_line(task_content, output_message, task_executor_memory, plan_step+idx)
+                _execute_line(task_content, output_message, task_executor_memory, plan_step+idx, chat_index)
                 yield output_message
         else:
             task_content = plans[plan_step]
-            _execute_line(task_content, output_message, task_executor_memory, plan_step)
+            _execute_line(task_content, output_message, task_executor_memory, plan_step, chat_index)
 
         # update self_memory
         self.append_history(query)
@@ -131,7 +138,7 @@ class ExecutorAgent(BaseAgent):
 
     def _arun_step(self, output_message: Message, query: Message, self_memory: Memory, 
             history: Memory, background: Memory, memory_pool: BaseMemoryManager, 
-            task_memory: Memory) -> Union[Message, Memory]:
+            task_memory: Memory, chat_index: str) -> Union[Message, Memory]:
         '''execute the llm predict by created prompt'''
         prompt = self.prompt_manager.generate_full_prompt(
             previous_agent_message=query, agent_long_term_memory=self_memory, ui_history=history, chain_summary_messages=background, memory_pool=memory_pool,
@@ -148,7 +155,7 @@ class ExecutorAgent(BaseAgent):
         output_message.step_content += "\n"+output_message.role_content
         output_message = self.message_utils.parser(output_message)
         # according the output to choose one action for code_content or tool_content
-        output_message, observation_message = self.message_utils.step_router(output_message)
+        output_message, observation_message = self.message_utils.step_router(output_message, chat_index=chat_index)
         # update parserd_output_list
         output_message.parsed_output_list.append(output_message.parsed_output)
 
@@ -160,10 +167,11 @@ class ExecutorAgent(BaseAgent):
             # logger.debug(f"{observation_message.role_name} content: {observation_message.role_content}")
         yield output_message, task_memory
 
-    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None):
+    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str = ""):
         task_memory = Memory(messages=[])
+        memory_pool = memory_manager.get_memory_pool(chat_index)
         prompt = self.prompt_manager.pre_print(
                 previous_agent_message=query, agent_long_term_memory=self.memory, ui_history=history, chain_summary_messages=background, react_memory=None, 
-                memory_pool=memory_manager.current_memory, task_memory=task_memory)
+                memory_pool=memory_pool, task_memory=task_memory)
         title = f"<<<<{self.role.role_name}'s prompt>>>>"
         print("#"*len(title) + f"\n{title}\n"+ "#"*len(title)+ f"\n\n{prompt}\n\n")

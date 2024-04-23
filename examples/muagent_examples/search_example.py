@@ -55,7 +55,7 @@ phase = BasePhase(
 # round-1
 query_content1 = "美国当前总统是谁？"
 query = Message(
-    role_name="human", role_type="user", input_query=query_content1,
+    chat_index="search_test",role_name="human", role_type="user", input_query=query_content1,
     search_engine_name="duckduckgo", score_threshold=1.0, top_k=3
     )
 
@@ -65,7 +65,7 @@ print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_
 # round-2
 query_content2 = "美国上一任总统是谁，两个人有什么关系没？"
 query = Message(
-    role_name="human", role_type="user", input_query=query_content2,
+    chat_index="search_test", role_name="human", role_type="user", input_query=query_content2,
     search_engine_name="duckduckgo", score_threshold=1.0, top_k=3
     )
 output_message, output_memory = phase.step(query)

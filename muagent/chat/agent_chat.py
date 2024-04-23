@@ -78,6 +78,7 @@ class AgentChat:
             embed_engine: str = Body("", description="向量模型类型"),
             model_name: str = Body("", description="llm模型名称"),
             temperature: float = Body(0.2, description=""),
+            chat_index: str = "",
             **kargs
             ) -> Message:
         
@@ -106,6 +107,7 @@ class AgentChat:
                     break
 
         input_message = Message(
+            chat_index=chat_index,
             role_content=query,
             role_type="user",
             role_name="human",
@@ -124,7 +126,7 @@ class AgentChat:
         )
         # history memory mangemant
         history = Memory(messages=[
-            Message(role_name=i["role"], role_type=i["role"], role_content=i["content"]) 
+            Message(chat_index=chat_index,role_name=i["role"], role_type=i["role"], role_content=i["content"]) 
             for i in history
             ])
         # start to execute
@@ -220,6 +222,7 @@ class AgentChat:
             embed_engine: str = Body("", description="向量模型类型"),
             model_name: str = Body("", description="llm模型名称"),
             temperature: float = Body(0.2, description=""),
+            chat_index: str = "",
             **kargs
             ) -> Message:
         
@@ -244,6 +247,7 @@ class AgentChat:
                     break
 
         input_message = Message(
+            chat_index=chat_index,
             role_content=query,
             role_type="user",
             role_name="human",

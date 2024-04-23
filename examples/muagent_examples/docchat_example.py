@@ -74,7 +74,7 @@ phase = BasePhase(
 # round-1
 query_content = "langchain有哪些模块"
 query = Message(
-    role_name="human", role_type="user", input_query=query_content,
+    chat_index="docchat_test", role_name="human", role_type="user", input_query=query_content,
     doc_engine_name=kb_name, score_threshold=1.0, top_k=3
     )
 
@@ -84,7 +84,7 @@ print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_
 # round-2
 query_content = "提示（prompts）有什么用？"
 query = Message(
-    role_name="human", role_type="user", input_query=query_content,
+    chat_index="docchat_test", role_name="human", role_type="user", input_query=query_content,
     doc_engine_name=kb_name, score_threshold=1.0, top_k=3
     )
 output_message, output_memory = phase.step(query)

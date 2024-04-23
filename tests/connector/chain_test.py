@@ -48,7 +48,7 @@ embed_config = EmbedConfig(
 )
 
 # log-level，print prompt和llm predict
-os.environ["log_verbose"] = "2"
+os.environ["log_verbose"] = "0"
 
 tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])[:3]
 
@@ -115,12 +115,11 @@ shutil.copy(source_file, JUPYTER_WORK_PATH)
 
 question = "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图"
 query = Message(
-    user_name="test", role_type="user", role_name="user", input_query=question,
+    chat_index="chain_test", user_name="test", role_type="user", role_name="user", input_query=question,
     tools=tools,
 )
 
 # base_chain.pre_print(query)
 output_message, output_memory = base_chain.step(query)
 print(output_message.input_query)
-print(output_message.role_content)
 print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_list"))

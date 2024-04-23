@@ -13,6 +13,12 @@ try:
     model_name = os.environ["model_name"]
     embed_model = os.environ["embed_model"]
     embed_model_path = os.environ["embed_model_path"]
+    
+    try:
+        from test_config import BgeBaseChineseEmbeddings
+        embeddings = BgeBaseChineseEmbeddings()
+    except:
+        embeddings = None
 except Exception as e:
     # set your config
     api_key = ""
@@ -20,6 +26,7 @@ except Exception as e:
     model_name = ""
     embed_model = ""
     embed_model_path = ""
+    embeddings = None
     logger.error(f"{e}")
 
 
@@ -41,9 +48,15 @@ llm_config = LLMConfig(
     model_name=model_name, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
 )
 
-embed_config = EmbedConfig(
-    embed_engine="model", embed_model=embed_model, embed_model_path=embed_model_path
-)
+if embeddings:
+    embed_config = EmbedConfig(
+        embed_model="default",
+        langchain_embeddings=embeddings
+    )
+else:
+    embed_config = EmbedConfig(
+        embed_engine="model", embed_model=embed_model, embed_model_path=embed_model_path
+    )
 
 # 
 phase_name = "baseGroupPhase"
@@ -60,10 +73,18 @@ shutil.copy(source_file, JUPYTER_WORK_PATH)
 
 # round-1
 query_content = "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图"
-# query_content = "帮我确认下127.0.0.1这个服务器的在10点是否存在异常，请帮我判断一下"
 query = Message(
-    role_name="human", role_type="user", tools=[], input_query=query_content,
+    role_name="human", role_type="user", tools=tools, input_query=query_content,
 )
 # phase.pre_print(query)
 output_message, output_memory = phase.step(query)
 print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_list"))
+
+# # round-2
+# query_content = "帮我确认下127.0.0.1这个服务器的在10点是否存在异常，请帮我判断一下"
+# query = Message(
+#     role_name="human", role_type="user", tools=tools, input_query=query_content,
+# )
+# # phase.pre_print(query)
+# output_message, output_memory = phase.step(query)
+# print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_list"))

@@ -1,6 +1,7 @@
 from typing import List, Union
 import traceback
 import copy
+import uuid
 from loguru import logger
 
 from langchain.schema import BaseRetriever
@@ -10,8 +11,9 @@ from muagent.connector.schema import (
 )
 from muagent.connector.memory_manager import BaseMemoryManager
 from muagent.llm_models import LLMConfig, EmbedConfig
+from muagent.utils.tbase_util import TbaseHandler
+
 from .base_agent import BaseAgent
-from muagent.connector.memory_manager import LocalMemoryManager
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
 
 react_output_template = '''#### RESPONSE OUTPUT FORMAT
@@ -66,7 +68,8 @@ class ReactAgent(BaseAgent):
             doc_retrieval: Union[BaseRetriever] = None,
             code_retrieval = None,
             search_retrieval = None,
-            log_verbose: str = "0"
+            log_verbose: str = "0",
+            tbase_handler: TbaseHandler = None
             ):
         
         role.react_context_level = 1
@@ -74,21 +77,25 @@ class ReactAgent(BaseAgent):
         # role.session_context_level = 0
         super().__init__(role, prompt_config, prompt_manager_type, task, memory, chat_turn, 
                          focus_agents, focus_message_keys, llm_config, embed_config, sandbox_server,
-                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval, log_verbose
+                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval,
+                         log_verbose, tbase_handler
                          )
 
-    def step(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None) -> Message:
+    def step(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str = "") -> Message:
         '''agent reponse from multi-message'''
-        for message in self.astep(query, history, background, memory_manager):
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
+        for message in self.astep(query, history, background, memory_manager, chat_index=chat_index):
             pass
         return message
 
-    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None) -> Message:
+    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager = None, chat_index: str = "") -> Message:
         '''agent reponse from multi-message'''
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
         step_nums = copy.deepcopy(self.chat_turn)
         react_memory = Memory(messages=[])
         # insert query
         output_message = Message(
+                chat_index=chat_index,
                 user_name=query.user_name,
                 role_name=self.role.role_name,
                 role_type="assistant", #self.role.role_type,
@@ -104,7 +111,7 @@ class ReactAgent(BaseAgent):
 
         memory_manager = self.init_memory_manager(memory_manager)
         memory_manager.append(query)
-        memory_pool = memory_manager.get_memory_pool(query_c.user_name)
+        memory_pool = memory_manager.get_memory_pool(chat_index)
         
         idx = 0
         # start to react
@@ -135,7 +142,7 @@ class ReactAgent(BaseAgent):
                 output_message.parsed_output_list.append(output_message.parsed_output)
                 break
             # according the output to choose one action for code_content or tool_content
-            output_message, observation_message = self.message_utils.step_router(output_message)
+            output_message, observation_message = self.message_utils.step_router(output_message, chat_index=chat_index)
             output_message.parsed_output_list.append(output_message.parsed_output)
             
             react_message = copy.deepcopy(output_message)
@@ -156,11 +163,12 @@ class ReactAgent(BaseAgent):
         memory_manager.append(output_message)
         yield output_message
         
-    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None):
+    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str=""):
         react_memory = Memory(messages=[])
+        memory_pool = memory_manager.get_memory_pool(chat_index)
         prompt = self.prompt_manager.pre_print(
                 previous_agent_message=query, agent_long_term_memory=self.memory, ui_history=history, chain_summary_messages=background, react_memory=react_memory, 
-                memory_pool=memory_manager.current_memory)
+                memory_pool=memory_pool)
         title = f"<<<<{self.role.role_name}'s prompt>>>>"
         print("#"*len(title) + f"\n{title}\n"+ "#"*len(title)+ f"\n\n{prompt}\n\n")
 

@@ -1,6 +1,7 @@
 from typing import List, Union
 import copy
 import random
+import uuid
 from loguru import logger
 
 from langchain.schema import BaseRetriever
@@ -9,8 +10,9 @@ from muagent.connector.schema import (
     Memory, Task, Role, Message, PromptField, LogVerboseEnum
 )
 from muagent.connector.memory_manager import BaseMemoryManager
-from muagent.connector.memory_manager import LocalMemoryManager
 from muagent.llm_models import LLMConfig, EmbedConfig
+from muagent.utils.tbase_util import TbaseHandler
+
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
 from .base_agent import BaseAgent
 
@@ -37,24 +39,27 @@ class SelectorAgent(BaseAgent):
             doc_retrieval: Union[BaseRetriever] = None,
             code_retrieval = None,
             search_retrieval = None,
-            log_verbose: str = "0"
+            log_verbose: str = "0",
+            tbase_handler: TbaseHandler = None
             ):
         
         super().__init__(role, prompt_config, prompt_manager_type, task, memory, chat_turn, 
                          focus_agents, focus_message_keys, llm_config, embed_config, sandbox_server,
-                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval, log_verbose
+                         jupyter_work_path, kb_root_path, doc_retrieval, code_retrieval, search_retrieval, 
+                         log_verbose, tbase_handler
                          )
         self.group_agents = group_agents
 
-    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None) -> Message:
+    def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str="") -> Message:
         '''agent reponse from multi-message'''
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
         # insert query into memory
         query_c = copy.deepcopy(query)
         query_c = self.start_action_step(query_c)
         # memory_manager init
         memory_manager = self.init_memory_manager(memory_manager)
         memory_manager.append(query)
-        memory_pool = memory_manager.get_memory_pool(query_c.user_name)
+        memory_pool = memory_manager.get_memory_pool(chat_index)
 
         prompt = self.prompt_manager.generate_full_prompt(
                 previous_agent_message=query_c, agent_long_term_memory=self.memory, ui_history=history, chain_summary_messages=background, react_memory=None, 
@@ -69,6 +74,7 @@ class SelectorAgent(BaseAgent):
 
         # select agent
         select_message = Message(
+            chat_index=chat_index,
             role_name=self.role.role_name,
             role_type="assistant", #self.role.role_type,
             role_content=content,
@@ -90,7 +96,7 @@ class SelectorAgent(BaseAgent):
             
             # 把除了role以外的信息传给下一个agent
             query_c.parsed_output.update({k:v for k,v in select_message.parsed_output.items() if k!="Role"})
-            for output_message in agent.astep(query_c, history, background=background, memory_manager=memory_manager):
+            for output_message in agent.astep(query_c, history, background=background, memory_manager=memory_manager, chat_index=chat_index):
                 yield output_message or select_message
             # update self_memory
             self.append_history(query_c)
@@ -107,10 +113,11 @@ class SelectorAgent(BaseAgent):
             select_message.parsed_output_list.extend(output_message.parsed_output_list)
         yield select_message
 
-    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None):
+    def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index:str=""):
+        memory_pool = memory_manager.get_memory_pool(chat_index)
         prompt = self.prompt_manager.pre_print(
                 previous_agent_message=query, agent_long_term_memory=self.memory, ui_history=history, chain_summary_messages=background, react_memory=None, 
-                memory_pool=memory_manager.current_memory, agents=self.group_agents)
+                memory_pool=memory_pool, agents=self.group_agents)
         title = f"<<<<{self.role.role_name}'s prompt>>>>"
         print("#"*len(title) + f"\n{title}\n"+ "#"*len(title)+ f"\n\n{prompt}\n\n")
 

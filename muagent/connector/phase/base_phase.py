@@ -3,6 +3,7 @@ import os
 import json
 import importlib
 import copy
+import uuid
 from loguru import logger
 
 from langchain.schema import BaseRetriever
@@ -14,11 +15,12 @@ from muagent.connector.schema import (
     CompletePhaseConfig,
     load_chain_configs, load_phase_configs, load_role_configs
 )
-from muagent.connector.memory_manager import BaseMemoryManager, LocalMemoryManager
+from muagent.connector.memory_manager import BaseMemoryManager, LocalMemoryManager, TbaseMemoryManager
 from muagent.connector.configs import AGETN_CONFIGS, CHAIN_CONFIGS, PHASE_CONFIGS
 from muagent.connector.message_process import MessageUtils
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
+from muagent.utils.tbase_util import TbaseHandler
 
 
 role_configs = load_role_configs(AGETN_CONFIGS)
@@ -48,7 +50,8 @@ class BasePhase:
             doc_retrieval: Union[BaseRetriever] = None,
             code_retrieval = None,
             search_retrieval = None,
-            log_verbose: str = "0"
+            log_verbose: str = "0",
+            tbase_handler: TbaseHandler = None,
             ) -> None:
         # 
         self.phase_name = phase_name
@@ -81,10 +84,16 @@ class BasePhase:
             base_phase_config = base_phase_config,
             base_chain_config = base_chain_config,
             base_role_config = base_role_config,
+            tbase_handler=tbase_handler
             )
-        self.memory_manager: BaseMemoryManager = LocalMemoryManager(
-            unique_name=phase_name, do_init=True, kb_root_path = kb_root_path, embed_config=embed_config, llm_config=llm_config
+        if tbase_handler:
+            self.memory_manager: BaseMemoryManager = TbaseMemoryManager(
+                unique_name=phase_name, use_vector=True, tbase_handler=tbase_handler, embed_config=embed_config, llm_config=llm_config,
             )
+        else:
+            self.memory_manager: BaseMemoryManager = LocalMemoryManager(
+                unique_name=phase_name, do_init=True, kb_root_path = kb_root_path, embed_config=embed_config, llm_config=llm_config
+                )
         self.conv_summary_agent = BaseAgent(
             role=role_configs["conv_summary"].role,
             prompt_config=role_configs["conv_summary"].prompt_config,
@@ -96,7 +105,9 @@ class BasePhase:
             kb_root_path=kb_root_path
             )
 
-    def astep(self, query: Message, history: Memory = None, reinit_memory=False) -> Tuple[Message, Memory]:
+    def astep(self, query: Message, history: Memory = None, chat_index: str = "", reinit_memory=False) -> Tuple[Message, Memory]:
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
+
         if reinit_memory:
             self.memory_manager.re_init(reinit_memory)
         self.memory_manager.append(query)
@@ -105,15 +116,14 @@ class BasePhase:
         local_phase_memory = Memory(messages=[])
         # do_search、do_doc_search、do_code_search
         query = self.message_utils.get_extrainfo_step(query, self.do_search, self.do_doc_retrieval, self.do_code_retrieval, self.do_tool_retrieval)
-        # query.parsed_output = query.parsed_output if query.parsed_output else {"origin_query": query.input_query}
-        # query.parsed_output_list = query.parsed_output_list if query.parsed_output_list else [{"origin_query": query.input_query}]
         input_message = copy.deepcopy(query)
         
         self.global_memory.append(input_message)
         local_phase_memory.append(input_message)
         for chain in self.chains:
             # chain can supply background and query to next chain
-            for output_message, local_chain_memory in chain.astep(input_message, history, background=chain_message, memory_manager=self.memory_manager):
+            for output_message, local_chain_memory in chain.astep(
+                        input_message, history, background=chain_message, memory_manager=self.memory_manager, chat_index=chat_index):
                 # logger.debug(f"local_memory: {local_phase_memory + local_chain_memory}")
                 yield output_message, local_phase_memory + local_chain_memory
 
@@ -128,7 +138,8 @@ class BasePhase:
             if self.do_summary:
                 if LogVerboseEnum.ge(LogVerboseEnum.Log1Level, self.log_verbose):
                     logger.info(f"{self.conv_summary_agent.role.role_name} input global memory: {local_phase_memory.to_str_messages(content_key='step_content')}")
-                for summary_message in self.conv_summary_agent.astep(query, background=local_phase_memory, memory_manager=self.memory_manager):
+                for summary_message in self.conv_summary_agent.astep(
+                            query, background=local_phase_memory, memory_manager=self.memory_manager, chat_index=chat_index):
                     pass
                 # summary_message = Message(**summary_message)
                 summary_message.role_name = chain.chainConfig.chain_name
@@ -147,8 +158,9 @@ class BasePhase:
         message.role_name = self.phase_name
         yield message, local_phase_memory
 
-    def step(self, query: Message, history: Memory = None, reinit_memory=False) -> Tuple[Message, Memory]:
-        for message, local_phase_memory in self.astep(query, history=history, reinit_memory=reinit_memory):
+    def step(self, query: Message, history: Memory = None, chat_index: str = "", reinit_memory=False) -> Tuple[Message, Memory]:
+        chat_index = query.chat_index or chat_index or str(uuid.uuid4())
+        for message, local_phase_memory in self.astep(query, history=history, chat_index=chat_index, reinit_memory=reinit_memory):
             pass
         return message, local_phase_memory
 
@@ -158,7 +170,7 @@ class BasePhase:
             chain.pre_print(query, history, background=chain_message, memory_manager=self.memory_manager)
 
     def init_chains(self, phase_name: str, phase_config: CompletePhaseConfig, base_phase_config, base_chain_config,
-            base_role_config, task=None, memory=None) -> List[BaseChain]:
+            base_role_config, task=None, memory=None, tbase_handler=None) -> List[BaseChain]:
         # load config
         role_configs = load_role_configs(base_role_config)
         chain_configs = load_chain_configs(base_chain_config)
@@ -205,7 +217,8 @@ class BasePhase:
                     doc_retrieval=self.doc_retrieval,
                     code_retrieval=self.code_retrieval,
                     search_retrieval=self.search_retrieval,
-                    log_verbose=self.log_verbose
+                    log_verbose=self.log_verbose,
+                    tbase_handler=tbase_handler
                 ) 
                 if agent_config.role.agent_type == "SelectorAgent":
                     for group_agent_name in agent_config.group_agents:
@@ -230,7 +243,8 @@ class BasePhase:
                             doc_retrieval=self.doc_retrieval,
                             code_retrieval=self.code_retrieval,
                             search_retrieval=self.search_retrieval,
-                            log_verbose=self.log_verbose
+                            log_verbose=self.log_verbose,
+                            tbase_handler=tbase_handler
                         ) 
                         base_agent.group_agents.append(group_base_agent)
 

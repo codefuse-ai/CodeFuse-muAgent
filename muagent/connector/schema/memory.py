@@ -23,6 +23,9 @@ class Memory(BaseModel):
     def update(self, role_name: str, role_type: str, role_content: str):
         self.messages.append(Message(role_name, role_type, role_content, role_content))
 
+    def sort_by_key(self, key: str):
+        self.messages = sorted(self.messages, key=lambda x: getattr(x, key, f"No this {key}"))
+
     def clear(self, ):
         self.messages = []
 
@@ -136,7 +139,7 @@ class Memory(BaseModel):
         return [message.spec_parsed_output for message in self.messages]
     
     def get_datetimes(self, ):
-        return [m.datetime for m in self.messages]
+        return [m.end_datetime for m in self.messages]
     
     def get_contents(self, ):
         return [m.role_content or m.input_query for m in self.messages]

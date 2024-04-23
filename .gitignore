@@ -1,0 +1,16 @@
+**/__pycache__
+knowledge_base
+logs
+embedding_models
+jupyter_work
+code_base
+data
+.DS_Store
+.idea
+.pyc
+test_config.py
+package.sh
+setup_test.py
+build
+*egg-info
+dist

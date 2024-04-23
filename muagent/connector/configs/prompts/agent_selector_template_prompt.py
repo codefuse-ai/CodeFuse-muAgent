@@ -6,12 +6,6 @@ When you need to select the appropriate role for handling a user's query, carefu
 
 ATTENTION: response carefully referenced "Response Output Format" in format.
 
-#### Input Format
-
-**Origin Query:** the initial question or objective that the user wanted to achieve
-
-**Context:** the context history to determine if Origin Query has been achieved.
-
 #### Response Output Format
 
 **Thoughts:** think the reason step by step about why you selecte one role
@@ -19,3 +13,10 @@ ATTENTION: response carefully referenced "Response Output Format" in format.
 **Role:** Select the role from agent names.
 
 """
+
+
+# #### Input Format
+
+# **Origin Query:** the initial question or objective that the user wanted to achieve
+
+# **Context:** the context history to determine if Origin Query has been achieved.

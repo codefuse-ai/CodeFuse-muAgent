@@ -53,7 +53,7 @@ class CodeBaseHandler:
                 self.nh.add_host(NEBULA_HOST, NEBULA_STORAGED_PORT)
                 time.sleep(1)
             except Exception as e:
-                logger.exception(e)
+                # logger.exception(e)
                 self.nh = None
                 try:
                     with open(self.local_graph_file_path, 'r') as f:

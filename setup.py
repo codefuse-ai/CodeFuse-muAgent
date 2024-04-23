@@ -4,14 +4,14 @@ import setuptools
 #     long_description = fh.read()
 
 setuptools.setup(
-    name="muagent",
+    name="codefuse-muagent",
     version="0.0.2",
     author="shanshi",
     author_email="wyp311395@antgroup.com",
     description="A multi-agent framework that facilitates the rapid construction of collaborative teams of agents.",
     # long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/codefuse-ai/codefuse-chatbot",
+    url="https://github.com/codefuse-ai/CodeFuse-muAgent",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3.9",
@@ -34,7 +34,7 @@ setuptools.setup(
         "chromadb==0.4.17",
         "javalang==0.13.0",
         "nebula3-python==3.1.0",
-        # 
-        # "duckduckgo-search",
+        "redis==5.0.1",
+        "pydantic<=1.10.14"
     ],
 )

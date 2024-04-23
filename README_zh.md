@@ -2,14 +2,14 @@
     <a>中文</a>&nbsp ｜ &nbsp<a href="README.md">English&nbsp </a>
 </p>
 
-# <p align="center">MuAgent: A Multi-Agent FrameWork For Faster Build Agents</p>
+# <p align="center">CodeFuse-muAgent: A Multi-Agent FrameWork For Faster Build Agents</p>
 
 <p align="center">
     <a href="README_zh.md"><img src="https://img.shields.io/badge/文档-中文版-yellow.svg" alt="ZH doc"></a>
     <a href="README.md"><img src="https://img.shields.io/badge/document-English-yellow.svg" alt="EN doc"></a>
-    <img src="https://img.shields.io/github/license/codefuse-ai/muagent" alt="License">
-    <a href="https://github.com/codefuse-ai/muagent/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/muagent" />
+    <img src="https://img.shields.io/github/license/codefuse-ai/CodeFuse-muAgent" alt="License">
+    <a href="https://github.com/codefuse-ai/CodeFuse-muAgent/issues">
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/CodeFuse-muAgent" />
     </a>
     <br><br>
 </p>
@@ -17,7 +17,7 @@
 
 
 ## 🔔 更新
-- [2024.04.01] muagent 开源，支持知识库、代码库、工具使用、代码解释器等功能
+- [2024.04.01] CodeFuse-muAgent 开源，支持知识库、代码库、工具使用、代码解释器等功能
 
 ## 📜 目录
 - [🤝 介绍](#-介绍)
@@ -28,18 +28,18 @@
 
 
 ## 🤝 介绍
-muagent是蚂蚁CodeFuse团队开发的Mulit Agent框架，其核心宗旨在于简化agents的标准操作程序（SOP）编排流程。muagent整合了一系列丰富的工具库、代码库、知识库以及沙盒环境，可支撑用户在任何领域场景都能依托muagent迅速搭建起复杂的多Agent交互应用。通过这一框架，用户能够高效地执行和处理多层次、多维度的复杂任务。
+CodeFuse-muAgent 是蚂蚁CodeFuse团队开发的Mulit Agent框架，其核心宗旨在于简化agents的标准操作程序（SOP）编排流程。muagent整合了一系列丰富的工具库、代码库、知识库以及沙盒环境，可支撑用户在任何领域场景都能依托muagent迅速搭建起复杂的多Agent交互应用。通过这一框架，用户能够高效地执行和处理多层次、多维度的复杂任务。
 
 ![](docs/resources/agent_runtime.png)
 
 
 ## 🚀 快速使用
-完整文档见：[muagent](docs/overview/o1.muagent.md)
+完整文档见：[CodeFuse-muAgent](docs/overview/o1.muagent.md)
 更多[demo](docs/overview/o3.quick-start.md)
 
 1. 安装
 ```
-pip install muagent
+pip install codefuse-muagent
 ```
 
 2. code answer
@@ -74,6 +74,8 @@ embed_config = EmbedConfig(
 初始化代码库
 ```
 # initialize codebase
+from muagent.base_configs.env_config import CB_ROOT_PATH
+
 codebase_name = 'client_local'
 code_path = "D://chromeDownloads/devopschat-bot/client_v2/client"
 
@@ -93,6 +95,15 @@ phase_name = "codeChatPhase"
 phase = BasePhase(
     phase_name, embed_config=embed_config, llm_config=llm_config,
 )
+
+query_content = "remove 可以做什么？"
+query = Message(
+    role_name="user", role_type="human", input_query=query_content,
+    code_engine_name=codebase_name, score_threshold=1.0, top_k=3, cb_search_type="tag",
+    local_graph_path=CB_ROOT_PATH, use_nh=False
+    )
+output_message3, output_memory3 = phase.step(query)
+print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output_list"))
 ```
 
 ## 🧭 关键技术
