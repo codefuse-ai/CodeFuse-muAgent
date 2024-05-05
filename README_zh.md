@@ -108,12 +108,12 @@ print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output
 
 ## 🧭 关键技术
 
-● Agent Base：构建了四种基本的Agent类型BaseAgent、ReactAgent、ExecutorAgent、SelectorAgent，支撑各种场景的基础活动
-● Communication：通过Message和Parse Message 实体完成Agent间的信息传递，并与Memory Manager交互再Memory Pool完成记忆管理
-● Prompt Manager：通过Role Handler、Doc/Tool Handler、Session Handler、Customized Handler，来自动化组装Customized 的Agent Prompt
-● Memory Manager： 用于支撑 chat history 的存储管理、信息压缩、记忆检索等管理，最后通过Memory Pool在数据库、本地、向量数据库中完成存储
-● Component：用于构建Agent的辅助生态组件，包括Retrieval、Tool、Action、Sandbox等
-● Customized Model：支持私有化的LLM和Embedding的接入
+- Agent Base：构建了四种基本的Agent类型BaseAgent、ReactAgent、ExecutorAgent、SelectorAgent，支撑各种场景的基础活动
+- Communication：通过Message和Parse Message 实体完成Agent间的信息传递，并与Memory Manager交互再Memory Pool完成记忆管理
+- Prompt Manager：通过Role Handler、Doc/Tool Handler、Session Handler、Customized Handler，来自动化组装Customized 的Agent Prompt
+- Memory Manager： 用于支撑 chat history 的存储管理、信息压缩、记忆检索等管理，最后通过Memory Pool在数据库、本地、向量数据库中完成存储
+- Component：用于构建Agent的辅助生态组件，包括Retrieval、Tool、Action、Sandbox等
+- Customized Model：支持私有化的LLM和Embedding的接入
 
 ## 贡献指南
 非常感谢您对 Codefuse 项目感兴趣，我们非常欢迎您对 Codefuse 项目的各种建议、意见（包括批评）、评论和贡献。
