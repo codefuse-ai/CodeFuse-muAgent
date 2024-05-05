@@ -103,12 +103,12 @@ print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output
 
 ## Key Technologies
 
-● Agent Base：Four fundamental Agent types are constructed – BaseAgent, ReactAgent, ExecutorAgent, SelectorAgent, supporting basic activities across various scenarios 
-● Communication: Information transmission between Agents is accomplished through Message and Parse Message entities, interacting with Memory Manager and managing memories in the Memory Pool 
-● Prompt Manager: Customized Agent Prompts are automatically assembled with the aid of Role Handler, Doc/Tool Handler, Session Handler, and Customized Handler 
-● Memory Manager: Facilitates the management of chat history storage, information compression, and memory retrieval, culminating in storage within databases, local systems, and vector databases via the Memory Pool 
-● Component: Auxiliary ecosystem components to construct Agents, including Retrieval, Tool, Action, Sandbox, etc. 
-● Customized Model: Supports the integration of private LLM and Embedding models
+- Agent Base：Four fundamental Agent types are constructed – BaseAgent, ReactAgent, ExecutorAgent, SelectorAgent, supporting basic activities across various scenarios 
+- Communication: Information transmission between Agents is accomplished through Message and Parse Message entities, interacting with Memory Manager and managing memories in the Memory Pool 
+- Prompt Manager: Customized Agent Prompts are automatically assembled with the aid of Role Handler, Doc/Tool Handler, Session Handler, and Customized Handler 
+- Memory Manager: Facilitates the management of chat history storage, information compression, and memory retrieval, culminating in storage within databases, local systems, and vector databases via the Memory Pool 
+- Component: Auxiliary ecosystem components to construct Agents, including Retrieval, Tool, Action, Sandbox, etc. 
+- Customized Model: Supports the integration of private LLM and Embedding models
 
 ##  Contribution
 We are deeply grateful for your interest in the Codefuse project and warmly welcome any suggestions, opinions (including criticism), comments, and contributions. 
