@@ -143,7 +143,7 @@ def search_code(cb_name: str = Body(..., examples=["sofaboot"]),
                 temperature: bool = Body(..., examples=["samples"]),
                 model_device: bool = Body(..., examples=["samples"]),
                 use_nh: bool = True,
-                local_graph_path: str = '',
+                local_graph_path: str = CB_ROOT_PATH,
                 embed_config: EmbedConfig = None,
                 ) -> dict:
     
