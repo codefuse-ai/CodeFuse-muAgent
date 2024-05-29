@@ -54,9 +54,11 @@ class CodeIntepreter:
             messages.append(message)
 
         try:
-            chat_ress = [chat_model(messages) for message in messages]
-        except:
+            chat_ress = [chat_model.predict(message) for message in messages]
+        except Exception as e:
+            logger.exception(f"{e}")
             chat_ress = chat_model.batch(messages)
+
         for chat_res, code in zip(chat_ress, code_list):
             try:
                 res[code] = chat_res.content

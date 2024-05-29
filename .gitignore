@@ -14,3 +14,4 @@ setup_test.py
 build
 *egg-info
 dist
+.ipynb_checkpoints

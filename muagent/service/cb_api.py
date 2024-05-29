@@ -56,6 +56,7 @@ async def create_cb(zip_file,
                     temperature: bool = Body(..., examples=["samples"]),
                     model_device: bool = Body(..., examples=["samples"]),
                     embed_config: EmbedConfig = None,
+                    local_graph_path: str = '',
                     ) -> BaseResponse:
     logger.info('cb_name={}, zip_path={}, do_interpret={}'.format(cb_name, code_path, do_interpret))
 
@@ -74,7 +75,7 @@ async def create_cb(zip_file,
 
     try:
         logger.info('start build code base')
-        cbh = CodeBaseHandler(cb_name, code_path, embed_config=embed_config, llm_config=llm_config)
+        cbh = CodeBaseHandler(cb_name, code_path, embed_config=embed_config, llm_config=llm_config, local_graph_path=local_graph_path)
         vertices_num, edge_num, file_num = cbh.import_code(zip_file=zip_file, do_interpret=do_interpret)
         logger.info('build code base done')
 
@@ -100,6 +101,7 @@ async def delete_cb(
         temperature: bool = Body(..., examples=["samples"]),
         model_device: bool = Body(..., examples=["samples"]),
         embed_config: EmbedConfig = None,
+        local_graph_path: str="",
         ) -> BaseResponse:
     logger.info('cb_name={}'.format(cb_name))
     embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
@@ -119,7 +121,7 @@ async def delete_cb(
             shutil.rmtree(CB_ROOT_PATH + os.sep + cb_name)
 
             # delete from codebase
-            cbh = CodeBaseHandler(cb_name, embed_config=embed_config, llm_config=llm_config)
+            cbh = CodeBaseHandler(cb_name, embed_config=embed_config, llm_config=llm_config, local_graph_path=local_graph_path)
             cbh.delete_codebase(codebase_name=cb_name)
 
         except Exception as e:

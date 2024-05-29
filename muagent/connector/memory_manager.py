@@ -590,19 +590,23 @@ class TbaseMemoryManager(BaseMemoryManager):
         }
 
         for k, v in tool_map.items():
-            message = Message(
-                chat_index=chat_index,
-                message_index= f"{nodeid}-{uuid.uuid4()}",
-                user_name=user_name,
-                role_name = v["role_name"], # agent 名字，
-                role_type = v["role_type"], # agent 类型，默认assistant，可选observation
-                ## llm output
-                role_content = tool_information[k], # 输入
-                customed_kargs = {
-                    **{kk: vv for kk, vv in tool_information.items() 
-                        if kk in v.get("customed_keys", [])}
-                } # 存储docs、tool等信息
-            )
+            try:
+                message = Message(
+                    chat_index=chat_index,
+                    #message_index= f"{nodeid}-{uuid.uuid4()}",
+                    message_index= f"{nodeid}-{k}",
+                    user_name=user_name,
+                    role_name = v["role_name"], # agent 名字，
+                    role_type = v["role_type"], # agent 类型，默认assistant，可选observation
+                    ## llm output
+                    role_content = tool_information[k], # 输入
+                    customed_kargs = {
+                        **{kk: vv for kk, vv in tool_information.items() 
+                            if kk in v.get("customed_keys", [])}
+                    } # 存储docs、tool等信息
+                )
+            except:
+                pass
             self.append(message)
 
     def get_memory_pool(self, chat_index: str = "") -> Memory:
@@ -802,12 +806,16 @@ class TbaseMemoryManager(BaseMemoryManager):
         for doc in r_docs.docs:
             tbase_message = {}
             for k, v in doc.__dict__.items():
+                if k in ["role_content", "input_query"]:
+                    tbase_message[k] = v
+                    continue
                 try:
                     v = json.loads(v)
                 except:
                     pass
 
                 tbase_message[k] = v
+
             message = Message(**tbase_message)
             memory.append(message)
 

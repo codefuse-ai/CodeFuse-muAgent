@@ -53,7 +53,7 @@ class CodeChat(Chat):
             return BaseResponse(code=404, msg=f"未找到代码库 {self.engine_name}")
         return BaseResponse(code=200, msg=f"找到代码库 {self.engine_name}")
 
-    def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig):
+    def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, local_graph_path=""):
         '''process'''
 
         codes_res = search_code(query=query, cb_name=self.engine_name, code_limit=self.code_limit,
@@ -67,7 +67,8 @@ class CodeChat(Chat):
                                 embed_model_path=embed_config.embed_model_path,
                                 embed_engine=embed_config.embed_engine,
                                 model_device=embed_config.model_device,
-                                embed_config=embed_config
+                                embed_config=embed_config,
+                                local_graph_path=local_graph_path
                                 )
 
         context = codes_res['context']
@@ -115,6 +116,7 @@ class CodeChat(Chat):
             model_name: str = Body("", ),
             temperature: float = Body(0.5, ),
             model_device: str = Body("", ),
+            local_graph_path: str=Body(", "),
             **kargs
             ):
         params = locals()
@@ -127,9 +129,9 @@ class CodeChat(Chat):
         self.local_doc_url = local_doc_url if isinstance(local_doc_url, bool) else local_doc_url.default
         self.request = request
         self.cb_search_type = cb_search_type
-        return self._chat(query, history, llm_config, embed_config, **kargs)
+        return self._chat(query, history, llm_config, embed_config, local_graph_path, **kargs)
 
-    def _chat(self, query: str, history: List[History], llm_config: LLMConfig, embed_config: EmbedConfig, **kargs):
+    def _chat(self, query: str, history: List[History], llm_config: LLMConfig, embed_config: EmbedConfig, local_graph_path: str, **kargs):
         history = [History(**h) if isinstance(h, dict) else h for h in history]
 
         service_status = self.check_service_status()
@@ -140,7 +142,7 @@ class CodeChat(Chat):
             # model = getChatModel()
             model = getChatModelFromConfig(llm_config)
 
-            result, content = self.create_task(query, history, model, llm_config, embed_config, **kargs)
+            result, content = self.create_task(query, history, model, llm_config, embed_config, local_graph_path, **kargs)
             # logger.info('result={}'.format(result))
             # logger.info('content={}'.format(content))
 
@@ -156,9 +158,9 @@ class CodeChat(Chat):
         return StreamingResponse(chat_iterator(query, history),
                                  media_type="text/event-stream")
 
-    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig):
+    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, local_graph_path: str):
         '''构建 llm 生成任务'''
-        chain, context, result = self._process(query, history, model, llm_config, embed_config)
+        chain, context, result = self._process(query, history, model, llm_config, embed_config, local_graph_path)
         logger.info('chain={}'.format(chain))
         try:
             content = chain({"context": context, "question": query})
