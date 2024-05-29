@@ -79,6 +79,7 @@ class AgentChat:
             model_name: str = Body("", description="llm模型名称"),
             temperature: float = Body(0.2, description=""),
             chat_index: str = "",
+            local_graph_path: str = "",
             **kargs
             ) -> Message:
         
@@ -122,7 +123,8 @@ class AgentChat:
             code_engine_name=code_engine_name,
             score_threshold=score_threshold, top_k=top_k,
             history_node_list=history_node_list,
-            tools=tools
+            tools=tools,
+            local_graph_path=local_graph_path
         )
         # history memory mangemant
         history = Memory(messages=[
@@ -223,6 +225,7 @@ class AgentChat:
             model_name: str = Body("", description="llm模型名称"),
             temperature: float = Body(0.2, description=""),
             chat_index: str = "",
+            local_graph_path: str = "",
             **kargs
             ) -> Message:
         
@@ -264,7 +267,8 @@ class AgentChat:
             cb_search_type=cb_search_type,
             score_threshold=score_threshold, top_k=top_k,
             history_node_list=history_node_list,
-            tools=tools
+            tools=tools,
+            local_graph_path=local_graph_path
         )
         # history memory mangemant
         history = Memory(messages=[
@@ -292,7 +296,8 @@ class AgentChat:
         
         def chat_iterator(message: Message, local_memory: Memory, isDetailed=False):
             step_content = local_memory.to_str_messages(content_key='step_content', filter_roles=["human"])
-            step_content = "\n\n".join([f"{v}" for parsed_output in local_memory.get_parserd_output_list()[1:] for k, v in parsed_output.items() if k not in ["Action Status"]])
+            step_content = "\n\n".join([f"{v}" for parsed_output in local_memory.get_parserd_output_list() for k, v in parsed_output.items() if k not in ["Action Status", "human", "user"]])
+            # logger.debug(f"{local_memory.get_parserd_output_list()}")
             final_content = message.role_content
             result = {
                 "answer": "",
@@ -311,7 +316,7 @@ class AgentChat:
                     if node not in has_nodes:
                         related_nodes.append(node)
             result["related_nodes"] = related_nodes
-            
+
             # logger.debug(f"{result['figures'].keys()}, isDetailed: {isDetailed}")
             message_str = step_content
             if self.stream:

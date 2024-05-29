@@ -5,7 +5,7 @@ import setuptools
 
 setuptools.setup(
     name="codefuse-muagent",
-    version="0.0.2",
+    version="0.0.4",
     author="shanshi",
     author_email="wyp311395@antgroup.com",
     description="A multi-agent framework that facilitates the rapid construction of collaborative teams of agents.",

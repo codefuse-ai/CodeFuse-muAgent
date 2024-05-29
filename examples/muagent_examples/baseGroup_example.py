@@ -70,7 +70,6 @@ import shutil
 source_file = 'D://project/gitlab/llm/external/ant_code/Codefuse-chatbot/jupyter_work/employee_data.csv'
 shutil.copy(source_file, JUPYTER_WORK_PATH)
 
-
 # round-1
 query_content = "确认本地是否存在employee_data.csv，并查看它有哪些列和数据类型;然后画柱状图"
 query = Message(
