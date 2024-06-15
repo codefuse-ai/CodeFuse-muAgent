@@ -11,6 +11,7 @@ class LLMConfig:
     def __init__(
             self,
             model_name: str = "gpt-3.5-turbo",
+            model_engine: str = "openai",
             temperature: float = 0.25, 
             stop: Union[List[str], str] = None,
             api_key: str = "",
@@ -19,12 +20,15 @@ class LLMConfig:
             llm: LLM = None,
             **kwargs
         ):
-
+        # only support http connection with others
+        # llm_model init config
         self.model_name: str = model_name
+        self.model_engine: str = model_engine
         self.temperature: float = temperature
         self.stop: Union[List[str], str] = stop
         self.api_key: str = api_key
         self.api_base_url: str = api_base_url
+        # custom llm
         self.llm: LLM = llm
         # 
         self.check_config()
@@ -55,7 +59,7 @@ class EmbedConfig:
         self.model_device: str = model_device
         self.api_key: str = api_key
         self.api_base_url: str = api_base_url
-        # 
+        # custom embeddings
         self.langchain_embeddings = langchain_embeddings
         # 
         self.check_config()

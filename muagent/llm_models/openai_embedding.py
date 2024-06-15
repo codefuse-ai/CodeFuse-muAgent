@@ -5,7 +5,9 @@
 @time: 2023/11/22 上午10:45
 @desc:
 '''
+
 import openai
+from openai import OpenAI
 import base64
 import json
 import os
@@ -14,18 +16,34 @@ from loguru import logger
 
 class OpenAIEmbedding:
     def __init__(self):
-        pass
+
+        try:
+            from zdatafront import ZDataFrontClient
+            from zdatafront.openai import SyncProxyHttpClient
+            # zdatafront 分配的业务标记
+            VISIT_DOMAIN = os.environ.get("visit_domain")
+            VISIT_BIZ = os.environ.get("visit_biz")
+            VISIT_BIZ_LINE = os.environ.get("visit_biz_line")
+            # zdatafront 提供的统一加密密钥
+            aes_secret_key = os.environ.get("aes_secret_key")
+
+            zdatafront_client = ZDataFrontClient(visit_domain=VISIT_DOMAIN, visit_biz=VISIT_BIZ, visit_biz_line=VISIT_BIZ_LINE, aes_secret_key=aes_secret_key)
+            self.http_client = SyncProxyHttpClient(zdatafront_client=zdatafront_client, prefer_async=True)
+        except Exception as e:
+            logger.warning("There is no zdatafront, just as openai config")
+            self.http_client = None
 
     def get_emb(self, text_list):
         openai.api_key = os.environ["OPENAI_API_KEY"]
-        openai.api_base = os.environ["API_BASE_URL"]
+        openai.base_url = os.environ["API_BASE_URL"]
 
         # change , to ，to avoid bug
         modified_text_list = [i.replace(',', '，') for i in text_list]
+        client = OpenAI(http_client=self.http_client)
 
-        emb_all_result = openai.Embedding.create(
+        emb_all_result = client.embeddings.create(
+            input=modified_text_list,
             model="text-embedding-ada-002",
-            input=modified_text_list
         )
 
         res = {}

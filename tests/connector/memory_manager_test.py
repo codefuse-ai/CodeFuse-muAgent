@@ -33,7 +33,7 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 
 
 llm_config = LLMConfig(
-    model_name=model_name, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
+    model_name=model_name, model_type="openai", api_key=api_key,  api_base_url=api_base_url, temperature=0.3,
 )
 
 embed_config = EmbedConfig(

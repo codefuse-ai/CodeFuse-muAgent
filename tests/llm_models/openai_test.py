@@ -24,9 +24,8 @@ except Exception as e:
 
 
 
-
-from langchain.chat_models import ChatOpenAI
-from langchain import PromptTemplate, LLMChain
+# test 1
+from langchain_openai import ChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate
 model = ChatOpenAI(
     streaming=True,
@@ -39,34 +38,12 @@ model = ChatOpenAI(
 # test 1
 print(model.predict("please output 123!"))
 
+
 # # test 2
-# chat_prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
-# chain = LLMChain(prompt=chat_prompt, llm=model)
-# content = chain({"input": "who are you!"})
-# print(content)
-
-# test 3
-# import openai
-# # openai.api_key = "EMPTY" # Not support yet
-# openai.api_base = api_base_url
-# # create a chat completion
-# completion = openai.ChatCompletion.create(
-#     model=model_name,
-#     messages=[{"role": "user", "content": "Hello! What is your name? "}],
-#     max_tokens=100,
-# )
-# # print the completion
-# print(completion.choices[0].message.content)
-
-# import openai
-# # openai.api_key = "EMPTY" # Not support yet
-# openai.api_base = "http://127.0.0.1:8888/v1"
-# model = "example"
-# # create a chat completion
-# completion = openai.ChatCompletion.create(
-#     model=model,
-#     messages=[{"role": "user", "content": "Hello! What is your name? "}],
-#     max_tokens=100,
-# )
-# # print the completion
-# print(completion.choices[0].message.content)
+# from openai import OpenAI
+# http_client = None
+# client = OpenAI(api_key=os.environ.get("api_key"), http_client=http_client)
+# model = 'gpt-3.5-turbo'
+# messages=[{'role': 'user', 'content': 'Hello World'}]
+# result = client.chat.completions.create(model=model, messages=messages)
+# print(result)

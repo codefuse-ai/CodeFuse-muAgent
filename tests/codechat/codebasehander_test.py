@@ -23,8 +23,11 @@ except Exception as e:
     embed_model_path = ""
     logger.error(f"{e}")
 
-
-
+# local debug
+src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+sys.path.append(src_dir)
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.codechat.codebase_handler.codebase_handler import CodeBaseHandler
 from muagent.base_configs.env_config import CB_ROOT_PATH
@@ -64,3 +67,4 @@ vertexes = cbh.search_vertices(vertex_type="class") # method/class
 
 # search_type = [tag, cypher, description] if you have llm and nebula-api
 code_text, related_vertex = cbh.search_code(query="remove函数做什么", search_type="tag", limit = 3)
+print(code_text)

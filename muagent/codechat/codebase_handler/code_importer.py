@@ -12,7 +12,7 @@ from loguru import logger
 
 from muagent.db_handler.graph_db_handler.nebula_handler import NebulaHandler
 from muagent.db_handler.vector_db_handler.chroma_handler import ChromaHandler
-from muagent.embeddings.get_embedding import get_embedding
+from muagent.llm_models.get_embedding import get_embedding
 from muagent.llm_models.llm_config import EmbedConfig
 
 

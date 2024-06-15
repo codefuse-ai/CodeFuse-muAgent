@@ -24,11 +24,10 @@ except Exception as e:
     embed_model_path = ""
     logger.error(f"{e}")
 
-# src_dir = os.path.join(
-#     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# )
-
-# sys.path.append(src_dir)
+src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+sys.path.append(src_dir)
 from muagent.connector.agents import BaseAgent, ReactAgent, ExecutorAgent, SelectorAgent
 from muagent.connector.schema import Role, Message
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
@@ -191,4 +190,4 @@ query = Message(
 # base_agent.pre_print(query)
 output_message = base_agent.step(query)
 print(output_message.input_query)
-print(output_message.role_content)
+print(output_message.parsed_output_list)

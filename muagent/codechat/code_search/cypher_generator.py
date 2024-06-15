@@ -5,7 +5,7 @@
 @time: 2023/11/24 上午10:17
 @desc:
 '''
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from loguru import logger
 
 from muagent.llm_models.openai_model import getChatModelFromConfig
@@ -14,7 +14,8 @@ from muagent.utils.postprocess import replace_lt_gt
 from langchain.schema import (
     HumanMessage,
 )
-from langchain.chains.graph_qa.prompts import NGQL_GENERATION_PROMPT, CYPHER_GENERATION_TEMPLATE
+# from langchain.chains.graph_qa.prompts import NGQL_GENERATION_PROMPT, CYPHER_GENERATION_TEMPLATE
+from langchain_community.chains.graph_qa.prompts import CYPHER_GENERATION_TEMPLATE
 
 schema = '''
 Node properties: [{'tag': 'package', 'properties': []}, {'tag': 'class', 'properties': []}, {'tag': 'method', 'properties': []}]

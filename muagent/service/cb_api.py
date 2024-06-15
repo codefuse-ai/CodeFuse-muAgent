@@ -12,7 +12,7 @@ import shutil
 
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi import File, Form, Body, Query, UploadFile
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 
 from .service_factory import KBServiceFactory
 from muagent.utils.server_utils import BaseResponse, ListResponse

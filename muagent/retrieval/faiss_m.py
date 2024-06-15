@@ -21,13 +21,13 @@ from typing import (
 
 import numpy as np
 
-from langchain.docstore.base import AddableMixin, Docstore
-from langchain.docstore.document import Document
-# from langchain.docstore.in_memory import InMemoryDocstore
+from langchain_community.docstore.base import AddableMixin, Docstore
+from langchain_community.docstore.document import Document
+# from langchain_community.docstore.in_memory import InMemoryDocstore
 from .in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain_community.vectorstores import VectorStore
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 
 class DistanceStrategy(str, Enum):
@@ -86,7 +86,7 @@ class FAISS(VectorStore):
         .. code-block:: python
 
             from langchain.embeddings.openai import OpenAIEmbeddings
-            from langchain.vectorstores import FAISS
+            from langchain_community.vectorstores import FAISS
 
             embeddings = OpenAIEmbeddings()
             texts = ["FAISS is an important library", "LangChain supports FAISS"]
