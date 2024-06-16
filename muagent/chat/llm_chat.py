@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
@@ -31,7 +31,7 @@ class LLMChat(Chat):
         content = chain({"input": query})
         return {"answer": "", "docs": ""}, content
 
-    def create_atask(self, query, history, model, llm_config: LLMConfig, embed_config: EmbedConfig, callback: AsyncIteratorCallbackHandler):
+    def create_atask(self, query, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, callback: AsyncIteratorCallbackHandler):
         chat_prompt = ChatPromptTemplate.from_messages(
             [i.to_msg_tuple() for i in history] + [("human", "{input}")]
         )

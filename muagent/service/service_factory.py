@@ -145,5 +145,5 @@ def get_kb_doc_details(kb_name: str, kb_root_path) -> List[Dict]:
     for i, v in enumerate(result.values()):
         v['No'] = i + 1
         data.append(v)
-   
+
     return data

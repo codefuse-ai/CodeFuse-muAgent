@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 import asyncio, json, os
 from typing import List, AsyncIterable
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
@@ -55,8 +55,8 @@ class Chat:
             embed_config: EmbedConfig = Body({}, description="embedding_model config"),
             **kargs
             ):
-        params = locals()
-        params.pop("self", None)
+        # params = locals()
+        # params.pop("self", None)
         # llm_config: LLMConfig = LLMConfig(**params)
         # embed_config: EmbedConfig = EmbedConfig(**params)
         self.engine_name = engine_name if isinstance(engine_name, str) else engine_name.default
@@ -78,6 +78,7 @@ class Chat:
         def chat_iterator(query: str, history: List[History]):
             # model = getChatModel()
             model = getChatModelFromConfig(llm_config)
+            model = model.llm
 
             result, content = self.create_task(query, history, model, llm_config, embed_config, **kargs)
             logger.info('result={}'.format(result))
@@ -142,6 +143,7 @@ class Chat:
             callback = AsyncIteratorCallbackHandler()
             # model = getChatModel()
             model = getChatModelFromConfig(llm_config)
+            model = model.llm
 
             task, result = self.create_atask(query, history, model, llm_config, embed_config, callback)
             if self.stream:
@@ -166,7 +168,7 @@ class Chat:
         content = chain({"input": query})
         return {"answer": "", "docs": ""}, content
 
-    def create_atask(self, query, history, model, llm_config: LLMConfig, embed_config: EmbedConfig, callback: AsyncIteratorCallbackHandler):
+    def create_atask(self, query, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, callback: AsyncIteratorCallbackHandler):
         chat_prompt = ChatPromptTemplate.from_messages(
             [i.to_msg_tuple() for i in history] + [("human", "{input}")]
         )

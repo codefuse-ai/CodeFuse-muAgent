@@ -174,7 +174,7 @@ class AgentChat:
             result["related_nodes"] = related_nodes
             
             # logger.debug(f"{result['figures'].keys()}, isDetailed: {isDetailed}")
-            message_str = step_content
+            message_str = final_content
             if self.stream:
                 for token in message_str:
                     result["answer"] = token
@@ -238,8 +238,8 @@ class AgentChat:
             custom_phase_configs, custom_chain_configs, custom_role_configs)
         
         # 
-        params = locals()
-        params.pop("self")
+        # params = locals()
+        # params.pop("self")
         # embed_config: EmbedConfig = EmbedConfig(**params)
         # llm_config: LLMConfig = LLMConfig(**params)
 
@@ -302,7 +302,7 @@ class AgentChat:
             step_content = local_memory.to_str_messages(content_key='step_content', filter_roles=["human"])
             step_content = "\n\n".join([f"{v}" for parsed_output in local_memory.get_parserd_output_list() for k, v in parsed_output.items() if k not in ["Action Status", "human", "user"]])
             # logger.debug(f"{local_memory.get_parserd_output_list()}")
-            final_content = message.role_content
+            final_content = step_content or message.role_content
             result = {
                 "answer": "",
                 "db_docs": [str(doc) for doc in message.db_docs],
@@ -322,7 +322,7 @@ class AgentChat:
             result["related_nodes"] = related_nodes
 
             # logger.debug(f"{result['figures'].keys()}, isDetailed: {isDetailed}")
-            message_str = step_content
+            message_str = final_content
             if self.stream:
                 for token in message_str:
                     result["answer"] = token

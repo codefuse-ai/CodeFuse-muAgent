@@ -11,7 +11,7 @@ import os, asyncio
 from typing import List
 from fastapi.responses import StreamingResponse
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
@@ -129,8 +129,8 @@ class CodeChat(Chat):
             use_nh: bool =Body(True, description=""),
             **kargs
             ):
-        params = locals()
-        params.pop("self")
+        # params = locals()
+        # params.pop("self")
         # llm_config: LLMConfig = LLMConfig(**params)
         # embed_config: EmbedConfig = EmbedConfig(**params)
         self.engine_name = engine_name if isinstance(engine_name, str) else engine_name.default
@@ -151,6 +151,7 @@ class CodeChat(Chat):
         def chat_iterator(query: str, history: List[History]):
             # model = getChatModel()
             model = getChatModelFromConfig(llm_config)
+            model = model.llm
 
             result, content = self.create_task(query, history, model, llm_config, embed_config, local_graph_path, **kargs)
             # logger.info('result={}'.format(result))

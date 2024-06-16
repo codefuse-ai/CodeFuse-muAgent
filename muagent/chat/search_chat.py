@@ -1,9 +1,9 @@
 import os, asyncio
 from typing import List, Optional, Dict
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
-from langchain_community.utilities import BingSearchAPIWrapper, DuckDuckGoSearchAPIWrapper
+from langchain.utilities import BingSearchAPIWrapper, DuckDuckGoSearchAPIWrapper
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain_community.docstore.document import Document
 

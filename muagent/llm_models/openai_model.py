@@ -47,7 +47,7 @@ class OpenAILLMModel(CustomLLMModel):
             VISIT_BIZ_LINE = os.environ.get("visit_biz_line")
             # zdatafront 提供的统一加密密钥
             aes_secret_key = os.environ.get("aes_secret_key")
-
+            # logger.debug(f"{VISIT_DOMAIN}, {VISIT_BIZ}, {VISIT_BIZ_LINE}, {aes_secret_key}")
             zdatafront_client = ZDataFrontClient(visit_domain=VISIT_DOMAIN, visit_biz=VISIT_BIZ, visit_biz_line=VISIT_BIZ_LINE, aes_secret_key=aes_secret_key)
             http_client = SyncProxyHttpClient(zdatafront_client=zdatafront_client, prefer_async=True)
         except Exception as e:
@@ -112,8 +112,7 @@ class LYWWLLMModel(OpenAILLMModel):
             )
 
 
-def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None, ) -> Union[ChatOpenAI, LLM]:
-
+def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None, ) -> Union[ChatOpenAI, LLM, CustomLLMModel]:
     if llm_config and llm_config.llm and isinstance(llm_config.llm, LLM):
         return CustomLLMModel(llm=llm_config.llm)
     elif llm_config:

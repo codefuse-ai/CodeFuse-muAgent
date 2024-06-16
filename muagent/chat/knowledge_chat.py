@@ -3,7 +3,7 @@ import os, asyncio
 from urllib.parse import urlencode
 from typing import List
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
@@ -75,7 +75,7 @@ class KnowledgeChat(Chat):
         result = {"answer": "", "docs": source_documents}
         return chain, context, result
 
-    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, ):
+    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, **kargs):
         '''构建 llm 生成任务'''
         logger.debug(f"query: {query}, history: {history}")
         chain, context, result = self._process(query, history, model, llm_config, embed_config)

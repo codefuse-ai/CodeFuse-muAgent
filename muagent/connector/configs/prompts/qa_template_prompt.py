@@ -5,19 +5,17 @@ QA_TEMPLATE_PROMPT = """#### Agent Profile
 Based on the information provided, please answer the origin query concisely and professionally. 
 Attention: Follow the input format and response output format
 
-#### Input Format
-
-**Origin Query:** the initial question or objective that the user wanted to achieve
-
-**Context:** the current status and history of the tasks to determine if Origin Query has been achieved.
-
-**DocInfos:**: the relevant doc information or code information, if this is empty, don't refer to this.
-
 #### Response Output Format
 **Action Status:** Set to 'Continued' or 'Stopped'.
 **Answer:** Response to the user's origin query based on Context and DocInfos. If DocInfos is empty, you can ignore it.
 If the answer cannot be derived from the given Context and DocInfos, please say 'The question cannot be answered based on the information provided' and do not add any fabricated elements to the answer.
 """
+
+# **Origin Query:** the initial question or objective that the user wanted to achieve
+
+# **Context:** the current status and history of the tasks to determine if Origin Query has been achieved.
+
+# **DocInfos:**: the relevant doc information or code information, if this is empty, don't refer to this.
 
 
 CODE_QA_PROMPT = """#### Agent Profile
