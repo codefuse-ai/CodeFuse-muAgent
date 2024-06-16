@@ -16,7 +16,7 @@ from muagent.utils.path_utils import *
 from muagent.orm.commands import *
 from muagent.orm.utils import DocumentFile
 from muagent.base_configs.env_config import KB_ROOT_PATH
-from muagent.llm_models.llm_config import EmbedConfig
+from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.utils.server_utils import run_async
 
 async def list_kbs():
@@ -27,16 +27,17 @@ async def list_kbs():
 async def create_kb(knowledge_base_name: str = Body(..., examples=["samples"]),
                     vector_store_type: str = Body("faiss"),
                     kb_root_path: str =Body(""),
-                    api_key: bool = Body(..., examples=["samples"]),
-                    api_base_url: bool = Body(..., examples=["samples"]),
-                    embed_model: bool = Body(..., examples=["samples"]),
-                    embed_model_path: bool = Body(..., examples=["samples"]),
-                    model_device: bool = Body(..., examples=["samples"]),
-                    embed_engine: bool = Body(..., examples=["samples"]),
+                    # api_key: bool = Body(..., examples=["samples"]),
+                    # api_base_url: bool = Body(..., examples=["samples"]),
+                    # embed_model: bool = Body(..., examples=["samples"]),
+                    # embed_model_path: bool = Body(..., examples=["samples"]),
+                    # model_device: bool = Body(..., examples=["samples"]),
+                    # embed_engine: bool = Body(..., examples=["samples"]),
+                    llm_config: LLMConfig = None,
                     embed_config: EmbedConfig = None,
                     ) -> BaseResponse:
 
-    embed_config: EmbedConfig = embed_config if embed_config  else EmbedConfig(**locals()) 
+    # embed_config: EmbedConfig = embed_config if embed_config  else EmbedConfig(**locals()) 
     # Create selected knowledge base
     if not validate_kb_name(knowledge_base_name):
         return BaseResponse(code=403, msg="Don't attack me")
@@ -93,15 +94,17 @@ def search_docs(query: str = Body(..., description="用户输入", examples=["�
                 top_k: int = Body(5, description="匹配向量数"),
                 score_threshold: float = Body(1.0, description="知识库匹配相关度阈值，取值范围在0-1之间，SCORE越小，相关度越高，取到1相当于不筛选，建议设置在0.5左右", ge=0, le=1),
                 kb_root_path: str =Body(""),
-                api_key: bool = Body(..., examples=["samples"]),
-                api_base_url: bool = Body(..., examples=["samples"]),
-                embed_model: bool = Body(..., examples=["samples"]),
-                embed_model_path: bool = Body(..., examples=["samples"]),
-                model_device: bool = Body(..., examples=["samples"]),
-                embed_engine: bool = Body(..., examples=["samples"]),
+                # api_key: bool = Body(..., examples=["samples"]),
+                # api_base_url: bool = Body(..., examples=["samples"]),
+                # embed_model: bool = Body(..., examples=["samples"]),
+                # embed_model_path: bool = Body(..., examples=["samples"]),
+                # model_device: bool = Body(..., examples=["samples"]),
+                # embed_engine: bool = Body(..., examples=["samples"]),
+                llm_config: LLMConfig = None,
+                embed_config: EmbedConfig = None,
         ) -> List[DocumentWithScore]:
     
-    embed_config: EmbedConfig = EmbedConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals())
     kb = KBServiceFactory.get_service_by_name(knowledge_base_name, embed_config, kb_root_path)
     if kb is None:
         return []
@@ -132,18 +135,19 @@ async def upload_doc(file: UploadFile = File(..., description="上传文件"),
                      override: bool = Form(False, description="覆盖已有文件"),
                      not_refresh_vs_cache: bool = Form(False, description="暂不保存向量库（用于FAISS）"),
                      kb_root_path: str =Body(""),
-                    api_key: bool = Body(..., examples=["samples"]),
-                    api_base_url: bool = Body(..., examples=["samples"]),
-                    embed_model: bool = Body(..., examples=["samples"]),
-                    embed_model_path: bool = Body(..., examples=["samples"]),
-                    model_device: bool = Body(..., examples=["samples"]),
-                    embed_engine: bool = Body(..., examples=["samples"]),
+                    # api_key: bool = Body(..., examples=["samples"]),
+                    # api_base_url: bool = Body(..., examples=["samples"]),
+                    # embed_model: bool = Body(..., examples=["samples"]),
+                    # embed_model_path: bool = Body(..., examples=["samples"]),
+                    # model_device: bool = Body(..., examples=["samples"]),
+                    # embed_engine: bool = Body(..., examples=["samples"]),
+                    llm_config: LLMConfig = None,
                     embed_config: EmbedConfig = None,
                      ) -> BaseResponse:
     if not validate_kb_name(knowledge_base_name):
         return BaseResponse(code=403, msg="Don't attack me")
 
-    embed_config: EmbedConfig = embed_config if embed_config else EmbedConfig(**locals())
+    # embed_config: EmbedConfig = embed_config if embed_config else EmbedConfig(**locals())
     kb = KBServiceFactory.get_service_by_name(knowledge_base_name, embed_config, kb_root_path)
     if kb is None:
         return BaseResponse(code=404, msg=f"未找到知识库 {knowledge_base_name}")
@@ -184,17 +188,19 @@ async def delete_doc(knowledge_base_name: str = Body(..., examples=["samples"]),
                      delete_content: bool = Body(False),
                      not_refresh_vs_cache: bool = Body(False, description="暂不保存向量库（用于FAISS）"),
                      kb_root_path: str =Body(""),
-                    api_key: bool = Body(..., examples=["samples"]),
-                    api_base_url: bool = Body(..., examples=["samples"]),
-                    embed_model: bool = Body(..., examples=["samples"]),
-                    embed_model_path: bool = Body(..., examples=["samples"]),
-                    model_device: bool = Body(..., examples=["samples"]),
-                    embed_engine: bool = Body(..., examples=["samples"]),
+                    # api_key: bool = Body(..., examples=["samples"]),
+                    # api_base_url: bool = Body(..., examples=["samples"]),
+                    # embed_model: bool = Body(..., examples=["samples"]),
+                    # embed_model_path: bool = Body(..., examples=["samples"]),
+                    # model_device: bool = Body(..., examples=["samples"]),
+                    # embed_engine: bool = Body(..., examples=["samples"]),
+                    llm_config: LLMConfig = None,
+                    embed_config: EmbedConfig = None,
                     ) -> BaseResponse:
     if not validate_kb_name(knowledge_base_name):
         return BaseResponse(code=403, msg="Don't attack me")
 
-    embed_config: EmbedConfig = EmbedConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals())
     knowledge_base_name = urllib.parse.unquote(knowledge_base_name)
     kb = KBServiceFactory.get_service_by_name(knowledge_base_name, embed_config, kb_root_path)
     if kb is None:
@@ -220,17 +226,19 @@ async def update_doc(
         file_name: str = Body(..., examples=["file_name"]),
         not_refresh_vs_cache: bool = Body(False, description="暂不保存向量库（用于FAISS）"),
         kb_root_path: str =Body(""),
-        api_key: bool = Body(..., examples=["samples"]),
-        api_base_url: bool = Body(..., examples=["samples"]),
-        embed_model: bool = Body(..., examples=["samples"]),
-        embed_model_path: bool = Body(..., examples=["samples"]),
-        model_device: bool = Body(..., examples=["samples"]),
-        embed_engine: bool = Body(..., examples=["samples"]),
+        # api_key: bool = Body(..., examples=["samples"]),
+        # api_base_url: bool = Body(..., examples=["samples"]),
+        # embed_model: bool = Body(..., examples=["samples"]),
+        # embed_model_path: bool = Body(..., examples=["samples"]),
+        # model_device: bool = Body(..., examples=["samples"]),
+        # embed_engine: bool = Body(..., examples=["samples"]),
+        llm_config: LLMConfig = None,
+        embed_config: EmbedConfig = None,
     ) -> BaseResponse:
     '''
     更新知识库文档
     '''
-    embed_config: EmbedConfig = EmbedConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals())
     if not validate_kb_name(knowledge_base_name):
         return BaseResponse(code=403, msg="Don't attack me")
 
@@ -289,12 +297,14 @@ async def recreate_vector_store(
         allow_empty_kb: bool = Body(True),
         vs_type: str = Body("faiss"),
         kb_root_path: str = Body(""),
-        api_key: bool = Body(..., examples=["samples"]),
-        api_base_url: bool = Body(..., examples=["samples"]),
-        embed_model: bool = Body(..., examples=["samples"]),
-        embed_model_path: bool = Body(..., examples=["samples"]),
-        model_device: bool = Body(..., examples=["samples"]),
-        embed_engine: bool = Body(..., examples=["samples"]),
+        # api_key: bool = Body(..., examples=["samples"]),
+        # api_base_url: bool = Body(..., examples=["samples"]),
+        # embed_model: bool = Body(..., examples=["samples"]),
+        # embed_model_path: bool = Body(..., examples=["samples"]),
+        # model_device: bool = Body(..., examples=["samples"]),
+        # embed_engine: bool = Body(..., examples=["samples"]),
+        llm_config: LLMConfig = None,
+        embed_config: EmbedConfig = None,
     ):
     '''
     recreate vector store from the content.
@@ -302,7 +312,7 @@ async def recreate_vector_store(
     by default, get_service_by_name only return knowledge base in the info.db and having document files in it.
     set allow_empty_kb to True make it applied on empty knowledge base which it not in the info.db or having no documents.
     '''
-    embed_config: EmbedConfig = EmbedConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals())
     async def output():
         kb = KBServiceFactory.get_service(knowledge_base_name, vs_type, embed_config, kb_root_path)
         if not kb.exists() and not allow_empty_kb:

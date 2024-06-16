@@ -50,11 +50,15 @@ class CodeRetrieval(BaseToolModel):
         }.get(search_type, 'tag')
 
         # default
+        # codes = search_code(code_base_name, query, code_limit, search_type=search_type, history_node_list=history_node_list,
+        #                     embed_engine=embed_config.embed_engine, embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
+        #                     model_device=embed_config.model_device, model_name=llm_config.model_name, temperature=llm_config.temperature,
+        #                     api_base_url=llm_config.api_base_url, api_key=llm_config.api_key, use_nh=use_nh,
+        #                     local_graph_path=local_graph_path, embed_config=embed_config
+        #                     )
         codes = search_code(code_base_name, query, code_limit, search_type=search_type, history_node_list=history_node_list,
-                            embed_engine=embed_config.embed_engine, embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
-                            model_device=embed_config.model_device, model_name=llm_config.model_name, temperature=llm_config.temperature,
-                            api_base_url=llm_config.api_base_url, api_key=llm_config.api_key, use_nh=use_nh,
-                            local_graph_path=local_graph_path, embed_config=embed_config
+                            use_nh=use_nh, local_graph_path=local_graph_path, 
+                            llm_config=llm_config, embed_config=embed_config
                             )
         return_codes = []
         context = codes['context']

@@ -70,14 +70,16 @@ class AgentChat:
             kb_root_path: str = Body("", description="知识库存储路径"),
             jupyter_work_path: str = Body("", description="sandbox执行环境"),
             sandbox_server: str = Body({}, description="代码历史相关节点"),
-            api_key: str = Body(os.environ.get("OPENAI_API_KEY"), description=""),
-            api_base_url: str = Body(os.environ.get("API_BASE_URL"),),
-            embed_model: str = Body("", description="向量模型"),
-            embed_model_path: str = Body("", description="向量模型路径"),
-            model_device: str = Body("", description="模型加载设备"),
-            embed_engine: str = Body("", description="向量模型类型"),
-            model_name: str = Body("", description="llm模型名称"),
-            temperature: float = Body(0.2, description=""),
+            # api_key: str = Body(os.environ.get("OPENAI_API_KEY"), description=""),
+            # api_base_url: str = Body(os.environ.get("API_BASE_URL"),),
+            # embed_model: str = Body("", description="向量模型"),
+            # embed_model_path: str = Body("", description="向量模型路径"),
+            # model_device: str = Body("", description="模型加载设备"),
+            # embed_engine: str = Body("", description="向量模型类型"),
+            # model_name: str = Body("", description="llm模型名称"),
+            # temperature: float = Body(0.2, description=""),
+            llm_config: LLMConfig = Body({}, description="llm_model config"),
+            embed_config: EmbedConfig = Body({}, description="llm_model config"),
             chat_index: str = "",
             local_graph_path: str = "",
             **kargs
@@ -88,8 +90,8 @@ class AgentChat:
             custom_phase_configs, custom_chain_configs, custom_role_configs)
         params = locals()
         params.pop("self")
-        embed_config: EmbedConfig = EmbedConfig(**params)
-        llm_config: LLMConfig = LLMConfig(**params)
+        # embed_config: EmbedConfig = EmbedConfig(**params)
+        # llm_config: LLMConfig = LLMConfig(**params)
 
         logger.info('phase_configs={}'.format(phase_configs))
         logger.info('chain_configs={}'.format(chain_configs))
@@ -216,14 +218,16 @@ class AgentChat:
             kb_root_path: str = Body("", description="知识库存储路径"),
             jupyter_work_path: str = Body("", description="sandbox执行环境"),
             sandbox_server: str = Body({}, description="代码历史相关节点"),
-            api_key: str = Body(os.environ["OPENAI_API_KEY"], description=""),
-            api_base_url: str = Body(os.environ.get("API_BASE_URL"),),
-            embed_model: str = Body("", description="向量模型"),
-            embed_model_path: str = Body("", description="向量模型路径"),
-            model_device: str = Body("", description="模型加载设备"),
-            embed_engine: str = Body("", description="向量模型类型"),
-            model_name: str = Body("", description="llm模型名称"),
-            temperature: float = Body(0.2, description=""),
+            # api_key: str = Body(os.environ["OPENAI_API_KEY"], description=""),
+            # api_base_url: str = Body(os.environ.get("API_BASE_URL"),),
+            # embed_model: str = Body("", description="向量模型"),
+            # embed_model_path: str = Body("", description="向量模型路径"),
+            # model_device: str = Body("", description="模型加载设备"),
+            # embed_engine: str = Body("", description="向量模型类型"),
+            # model_name: str = Body("", description="llm模型名称"),
+            # temperature: float = Body(0.2, description=""),
+            llm_config: LLMConfig = Body({}, description="llm_model config"),
+            embed_config: EmbedConfig = Body({}, description="llm_model config"),
             chat_index: str = "",
             local_graph_path: str = "",
             **kargs
@@ -236,8 +240,8 @@ class AgentChat:
         # 
         params = locals()
         params.pop("self")
-        embed_config: EmbedConfig = EmbedConfig(**params)
-        llm_config: LLMConfig = LLMConfig(**params)
+        # embed_config: EmbedConfig = EmbedConfig(**params)
+        # llm_config: LLMConfig = LLMConfig(**params)
 
         # choose tools
         tools = toLangchainTools([TOOL_DICT[i] for i in choose_tools if i in TOOL_DICT])

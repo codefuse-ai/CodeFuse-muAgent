@@ -53,24 +53,31 @@ class CodeChat(Chat):
             return BaseResponse(code=404, msg=f"未找到代码库 {self.engine_name}")
         return BaseResponse(code=200, msg=f"找到代码库 {self.engine_name}")
 
-    def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, local_graph_path=""):
+    def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, local_graph_path="", use_nh=True):
         '''process'''
 
+        # codes_res = search_code(query=query, cb_name=self.engine_name, code_limit=self.code_limit,
+        #                         search_type=self.cb_search_type,
+        #                         history_node_list=self.history_node_list,
+        #                         api_key=llm_config.api_key,
+        #                         api_base_url=llm_config.api_base_url,
+        #                         model_name=llm_config.model_name,
+        #                         temperature=llm_config.temperature,
+        #                         embed_model=embed_config.embed_model,
+        #                         embed_model_path=embed_config.embed_model_path,
+        #                         embed_engine=embed_config.embed_engine,
+        #                         model_device=embed_config.model_device,
+        #                         embed_config=embed_config,
+        #                         local_graph_path=local_graph_path
+        #                         )
         codes_res = search_code(query=query, cb_name=self.engine_name, code_limit=self.code_limit,
                                 search_type=self.cb_search_type,
                                 history_node_list=self.history_node_list,
-                                api_key=llm_config.api_key,
-                                api_base_url=llm_config.api_base_url,
-                                model_name=llm_config.model_name,
-                                temperature=llm_config.temperature,
-                                embed_model=embed_config.embed_model,
-                                embed_model_path=embed_config.embed_model_path,
-                                embed_engine=embed_config.embed_engine,
-                                model_device=embed_config.model_device,
+                                llm_config=llm_config,
                                 embed_config=embed_config,
+                                use_nh=use_nh,
                                 local_graph_path=local_graph_path
                                 )
-
         context = codes_res['context']
         related_vertices = codes_res['related_vertices']
 
@@ -108,21 +115,24 @@ class CodeChat(Chat):
             local_doc_url: bool = Body(False, description="知识文件返回本地路径(true)或URL(false)"),
             request: Request = None,
             
-            api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
-            api_base_url: str = Body(os.environ.get("API_BASE_URL")),
-            embed_model: str = Body("", ),
-            embed_model_path: str = Body("", ),
-            embed_engine: str = Body("", ),
-            model_name: str = Body("", ),
-            temperature: float = Body(0.5, ),
-            model_device: str = Body("", ),
+            # api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
+            # api_base_url: str = Body(os.environ.get("API_BASE_URL")),
+            # embed_model: str = Body("", ),
+            # embed_model_path: str = Body("", ),
+            # embed_engine: str = Body("", ),
+            # model_name: str = Body("", ),
+            # temperature: float = Body(0.5, ),
+            # model_device: str = Body("", ),
+            llm_config: LLMConfig = Body({}, description="llm_model config"),
+            embed_config: EmbedConfig = Body({}, description="llm_model config"),
             local_graph_path: str=Body(", "),
+            use_nh: bool =Body(True, description=""),
             **kargs
             ):
         params = locals()
         params.pop("self")
-        llm_config: LLMConfig = LLMConfig(**params)
-        embed_config: EmbedConfig = EmbedConfig(**params)
+        # llm_config: LLMConfig = LLMConfig(**params)
+        # embed_config: EmbedConfig = EmbedConfig(**params)
         self.engine_name = engine_name if isinstance(engine_name, str) else engine_name.default
         self.code_limit = code_limit
         self.stream = stream if isinstance(stream, bool) else stream.default

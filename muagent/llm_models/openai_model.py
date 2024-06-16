@@ -91,13 +91,15 @@ class LYWWLLMModel(OpenAILLMModel):
             base_url=os.environ.get("api_base_url")
             model_name=os.environ.get("LLM_MODEL", "yi-34b-chat-0205")
             temperature=os.environ.get("temperature", 0.5)
-            model_kwargs={"stop": os.environ.get("stop", "")}
+            stop = [os.environ.get("stop", "")] if os.environ.get("stop", "") else None
+            model_kwargs={"stop": stop}
         else:
             api_key=llm_config.api_key
             base_url=llm_config.api_base_url
             model_name=llm_config.model_name
             temperature=llm_config.temperature
-            model_kwargs={"stop": llm_config.stop}
+            stop = [llm_config.stop] if llm_config.stop else None
+            model_kwargs={"stop": stop}
 
         self.llm = ChatOpenAI(
                 streaming=True,
@@ -110,7 +112,6 @@ class LYWWLLMModel(OpenAILLMModel):
             )
 
 
-
 def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None, ) -> Union[ChatOpenAI, LLM]:
 
     if llm_config and llm_config.llm and isinstance(llm_config.llm, LLM):
@@ -119,7 +120,6 @@ def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbac
         model_class_dict = {"openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel}
         model_class = model_class_dict[llm_config.model_engine]
         model = model_class(llm_config, callBack)
-        logger.debug(f"{model}")
         return model
     else:
         return OpenAILLMModel(llm_config, callBack)

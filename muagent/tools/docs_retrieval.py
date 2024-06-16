@@ -26,10 +26,13 @@ class DocRetrieval(BaseToolModel):
     def run(cls, query, knowledge_base_name, search_top=5, score_threshold=1.0, embed_config: EmbedConfig=EmbedConfig(), kb_root_path: str=""):
         """excute your tool!"""
         try:
+            # docs = search_docs(query, knowledge_base_name, search_top, score_threshold,
+            #                    kb_root_path=kb_root_path, embed_engine=embed_config.embed_engine,
+            #                    embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
+            #                    model_device=embed_config.model_device
+            #                    )
             docs = search_docs(query, knowledge_base_name, search_top, score_threshold,
-                               kb_root_path=kb_root_path, embed_engine=embed_config.embed_engine,
-                               embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
-                               model_device=embed_config.model_device
+                               kb_root_path=kb_root_path, llm_config=None, embed_config=embed_config
                                )
         except Exception as e:
             logger.exception(e)

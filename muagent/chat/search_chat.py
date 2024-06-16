@@ -3,7 +3,7 @@ from typing import List, Optional, Dict
 
 from langchain import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
-from langchain.utilities import BingSearchAPIWrapper, DuckDuckGoSearchAPIWrapper
+from langchain_community.utilities import BingSearchAPIWrapper, DuckDuckGoSearchAPIWrapper
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain_community.docstore.document import Document
 

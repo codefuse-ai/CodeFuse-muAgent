@@ -47,21 +47,22 @@ async def create_cb(zip_file,
                     cb_name: str = Body(..., examples=["samples"]),
                     code_path: str = Body(..., examples=["samples"]),
                     do_interpret: bool = Body(..., examples=["samples"]),
-                    api_key: bool = Body(..., examples=["samples"]),
-                    api_base_url: bool = Body(..., examples=["samples"]),
-                    embed_model: bool = Body(..., examples=["samples"]),
-                    embed_model_path: bool = Body(..., examples=["samples"]),
-                    embed_engine: bool = Body(..., examples=["samples"]),
-                    model_name: bool = Body(..., examples=["samples"]),
-                    temperature: bool = Body(..., examples=["samples"]),
-                    model_device: bool = Body(..., examples=["samples"]),
+                    # api_key: bool = Body(..., examples=["samples"]),
+                    # api_base_url: bool = Body(..., examples=["samples"]),
+                    # embed_model: bool = Body(..., examples=["samples"]),
+                    # embed_model_path: bool = Body(..., examples=["samples"]),
+                    # embed_engine: bool = Body(..., examples=["samples"]),
+                    # model_name: bool = Body(..., examples=["samples"]),
+                    # temperature: bool = Body(..., examples=["samples"]),
+                    # model_device: bool = Body(..., examples=["samples"]),
+                    llm_config: LLMConfig = None,
                     embed_config: EmbedConfig = None,
                     local_graph_path: str = '',
                     ) -> BaseResponse:
     logger.info('cb_name={}, zip_path={}, do_interpret={}'.format(cb_name, code_path, do_interpret))
 
-    embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
-    llm_config: LLMConfig = LLMConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
+    # llm_config: LLMConfig = LLMConfig(**locals())
 
     # Create selected knowledge base
     if not validate_kb_name(cb_name):
@@ -92,20 +93,21 @@ async def create_cb(zip_file,
 
 async def delete_cb(
         cb_name: str = Body(..., examples=["samples"]),
-        api_key: bool = Body(..., examples=["samples"]),
-        api_base_url: bool = Body(..., examples=["samples"]),
-        embed_model: bool = Body(..., examples=["samples"]),
-        embed_model_path: bool = Body(..., examples=["samples"]),
-        embed_engine: bool = Body(..., examples=["samples"]),
-        model_name: bool = Body(..., examples=["samples"]),
-        temperature: bool = Body(..., examples=["samples"]),
-        model_device: bool = Body(..., examples=["samples"]),
+        # api_key: bool = Body(..., examples=["samples"]),
+        # api_base_url: bool = Body(..., examples=["samples"]),
+        # embed_model: bool = Body(..., examples=["samples"]),
+        # embed_model_path: bool = Body(..., examples=["samples"]),
+        # embed_engine: bool = Body(..., examples=["samples"]),
+        # model_name: bool = Body(..., examples=["samples"]),
+        # temperature: bool = Body(..., examples=["samples"]),
+        # model_device: bool = Body(..., examples=["samples"]),
+        llm_config: LLMConfig = None,
         embed_config: EmbedConfig = None,
         local_graph_path: str="",
         ) -> BaseResponse:
     logger.info('cb_name={}'.format(cb_name))
-    embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
-    llm_config: LLMConfig = LLMConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
+    # llm_config: LLMConfig = LLMConfig(**locals())
     # Create selected knowledge base
     if not validate_kb_name(cb_name):
         return BaseResponse(code=403, msg="Don't attack me")
@@ -136,16 +138,17 @@ def search_code(cb_name: str = Body(..., examples=["sofaboot"]),
                 code_limit: int = Body(..., examples=['1']),
                 search_type: str = Body(..., examples=['你好']),
                 history_node_list: list = Body(...),
-                api_key: bool = Body(..., examples=["samples"]),
-                api_base_url: bool = Body(..., examples=["samples"]),
-                embed_model: bool = Body(..., examples=["samples"]),
-                embed_model_path: bool = Body(..., examples=["samples"]),
-                embed_engine: bool = Body(..., examples=["samples"]),
-                model_name: bool = Body(..., examples=["samples"]),
-                temperature: bool = Body(..., examples=["samples"]),
-                model_device: bool = Body(..., examples=["samples"]),
+                # api_key: bool = Body(..., examples=["samples"]),
+                # api_base_url: bool = Body(..., examples=["samples"]),
+                # embed_model: bool = Body(..., examples=["samples"]),
+                # embed_model_path: bool = Body(..., examples=["samples"]),
+                # embed_engine: bool = Body(..., examples=["samples"]),
+                # model_name: bool = Body(..., examples=["samples"]),
+                # temperature: bool = Body(..., examples=["samples"]),
+                # model_device: bool = Body(..., examples=["samples"]),
                 use_nh: bool = True,
                 local_graph_path: str = CB_ROOT_PATH,
+                llm_config: LLMConfig = None,
                 embed_config: EmbedConfig = None,
                 ) -> dict:
     
@@ -156,8 +159,8 @@ def search_code(cb_name: str = Body(..., examples=["sofaboot"]),
         logger.info('code_limit={}'.format(code_limit))
         logger.info('search_type={}'.format(search_type))
         logger.info('history_node_list={}'.format(history_node_list))
-    embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
-    llm_config: LLMConfig = LLMConfig(**locals())
+    # embed_config: EmbedConfig = EmbedConfig(**locals()) if embed_config is None else embed_config
+    # llm_config: LLMConfig = LLMConfig(**locals())
     try:
         # load codebase
         cbh = CodeBaseHandler(codebase_name=cb_name, embed_config=embed_config, llm_config=llm_config,

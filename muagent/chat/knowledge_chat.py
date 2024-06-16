@@ -47,11 +47,15 @@ class KnowledgeChat(Chat):
     
     def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, ):
         '''process'''
+        # docs = search_docs(
+        #     query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path,
+        #     api_key=embed_config.api_key, api_base_url=embed_config.api_base_url, embed_model=embed_config.embed_model,
+        #     embed_model_path=embed_config.embed_model_path, embed_engine=embed_config.embed_engine,
+        #     model_device=embed_config.model_device, 
+        #     )
         docs = search_docs(
-            query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path,
-            api_key=embed_config.api_key, api_base_url=embed_config.api_base_url, embed_model=embed_config.embed_model,
-            embed_model_path=embed_config.embed_model_path, embed_engine=embed_config.embed_engine,
-            model_device=embed_config.model_device, 
+            query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path, 
+            llm_config=llm_config, embed_config=embed_config
             )
         context = "\n".join([doc.page_content for doc in docs])
         source_documents = []

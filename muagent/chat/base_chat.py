@@ -43,20 +43,22 @@ class Chat:
             stream: bool = Body(False, description="流式输出"),
             local_doc_url: bool = Body(False, description="知识文件返回本地路径(true)或URL(false)"),
             request: Request = None,
-            api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
-            api_base_url: str = Body(os.environ.get("API_BASE_URL")),
-            embed_model: str = Body("", ),
-            embed_model_path: str = Body("", ),
-            embed_engine: str = Body("", ),
-            model_name: str = Body("", ),
-            temperature: float = Body(0.5, ),
-            model_device: str = Body("", ),
+            # api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
+            # api_base_url: str = Body(os.environ.get("API_BASE_URL")),
+            # embed_model: str = Body("", ),
+            # embed_model_path: str = Body("", ),
+            # embed_engine: str = Body("", ),
+            # model_name: str = Body("", ),
+            # temperature: float = Body(0.5, ),
+            # model_device: str = Body("", ),
+            llm_config: LLMConfig = Body({}, description="llm_model config"),
+            embed_config: EmbedConfig = Body({}, description="embedding_model config"),
             **kargs
             ):
         params = locals()
         params.pop("self", None)
-        llm_config: LLMConfig = LLMConfig(**params)
-        embed_config: EmbedConfig = EmbedConfig(**params)
+        # llm_config: LLMConfig = LLMConfig(**params)
+        # embed_config: EmbedConfig = EmbedConfig(**params)
         self.engine_name = engine_name if isinstance(engine_name, str) else engine_name.default
         self.top_k = top_k if isinstance(top_k, int) else top_k.default
         self.score_threshold = score_threshold if isinstance(score_threshold, float) else score_threshold.default
@@ -106,20 +108,22 @@ class Chat:
             stream: bool = Body(False, description="流式输出"),
             local_doc_url: bool = Body(False, description="知识文件返回本地路径(true)或URL(false)"),
             request: Request = None,
-            api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
-            api_base_url: str = Body(os.environ.get("API_BASE_URL")),
-            embed_model: str = Body("", ),
-            embed_model_path: str = Body("", ),
-            embed_engine: str = Body("", ),
-            model_name: str = Body("", ),
-            temperature: float = Body(0.5, ),
-            model_device: str = Body("", ),
+            # api_key: str = Body(os.environ.get("OPENAI_API_KEY")),
+            # api_base_url: str = Body(os.environ.get("API_BASE_URL")),
+            # embed_model: str = Body("", ),
+            # embed_model_path: str = Body("", ),
+            # embed_engine: str = Body("", ),
+            # model_name: str = Body("", ),
+            # temperature: float = Body(0.5, ),
+            # model_device: str = Body("", ),
+            llm_config: LLMConfig = Body({}, description="llm_model config"),
+            embed_config: EmbedConfig = Body({}, description="llm_model config"),
             ):
         # 
         params = locals()
         params.pop("self", None)
-        llm_config: LLMConfig = LLMConfig(**params)
-        embed_config: EmbedConfig = EmbedConfig(**params)
+        # llm_config: LLMConfig = LLMConfig(**params)
+        # embed_config: EmbedConfig = EmbedConfig(**params)
         self.engine_name = engine_name if isinstance(engine_name, str) else engine_name.default
         self.top_k = top_k if isinstance(top_k, int) else top_k.default
         self.score_threshold = score_threshold if isinstance(score_threshold, float) else score_threshold.default
