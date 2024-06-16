@@ -113,12 +113,14 @@ class LYWWLLMModel(OpenAILLMModel):
 
 
 def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None, ) -> Union[ChatOpenAI, LLM, CustomLLMModel]:
+    # logger.debug(f"{llm_config}")
     if llm_config and llm_config.llm and isinstance(llm_config.llm, LLM):
         return CustomLLMModel(llm=llm_config.llm)
     elif llm_config:
         model_class_dict = {"openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel}
         model_class = model_class_dict[llm_config.model_engine]
         model = model_class(llm_config, callBack)
+        # logger.debug(f"{model.llm}")
         return model
     else:
         return OpenAILLMModel(llm_config, callBack)
