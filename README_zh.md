@@ -34,8 +34,8 @@ CodeFuse-muAgent 是蚂蚁CodeFuse团队开发的Mulit Agent框架，其核心�
 
 
 ## 🚀 快速使用
-完整文档见：[CodeFuse-muAgent](docs/overview/o1.muagent.md)
-更多[demo](docs/overview/o3.quick-start.md)
+完整文档见：[CodeFuse-muAgent](https://codefuse-ai.github.io/zh-CN/docs/api-docs/MuAgent/overview/multi-agent)
+更多[demo](https://codefuse-ai.github.io/zh-CN/docs/api-docs/MuAgent/connector/customed_examples)
 
 1. 安装
 ```
@@ -120,7 +120,7 @@ print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output
 
 您对 Codefuse 的各种建议、意见、评论可以直接通过 GitHub 的 Issues 提出。
 
-参与 Codefuse 项目并为其作出贡献的方法有很多：代码实现、测试编写、流程工具改进、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表。详见[Contribution Guide...](docs/contribution/contribute_guide.md)
+参与 Codefuse 项目并为其作出贡献的方法有很多：代码实现、测试编写、流程工具改进、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表。详见[Contribution Guide...](https://codefuse-ai.github.io/zh-CN/contribution/issue)
 
 
 ## 🗂 其他
