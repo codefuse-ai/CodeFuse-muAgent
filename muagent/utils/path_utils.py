@@ -1,5 +1,5 @@
 import os
-from langchain.document_loaders import CSVLoader, PyPDFLoader, UnstructuredFileLoader, TextLoader, PythonLoader
+from langchain_community.document_loaders import CSVLoader, PyPDFLoader, UnstructuredFileLoader, TextLoader, PythonLoader
 
 from muagent.retrieval.document_loaders import JSONLLoader, JSONLoader
 # from configs.model_config import (

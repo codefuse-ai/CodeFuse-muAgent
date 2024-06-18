@@ -15,7 +15,7 @@ from muagent.db_handler.vector_db_handler.chroma_handler import ChromaHandler
 
 from muagent.codechat.code_search.cypher_generator import CypherGenerator
 from muagent.codechat.code_search.tagger import Tagger
-from muagent.embeddings.get_embedding import get_embedding
+from muagent.llm_models.get_embedding import get_embedding
 from muagent.llm_models.llm_config import LLMConfig, EmbedConfig
 
 

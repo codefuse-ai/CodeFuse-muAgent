@@ -6,14 +6,14 @@ from collections import Counter
 from loguru import logger
 import numpy as np
 
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 
 
 from .schema import Memory, Message
 from muagent.service.service_factory import KBServiceFactory
 from muagent.llm_models import getChatModelFromConfig
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
-from muagent.embeddings.utils import load_embeddings_from_path
+from muagent.retrieval.utils import load_embeddings_from_path
 from muagent.utils.common_utils import *
 from muagent.connector.configs.prompts import CONV_SUMMARY_PROMPT_SPEC
 from muagent.orm import table_init
@@ -489,7 +489,7 @@ class LocalMemoryManager(BaseMemoryManager):
 
 
 from muagent.utils.tbase_util import TbaseHandler
-from muagent.embeddings.get_embedding import get_embedding
+from muagent.llm_models.get_embedding import get_embedding
 from redis.commands.search.field import (
     TextField,
     NumericField,

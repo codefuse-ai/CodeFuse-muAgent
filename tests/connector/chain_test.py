@@ -13,6 +13,7 @@ try:
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
+    model_engine = os.environ["model_engine"]
     embed_model = os.environ["embed_model"]
     embed_model_path = os.environ["embed_model_path"]
 except Exception as e:
@@ -20,14 +21,15 @@ except Exception as e:
     api_key = ""
     api_base_url= ""
     model_name = ""
+    model_engine = os.environ["model_engine"]
     embed_model = ""
     embed_model_path = ""
     logger.error(f"{e}")
 
+# test local code
 src_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-
 sys.path.append(src_dir)
 
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH
@@ -39,7 +41,7 @@ from muagent.tools import toLangchainTools, TOOL_DICT, TOOL_SETS
 
 
 llm_config = LLMConfig(
-    model_name=model_name, api_key=api_key,  api_base_url=api_base_url, temperature=0.3,
+    model_name=model_name, model_engine=model_engine, api_key=api_key,  api_base_url=api_base_url, temperature=0.3,
     stop="**Observation:**"
 )
 

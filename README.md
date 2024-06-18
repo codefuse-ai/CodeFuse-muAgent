@@ -33,8 +33,8 @@ Developed by the Ant CodeFuse Team, CodeFuse-muAgent is a Multi-Agent framework 
 ![](docs/resources/agent_runtime.png)
 
 ## 🚀 快速使用
-For complete documentation, see: [CodeFuse-muAgent](docs/overview/o1.muagent.md)
-For more [demos](docs/overview/o3.quick-start.md)
+For complete documentation, see: [CodeFuse-muAgent](https://codefuse-ai.github.io/docs/api-docs/MuAgent/overview/multi-agent)
+For more [demos](https://codefuse-ai.github.io/docs/api-docs/MuAgent/connector/customed_examples)
 
 1. Installation
 ```
@@ -115,7 +115,7 @@ We are deeply grateful for your interest in the Codefuse project and warmly welc
 
 Feel free to raise your suggestions, opinions, and comments directly through GitHub Issues. There are numerous ways to participate in and contribute to the Codefuse project: code implementation, writing tests, process tool improvements, documentation enhancements, etc. 
 
-We welcome any contribution and will add you to the list of contributors. See [Contribution Guide...](docs/contribution/contribute_guide.md)
+We welcome any contribution and will add you to the list of contributors. See [Contribution Guide...](https://codefuse-ai.github.io/contribution/contribution)
 
 
 ## 🗂 Miscellaneous

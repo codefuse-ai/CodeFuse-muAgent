@@ -3,7 +3,7 @@ import os, asyncio
 from urllib.parse import urlencode
 from typing import List
 
-from langchain import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
@@ -47,11 +47,15 @@ class KnowledgeChat(Chat):
     
     def _process(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, ):
         '''process'''
+        # docs = search_docs(
+        #     query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path,
+        #     api_key=embed_config.api_key, api_base_url=embed_config.api_base_url, embed_model=embed_config.embed_model,
+        #     embed_model_path=embed_config.embed_model_path, embed_engine=embed_config.embed_engine,
+        #     model_device=embed_config.model_device, 
+        #     )
         docs = search_docs(
-            query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path,
-            api_key=embed_config.api_key, api_base_url=embed_config.api_base_url, embed_model=embed_config.embed_model,
-            embed_model_path=embed_config.embed_model_path, embed_engine=embed_config.embed_engine,
-            model_device=embed_config.model_device, 
+            query, self.engine_name, self.top_k, self.score_threshold, self.kb_root_path, 
+            llm_config=llm_config, embed_config=embed_config
             )
         context = "\n".join([doc.page_content for doc in docs])
         source_documents = []
@@ -71,7 +75,7 @@ class KnowledgeChat(Chat):
         result = {"answer": "", "docs": source_documents}
         return chain, context, result
 
-    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, ):
+    def create_task(self, query: str, history: List[History], model, llm_config: LLMConfig, embed_config: EmbedConfig, **kargs):
         '''构建 llm 生成任务'''
         logger.debug(f"query: {query}, history: {history}")
         chain, context, result = self._process(query, history, model, llm_config, embed_config)

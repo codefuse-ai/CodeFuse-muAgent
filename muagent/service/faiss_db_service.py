@@ -4,10 +4,10 @@ from typing import List
 from functools import lru_cache
 from loguru import logger
 
-# from langchain.vectorstores import FAISS
+# from langchain_community.vectorstores import FAISS
 from langchain.embeddings.base import Embeddings
-from langchain.docstore.document import Document
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_community.docstore.document import Document
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from muagent.base_configs.env_config import (
     KB_ROOT_PATH,
@@ -18,8 +18,8 @@ from .base_service import KBService, SupportedVSType
 from muagent.utils.path_utils import *
 from muagent.orm.utils import DocumentFile
 from muagent.utils.server_utils import torch_gc
-from muagent.embeddings.utils import load_embeddings, load_embeddings_from_path
-from muagent.embeddings.faiss_m import FAISS
+from muagent.retrieval.utils import load_embeddings, load_embeddings_from_path
+from muagent.retrieval.faiss_m import FAISS
 from muagent.llm_models.llm_config import EmbedConfig
 
 

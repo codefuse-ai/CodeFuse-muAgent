@@ -47,12 +47,17 @@ class CodeRetrievalSingle(BaseToolModel):
         code_limit = 1
 
         # default
+        # search_result = search_code(code_base_name, query, code_limit, search_type=search_type,
+        #                     history_node_list=[],
+        #                     embed_engine=embed_config.embed_engine, embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
+        #                     model_device=embed_config.model_device, model_name=llm_config.model_name, temperature=llm_config.temperature,
+        #                     api_base_url=llm_config.api_base_url, api_key=llm_config.api_key, embed_config=embed_config, use_nh=kargs.get("use_nh", True),
+        #                     local_graph_path=kargs.get("local_graph_path", "")
+        #                     )
         search_result = search_code(code_base_name, query, code_limit, search_type=search_type,
-                            history_node_list=[],
-                            embed_engine=embed_config.embed_engine, embed_model=embed_config.embed_model, embed_model_path=embed_config.embed_model_path,
-                            model_device=embed_config.model_device, model_name=llm_config.model_name, temperature=llm_config.temperature,
-                            api_base_url=llm_config.api_base_url, api_key=llm_config.api_key, embed_config=embed_config, use_nh=kargs.get("use_nh", True),
-                            local_graph_path=kargs.get("local_graph_path", "")
+                            history_node_list=[], use_nh=kargs.get("use_nh", True),
+                            local_graph_path=kargs.get("local_graph_path", ""),
+                            llm_config=llm_config, embed_config=embed_config
                             )
         if os.environ.get("log_verbose", "0") >= "3":
             logger.debug(search_result)

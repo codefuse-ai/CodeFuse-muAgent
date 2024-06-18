@@ -3,7 +3,7 @@ from typing import List
 import os
 
 from langchain.embeddings.base import Embeddings
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 
 # from configs.model_config import (
 #     kbs_config, VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD,
@@ -16,7 +16,7 @@ from muagent.base_configs.env_config import (
 from muagent.orm.commands import *
 from muagent.utils.path_utils import *
 from muagent.orm.utils import DocumentFile
-from muagent.embeddings.utils import load_embeddings, load_embeddings_from_path
+from muagent.retrieval.utils import load_embeddings, load_embeddings_from_path
 from muagent.retrieval.text_splitter import LCTextSplitter
 from muagent.llm_models.llm_config import EmbedConfig
 

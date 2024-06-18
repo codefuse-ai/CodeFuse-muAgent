@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.embeddings.base import Embeddings
 
 # from configs.model_config import embedding_model_dict

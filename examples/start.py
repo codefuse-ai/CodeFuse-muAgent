@@ -14,7 +14,7 @@ src_dir = os.path.join(
 DEFAULT_BIND_HOST = "127.0.0.1"
 os.environ["DEFAULT_BIND_HOST"] = DEFAULT_BIND_HOST
 CONTRAINER_NAME = "muagent"
-IMAGE_NAME = "devopsgpt:py39"
+IMAGE_NAME = "muagent:latest"
 SANDBOX_CONTRAINER_NAME = "devopsgpt_sandbox"
 SANDBOX_IMAGE_NAME = "devopsgpt:py39"
 SANDBOX_HOST = os.environ.get("SANDBOX_HOST") or DEFAULT_BIND_HOST # "172.25.0.3"
@@ -213,8 +213,7 @@ def start_api_service(sandbox_host=DEFAULT_BIND_HOST):
         '''curl -X PUT -H "Content-Type: application/json" -d'{"heartbeat_interval_secs":"2"}' -s "http://127.0.0.1:19669/flags"''',
         '''curl -X PUT -H "Content-Type: application/json" -d'{"heartbeat_interval_secs":"2"}' -s "http://127.0.0.1:19779/flags"''',
 
-        "pip install zdatafront-sdk-python==0.1.2 -i https://artifacts.antgroup-inc.cn/simple",
-        "pip install jieba",
+        "pip install zdatafront-sdk-python -i https://artifacts.antgroup-inc.cn/simple",
         "pip install duckduckgo-search",
 
         f"export DUCKDUCKGO_PROXY=socks5://host.docker.internal:13659 && export SANDBOX_HOST={sandbox_host}",

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import AnyStr, Callable, Dict, List, Optional, Union
 
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
