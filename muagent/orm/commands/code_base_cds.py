@@ -7,7 +7,7 @@
 '''
 from loguru import logger
 from muagent.orm.db import with_session
-from muagent.orm.schemas.base_schema import CodeBaseSchema
+from muagent.schemas.kb.base_schema import CodeBaseSchema
 
 
 @with_session

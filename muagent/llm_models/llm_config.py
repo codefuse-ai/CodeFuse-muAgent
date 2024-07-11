@@ -40,33 +40,52 @@ class LLMConfig:
         return ', '.join(f"{k}: {v}" for k,v in vars(self).items())
     
 
-@dataclass
+
+@dataclass(frozen=True)
 class EmbedConfig:
-    def __init__(
-            self,
-            api_key: str = "",
-            api_base_url: str = "",
-            embed_model: str = "",
-            embed_model_path: str = "",
-            embed_engine: str = "",
-            model_device: str = "cpu",
-            langchain_embeddings: Embeddings = None,
-            **kwargs
-        ):
-        self.embed_model: str = embed_model
-        self.embed_model_path: str = embed_model_path
-        self.embed_engine: str = embed_engine
-        self.model_device: str = model_device
-        self.api_key: str = api_key
-        self.api_base_url: str = api_base_url
-        # custom embeddings
-        self.langchain_embeddings = langchain_embeddings
-        # 
-        self.check_config()
+
+    embed_model: str = ""
+    embed_model_path: str = ""
+    embed_engine: str = "openai"
+    model_device: str = "cpu"
+    api_key: str = ""
+    api_base_url: str = ""
+    # custom embeddings
+    langchain_embeddings: Embeddings = None
 
     def check_config(self, ):
         pass
 
     def __str__(self):
         return ', '.join(f"{k}: {v}" for k,v in vars(self).items())
+    
+# @dataclass
+# class EmbedConfig:
+#     def __init__(
+#             self,
+#             api_key: str = "",
+#             api_base_url: str = "",
+#             embed_model: str = "",
+#             embed_model_path: str = "",
+#             embed_engine: str = "",
+#             model_device: str = "cpu",
+#             langchain_embeddings: Embeddings = None,
+#             **kwargs
+#         ):
+#         self.embed_model: str = embed_model
+#         self.embed_model_path: str = embed_model_path
+#         self.embed_engine: str = embed_engine
+#         self.model_device: str = model_device
+#         self.api_key: str = api_key
+#         self.api_base_url: str = api_base_url
+#         # custom embeddings
+#         self.langchain_embeddings = langchain_embeddings
+#         # 
+#         self.check_config()
+
+#     def check_config(self, ):
+#         pass
+
+#     def __str__(self):
+#         return ', '.join(f"{k}: {v}" for k,v in vars(self).items())
     

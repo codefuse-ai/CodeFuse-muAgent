@@ -2,7 +2,7 @@ from typing import List, Union, Dict
 import os
 
 from loguru import logger
-# from configs.model_config import EMBEDDING_MODEL, KB_ROOT_PATH
+
 from muagent.base_configs.env_config import KB_ROOT_PATH
 
 from .faiss_db_service import FaissKBService

@@ -15,7 +15,7 @@ from muagent.llm_models import getExtraModel, LLMConfig, getChatModelFromConfig,
 from muagent.connector.prompt_manager.prompt_manager import PromptManager
 from muagent.connector.memory_manager import BaseMemoryManager, LocalMemoryManager, TbaseMemoryManager
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
-from muagent.utils.tbase_util import TbaseHandler
+from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler
 
 class BaseAgent:
 
@@ -192,37 +192,6 @@ class BaseAgent:
     def token_usage(self, ):
         '''calculate the usage of token'''
         pass
-
-    # def select_memory_by_key(self, memory: Memory) -> Memory:
-    #     return Memory(
-    #         messages=[self.select_message_by_key(message) for message in memory.messages 
-    #                   if self.select_message_by_key(message) is not None]
-    #                   )
-
-    # def select_memory_by_agent_key(self, memory: Memory) -> Memory:
-    #     return Memory(
-    #         messages=[self.select_message_by_agent_key(message) for message in memory.messages 
-    #                   if self.select_message_by_agent_key(message) is not None]
-    #                   )
-
-    # def select_message_by_agent_key(self, message: Message) -> Message:
-    #     # assume we focus all agents
-    #     if self.focus_agents == []:
-    #         return message
-    #     return None if message is None or message.role_name not in self.focus_agents else self.select_message_by_key(message)
-    
-    # def select_message_by_key(self, message: Message) -> Message:
-    #     # assume we focus all key contents
-    #     if message is None:
-    #         return message
-        
-    #     if self.focus_message_keys == []:
-    #         return message
-        
-    #     message_c = copy.deepcopy(message)
-    #     message_c.parsed_output = {k: v for k,v in message_c.parsed_output.items() if k in self.focus_message_keys}
-    #     message_c.parsed_output_list = [{k: v for k,v in parsed_output.items() if k in self.focus_message_keys} for parsed_output in message_c.parsed_output_list]
-    #     return message_c
     
     def get_memory(self, content_key="role_content"):
         return self.memory.to_tuple_messages(content_key="step_content")

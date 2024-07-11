@@ -16,9 +16,18 @@ from redis.commands.search.field import (
     TagField
 )
 
+from muagent.schemas.db import TBConfig
+
+
 
 class TbaseHandler:
-    def __init__(self, tbase_args, index_name="wyp311395", definition_value="message", ):
+    def __init__(
+            self, 
+            tbase_args, 
+            index_name="test", 
+            definition_value="message",
+            tb_config: TBConfig = None
+        ):
         self.client = redis.Redis(
             host=tbase_args['host'],
             port=tbase_args['port'],
@@ -27,6 +36,7 @@ class TbaseHandler:
         )
         self.index_name = index_name
         self.definition_value = definition_value
+        self.tb_config = tb_config
 
     def create_index(self, index_name=None, schema=None, definition: list =None):
         '''
@@ -116,7 +126,7 @@ class TbaseHandler:
         res = self.client.hgetall(id)
         return res
 
-    def fuzzy_delete(self, collection_name, delete_str, index_name="wyp311395"):
+    def fuzzy_delete(self, collection_name, delete_str, index_name="test"):
         '''
         delete by metaid
         :param index_name:

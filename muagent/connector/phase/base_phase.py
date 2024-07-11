@@ -20,7 +20,7 @@ from muagent.connector.configs import AGETN_CONFIGS, CHAIN_CONFIGS, PHASE_CONFIG
 from muagent.connector.message_process import MessageUtils
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH
-from muagent.utils.tbase_util import TbaseHandler
+from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler
 
 
 role_configs = load_role_configs(AGETN_CONFIGS)

@@ -68,7 +68,7 @@ cbh.import_code(do_interpret=do_interpret)
 
 
 from muagent.connector.antflow import AgentFlow, ChainFlow, PhaseFlow
-from muagent.connector.configs.prompts import QA_TEMPLATE_PROMPT
+from muagent.base_configs.prompts import QA_TEMPLATE_PROMPT
 from muagent.connector.configs import BASE_PROMPT_CONFIGS
 from muagent.retrieval.base_retrieval import BaseCodeRetrieval
 import os

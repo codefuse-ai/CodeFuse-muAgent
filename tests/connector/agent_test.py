@@ -153,7 +153,7 @@ ATTENTION: response carefully referenced "Response Output Format" in format.
 
 **Role:** Select the role from agent names.
 """
-from muagent.connector.configs.prompts import REACT_CODE_PROMPT, REACT_TOOL_PROMPT
+from muagent.base_configs.prompts import REACT_CODE_PROMPT, REACT_TOOL_PROMPT
 
 tool_role = Role(role_type="assistant", role_name="tool_reacter", prompt=REACT_TOOL_PROMPT)
 tool_react_agent = ReactAgent(

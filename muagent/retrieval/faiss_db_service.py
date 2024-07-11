@@ -33,7 +33,7 @@ HuggingFaceEmbeddings.__hash__ = _embeddings_hash
 _VECTOR_STORE_TICKS = {}
 
 
-# @lru_cache(CACHED_VS_NUM)
+@lru_cache(CACHED_VS_NUM)
 def load_vector_store(
         knowledge_base_name: str,
         embed_config: EmbedConfig,
