@@ -27,3 +27,8 @@ class VBConfig(BaseModel):
     vb_type: str
     kb_root_path: str = None
     extra_kwargs: Dict = {}
+
+
+class SLSConfig(BaseModel):
+    sls_Type: str
+    extra_kwargs: Dict = {}

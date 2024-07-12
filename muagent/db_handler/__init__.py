@@ -8,8 +8,11 @@
 
 from .graph_db_handler import NebulaHandler, NetworkxHandler
 from .vector_db_handler import LocalFaissHandler, TbaseHandler, ChromaHandler
+from .sls_db_handler import AliYunSLSHandler
 
 
 __all__ = [
-    "NebulaHandler", "ChromaHandler", "TbaseHandler", "LocalFaissHandler", "NetworkxHandler"
+    "NebulaHandler", "NetworkxHandler",
+    "ChromaHandler", "TbaseHandler", "LocalFaissHandler", 
+    "AliYunSLSHandler"
 ]
