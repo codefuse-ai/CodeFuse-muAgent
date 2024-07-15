@@ -41,6 +41,7 @@ setuptools.setup(
         "nebula3-python==3.1.0",
         "SQLAlchemy==2.0.19",
         "redis==5.0.1",
-        "pydantic<=1.10.14"
+        "pydantic<=1.10.14",
+        "aliyun-log-python-sdk==0.9.0"
     ],
 )

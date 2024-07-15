@@ -47,34 +47,42 @@ class NetworkxHandler:
         return [
             GRelation(
                 id=f"{nodeid}-{neighbor}",
-                left=self.search_nodes_by_nodeid(nodeid),
-                right=self.search_nodes_by_nodeid(neighbor),
+                start_id=nodeid,
+                end_id=neighbor,
                 attributes=self.graph.get_edge_data(nodeid, neighbor)
             )
             for neighbor, attr in self.graph.adj[nodeid].items()
         ]
         
-    def search_edges_by_nodeids(self, left: str, right: str) -> GRelation:
-        if self.missing_node(left) or self.missing_node(right): return None
-        if self.missing_edge(left, right): return None
+    def search_edges_by_nodeids(self, start_id: str, end_id: str) -> GRelation:
+        if self.missing_node(start_id) or self.missing_node(end_id): return None
+        if self.missing_edge(start_id, end_id): return None
 
         return GRelation(
-                id=f"{left}-{right}",
-                left=self.search_nodes_by_nodeid(left),
-                right=self.search_nodes_by_nodeid(right),
-                attributes=self.graph.get_edge_data(left, right)
+                id=f"{start_id}-{end_id}",
+                start_id=start_id,
+                end_id=end_id,
+                attributes=self.graph.get_edge_data(start_id, end_id)
             )
         
     def search_nodes_by_attr(self, **attributes) -> List[GNode]:
-        return [GNode(id=node, attributes=attr) for node, attr in self.graph.nodes(data=True) if all(attr.get(k) == v for k, v in attributes.items())]
+        return [
+            GNode(id=node, attributes=attr) 
+            for node, attr in self.graph.nodes(data=True) 
+            if all(attr.get(k) == v for k, v in attributes.items())
+        ]
 
     def search_edges_by_attr(self, **attributes) -> List[GRelation]:
-        return [GRelation(
+        return [
+            GRelation(
                 id=f"{left}-{right}",
-                left=self.search_nodes_by_nodeid(left),
-                right=self.search_nodes_by_nodeid(right),
+                start_id=left,
+                end_id=right,
                 attributes=attr
-            ) for left, right, attr in self.graph.edges(data=True) if all(attr.get(k) == v for k, v in attributes.items())]
+            ) 
+            for left, right, attr in self.graph.edges(data=True) 
+            if all(attr.get(k) == v for k, v in attributes.items())
+        ]
     
     def save(self, kb_name: str):
         self.kb_name = kb_name or self.kb_name
@@ -128,7 +136,7 @@ class NetworkxHandler:
         relation_list = []
         for relation in relations:
             edge_attrs = relation.attributes
-            relation_list.append((relation.left.id, relation.right.id, edge_attrs))
+            relation_list.append((relation.start_id, relation.end_id, edge_attrs))
         return relation_list
 
     def missing_edge(self, left: str, right: str) -> bool:

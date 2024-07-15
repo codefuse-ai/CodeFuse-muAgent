@@ -16,7 +16,7 @@ from muagent.base_configs.env_config import (
 
 from .base_service import KBService, SupportedVSType
 from muagent.utils.path_utils import *
-from muagent.orm.utils import DocumentFile
+from muagent.schemas.kb.file_schema import DocumentFile
 from muagent.utils.server_utils import torch_gc
 from muagent.retrieval.utils import load_embeddings, load_embeddings_from_path
 from muagent.retrieval.faiss_m import FAISS

@@ -7,7 +7,9 @@
 '''
 from .nebula_handler import NebulaHandler
 from .networkx_handler import NetworkxHandler
+from .aliyun_sls_hanlder import AliYunSLSHandler
 
 __all__ = [
-    "NebulaHandler", "NetworkxHandler"
+    "NebulaHandler", "NetworkxHandler",
+    "AliYunSLSHandler"
 ]

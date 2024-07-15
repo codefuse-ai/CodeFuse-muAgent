@@ -26,7 +26,7 @@ class NodeTypesEnum(Enum):
     OWNER = 'owner'
 
 
-class EKGNode(BaseModel):
+class EKGNodeSchema(BaseModel):
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
     id: str
     # depend on user's difine
@@ -35,7 +35,7 @@ class EKGNode(BaseModel):
     description: str
 
 
-class EKGEdge(EKGNode):
+class EKGEdgeSchema(EKGNodeSchema):
     # ekg_edge:{graph_id}:{start_id}:{end_id}
     id: str
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
@@ -44,29 +44,29 @@ class EKGEdge(EKGNode):
     end_id: str
 
 
-class EKGIntentNode(EKGNode):
+class EKGIntentNodeSchema(EKGNodeSchema):
     pass
 
 
-class EKGScheduleNode(EKGNode):
+class EKGScheduleNodeSchema(EKGNodeSchema):
     pass
 
 
-class EKGTaskNode(EKGNode):
+class EKGTaskNodSchema(EKGNodeSchema):
     tool: str
     needCheck: bool
     accessCriteira: str
 
 
-class EKGAnalysisNode(EKGNode):
+class EKGAnalysisNodeSchema(EKGNodeSchema):
     accessCriteira: str
 
 
-class EKGPhenomenonNode(EKGNode):
+class EKGPhenomenonNodeSchema(EKGNodeSchema):
     pass
 
 
-class EKGGraphSls(BaseModel):
+class EKGGraphSlsSchema(BaseModel):
     # node_{NodeTypesEnum}
     type: str
     name: str
@@ -81,7 +81,7 @@ class EKGGraphSls(BaseModel):
     access_criteria: str = ''
 
 
-class EKGNodeTbase(BaseModel):
+class EKGNodeTbaseSchema(BaseModel):
     node_id: str
     node_type: str
     # node_str = 'graph_id={graph_id}', use for searching by graph_id
@@ -89,10 +89,20 @@ class EKGNodeTbase(BaseModel):
     node_vector: List
 
 
-class EKGEdgeTbase(BaseModel):
+class EKGEdgeTbaseSchema(BaseModel):
     edge_id: str
     edge_type: str
     edge_source: str
     edge_target: str
     # edge_str = 'graph_id={graph_id}', use for searching by graph_id
     edge_str: str
+
+
+class EKGTbaseData(BaseModel):
+    nodes: list[EKGNodeTbaseSchema]
+    edges: list[EKGEdgeTbaseSchema]
+
+
+class EKGSlsData(BaseModel):
+    nodes: list[EKGGraphSlsSchema]
+    edges: list[EKGGraphSlsSchema]

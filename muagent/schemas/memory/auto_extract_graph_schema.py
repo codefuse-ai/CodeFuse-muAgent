@@ -10,26 +10,26 @@ class Attribute(BaseModel):
 
 
 class GNodeAbs(BaseModel):
+    # node type for extract
     type: str
     attributes: List[Attribute]
 
 
 class GRelationAbs(BaseModel):
+    # relation type for extract
     type: str
     attributes: List[Attribute]
 
 
 class GNode(BaseModel):
-    id: str = None
-    type: str
+    id: str
     attributes: Dict[str, str]
 
 
 class GRelation(BaseModel):
-    id: str = None
-    type: str
-    left: GNode
-    right: GNode
+    id: str
+    start_id: str
+    end_id: str
     attributes: Dict[str, str]
 
 

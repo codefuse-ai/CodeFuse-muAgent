@@ -224,7 +224,7 @@ class HierarchicalMemoryManager(BaseMemoryManager):
 
         nodes = [GNode(**node) for node in nodes]
         edges = [
-            GRelation(**{**edge, **{'left': nodes_dict.get(edge['left'], {}), 'right': nodes_dict.get(edge['right'], {})}}) 
+            GRelation(**{**edge, **{'start_id': nodes_dict.get(edge['start_id'], {}), 'end_id': nodes_dict.get(edge['end_id'], {})}}) 
             for edge in edges
         ]
         return nodes, edges

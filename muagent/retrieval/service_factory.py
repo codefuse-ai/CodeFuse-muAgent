@@ -7,7 +7,7 @@ from muagent.base_configs.env_config import KB_ROOT_PATH
 
 from .faiss_db_service import FaissKBService
 from .base_service import KBService, SupportedVSType
-from muagent.orm.commands import *
+from muagent.service.ui_file_service import *
 from muagent.utils.path_utils import *
 from muagent.llm_models.llm_config import EmbedConfig
 

@@ -12,7 +12,7 @@ class AliYunSLSHandler:
 
     def __init__(
             self,
-            sls_config: SLSConfig = SLSConfig(sls_Type="aliyunSls")
+            sls_config: SLSConfig = SLSConfig(sls_type="aliyunSls")
     ):
         self.project = sls_config.extra_kwargs.get("project")
         self.logstore = sls_config.extra_kwargs.get("logstore")
@@ -21,6 +21,22 @@ class AliYunSLSHandler:
         self.accessKey = sls_config.extra_kwargs.get("accessKey")
         
         self.client = LogClient(self.endpoint, self.accessKeyId, self.accessKey)
+
+    # def add_node(self, node: GNode):
+    #     insert_nodes = self.node_process([node])
+    #     self.graph.add_nodes_from(insert_nodes)
+
+    # def add_nodes(self, nodes: List[GNode]):
+    #     insert_nodes = self.node_process(nodes)
+    #     self.graph.add_nodes_from(insert_nodes)
+
+    # def add_edge(self, grelation: GRelation):
+    #     insert_relations = self.relation_process([grelation])
+    #     self.graph.add_edges_from(insert_relations)
+
+    # def add_edges(self, grelations: List[GRelation]):
+    #     insert_relations = self.relation_process(grelations)
+    #     self.graph.add_edges_from(insert_relations)
 
     def add_data(self, data: List[Tuple[str, str]]) -> str:
         # 将数据写入到 sls 中

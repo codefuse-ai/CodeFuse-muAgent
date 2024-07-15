@@ -55,7 +55,7 @@ memory_extract_prompt_en = '''## 角色
 
 ## 要求
 1、根据 节点和边的数据结构 完成信息抽取
-2、edges中出现的left和right节点一定要在node中出现过
+2、edges中出现的start_id和end_id节点一定要在node中出现过
 
 ## 输出结构
 {
@@ -65,9 +65,9 @@ memory_extract_prompt_en = '''## 角色
          {'type': '{节点类型}', 'name': '{节点名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
     ],
     'edges': [
-        {'type': '{边类型}', 'left': '{实体名称}', 'right': '{实体名称}', 'name': '{边名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
+        {'type': '{边类型}', 'start_id': '{实体名称}', 'end_id': '{实体名称}', 'name': '{边名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
          ...,
-         {'type': '{边类型}', 'left': '{实体名称}', 'right': '{实体名称}', 'name': '{边名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
+         {'type': '{边类型}', 'start_id': '{实体名称}', 'end_id': '{实体名称}', 'name': '{边名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
     ],
 }
 
@@ -87,7 +87,7 @@ memory_extract_prompt_zh = '''## 角色
 
 ## 要求
 1、根据 节点和边的数据结构 完成信息抽取
-2、edges中出现的left和right节点一定要在node中出现过
+2、edges中出现的start_id和end_id节点一定要在node中出现过
 
 ## 输出结构
 {
@@ -97,9 +97,9 @@ memory_extract_prompt_zh = '''## 角色
          {'type': '{节点类型}', 'name': '{节点名称}', 'attributes': {'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
     ],
     'edges': [
-        {'type': '{边类型}', 'left': '{实体名称}', 'right': '{实体名称}', 'attributes': {'name': '{边名称}', 'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
+        {'type': '{边类型}', 'start_id': '{实体名称}', 'end_id': '{实体名称}', 'attributes': {'name': '{边名称}', 'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
          ...,
-         {'type': '{边类型}', 'left': '{实体名称}', 'right': '{实体名称}', 'attributes': {'name': '{边名称}', 'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
+         {'type': '{边类型}', 'start_id': '{实体名称}', 'end_id': '{实体名称}', 'attributes': {'name': '{边名称}', 'attribute1': '{属性值1}', ..., 'attributeN': '{属性值N}'},
     ],
 }
 

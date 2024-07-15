@@ -1,6 +1,6 @@
 from muagent.orm.db import with_session
 from muagent.schemas.kb.base_schema import KnowledgeFileSchema, KnowledgeBaseSchema
-from muagent.orm.utils import DocumentFile
+from muagent.schemas.kb.file_schema import DocumentFile
 
 
 

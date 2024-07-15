@@ -13,9 +13,9 @@ from langchain_community.docstore.document import Document
 from muagent.base_configs.env_config import (
     VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD, kbs_config
 )
-from muagent.orm.commands import *
+from muagent.service.ui_file_service import *
 from muagent.utils.path_utils import *
-from muagent.orm.utils import DocumentFile
+from muagent.schemas.kb.file_schema import DocumentFile
 from muagent.retrieval.utils import load_embeddings, load_embeddings_from_path
 from muagent.retrieval.text_splitter import LCTextSplitter
 from muagent.llm_models.llm_config import EmbedConfig

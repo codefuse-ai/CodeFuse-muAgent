@@ -30,5 +30,5 @@ class VBConfig(BaseModel):
 
 
 class SLSConfig(BaseModel):
-    sls_Type: str
+    sls_type: str
     extra_kwargs: Dict = {}
