@@ -46,7 +46,7 @@ class NetworkxHandler:
             
         return [
             GRelation(
-                id=f"{nodeid}-{neighbor}",
+                # id=f"{nodeid}-{neighbor}",
                 start_id=nodeid,
                 end_id=neighbor,
                 attributes=self.graph.get_edge_data(nodeid, neighbor)
@@ -59,7 +59,7 @@ class NetworkxHandler:
         if self.missing_edge(start_id, end_id): return None
 
         return GRelation(
-                id=f"{start_id}-{end_id}",
+                # id=f"{start_id}-{end_id}",
                 start_id=start_id,
                 end_id=end_id,
                 attributes=self.graph.get_edge_data(start_id, end_id)
@@ -75,7 +75,7 @@ class NetworkxHandler:
     def search_edges_by_attr(self, **attributes) -> List[GRelation]:
         return [
             GRelation(
-                id=f"{left}-{right}",
+                # id=f"{left}-{right}",
                 start_id=left,
                 end_id=right,
                 attributes=attr
@@ -95,6 +95,7 @@ class NetworkxHandler:
 
     def save_to_local(self, kb_name: str):
         dir_path = os.path.join(self.kb_root_path, kb_name)
+        os.makedirs(dir_path, exist_ok=True)
         # 将图保存到本地文件
         nx.write_graphml(self.graph, os.path.join(dir_path, 'graph.graphml'))
         

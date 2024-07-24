@@ -8,8 +8,10 @@
 from .nebula_handler import NebulaHandler
 from .networkx_handler import NetworkxHandler
 from .aliyun_sls_hanlder import AliYunSLSHandler
+from .geabase_handler import GeaBaseHandler
+
 
 __all__ = [
-    "NebulaHandler", "NetworkxHandler",
+    "NebulaHandler", "NetworkxHandler", "GeaBaseHandler",
     "AliYunSLSHandler"
 ]

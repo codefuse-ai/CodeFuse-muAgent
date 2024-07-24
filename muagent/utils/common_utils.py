@@ -112,3 +112,14 @@ def get_uploadfile(file: Union[str, Path, bytes], filename=None) -> UploadFile:
     return UploadFile(file=temp_file, filename=filename)
 
 
+def string_to_long_sha256(s: str) -> int:
+    # 使用 SHA-256 哈希函数
+    hash_object = hashlib.sha256(s.encode())
+    # 转换为16进制然后转换为整数
+    return int(hash_object.hexdigest(), 16)
+
+
+def double_hashing(s: str, modulus: int = 10e12) -> int:
+    hash1 = string_to_long_sha256(s)
+    hash2 = string_to_long_sha256(s[::-1])  # 用字符串的反序进行第二次hash
+    return int((hash1 + hash2) % modulus)

@@ -2,5 +2,5 @@ from .auto_extract_graph_schema import *
 
 
 __all__ = [
-    "GNodeAbs", "GRelationAbs", "Attribute", "GNode", "GRelation", "ThemeEnums"
+    "GNodeAbs", "GEdgeAbs", "GRelationAbs", "Attribute", "GNode", "GEdge", "GRelation", "ThemeEnums"
 ]

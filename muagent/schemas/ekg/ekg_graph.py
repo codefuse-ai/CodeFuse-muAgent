@@ -22,6 +22,7 @@ class NodeTypesEnum(Enum):
     SCHEDULE = 'schedule'
     INTENT = 'intent'
     TOOL = 'tool'
+    TOOL_INSTANCE = 'tool_instance'
     TEAM = 'team'
     OWNER = 'owner'
 

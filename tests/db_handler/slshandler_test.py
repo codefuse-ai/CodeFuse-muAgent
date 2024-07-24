@@ -23,7 +23,7 @@ src_dir = os.path.join(
 )
 print(src_dir)
 sys.path.append(src_dir)
-from muagent.db_handler.sls_db_handler import AliYunSLSHandler
+from muagent.db_handler import AliYunSLSHandler
 from muagent.schemas.db import SLSConfig
 
 

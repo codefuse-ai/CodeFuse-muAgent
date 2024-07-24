@@ -16,6 +16,13 @@ class GNodeAbs(BaseModel):
 
 
 class GRelationAbs(BaseModel):
+    # todo: 废弃
+    # relation type for extract
+    type: str
+    attributes: List[Attribute]
+
+
+class GEdgeAbs(BaseModel):
     # relation type for extract
     type: str
     attributes: List[Attribute]
@@ -23,14 +30,20 @@ class GRelationAbs(BaseModel):
 
 class GNode(BaseModel):
     id: str
-    attributes: Dict[str, str]
+    attributes: Dict
+
+
+class GEdge(BaseModel):
+    start_id: str
+    end_id: str
+    attributes: Dict
 
 
 class GRelation(BaseModel):
-    id: str
+    # todo: 废弃
     start_id: str
     end_id: str
-    attributes: Dict[str, str]
+    attributes: Dict
 
 
 class ThemeEnums(Enum):
