@@ -6,12 +6,12 @@
 @desc:
 '''
 
-from .graph_db_handler import NebulaHandler, NetworkxHandler, AliYunSLSHandler, GeaBaseHandler
+from .graph_db_handler import NebulaHandler, NetworkxHandler, AliYunSLSHandler, GeaBaseHandler, GBHandler
 from .vector_db_handler import LocalFaissHandler, TbaseHandler, ChromaHandler
 
 
 __all__ = [
-    "NebulaHandler", "NetworkxHandler", "GeaBaseHandler",
+    "GBHandler", "NebulaHandler", "NetworkxHandler", "GeaBaseHandler", 
     "ChromaHandler", "TbaseHandler", "LocalFaissHandler", 
     "AliYunSLSHandler"
 ]

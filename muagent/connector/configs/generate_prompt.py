@@ -4,7 +4,7 @@ from muagent.base_configs.prompts.simple_prompts import *
 def replacePrompt(prompt: str, keys: list[str] = []):
     prompt = prompt.replace("{", "{{").replace("}", "}}")
     for key in keys:
-        prompt = prompt.replace(f"{{{{key}}}}", f"{{key}}")
+        prompt = prompt.replace(f"{{{{{key}}}}}", f"{{{key}}}")
     return prompt
 
 def cleanPrompt(prompt):
@@ -54,4 +54,13 @@ def createMKGPrompt(conversation, schemas, language="en", **kwargs) -> str:
     #     prompt = memory_extract_prompt_zh.format(**{"conversation": conversation, "schemas": schemas})
     # else:
     #     prompt = memory_extract_prompt_en.format(**{"conversation": conversation, "schemas": schemas})
+    return cleanPrompt(prompt)
+
+
+def createText2EKGPrompt(text, language="en", **kwargs) -> str:
+    prompt = text2EKG_prompt_zh if language == "zh" else text2EKG_prompt_en
+    prompt = replacePrompt(prompt, keys=["text"])
+    from loguru import logger
+    logger.debug(f"{prompt}")
+    prompt = prompt.format(**{"text": text,})
     return cleanPrompt(prompt)

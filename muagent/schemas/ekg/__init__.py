@@ -4,10 +4,10 @@ from .ekg_create import *
 __all__ = [
     "EKGEdgeSchema", "EKGNodeSchema", 
     "EKGTaskNodeSchema", "EKGIntentNodeSchema", "EKGAnalysisNodeSchema", "EKGScheduleNodeSchema", "EKGPhenomenonNodeSchema",
-    "EKGEdgeTbaseSchema", "EKGEdgeTbaseSchema", "EKGTbaseData", 
+    "EKGNodeTbaseSchema", "EKGEdgeTbaseSchema", "EKGTbaseData", 
     "EKGGraphSlsSchema", "EKGSlsData",
-    "SHAPE2TYPE",
-
+    "SHAPE2TYPE", "TYPE2SCHEMA",
+    "YuqueDslNodeData", "YuqueDslEdgeData", "YuqueDslDatas",
 
     "EKGIntentResp",
 ]

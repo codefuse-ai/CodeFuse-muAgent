@@ -1,5 +1,5 @@
 from loguru import logger
-
+from typing import Union
 import numpy as np
 
 import redis
@@ -23,20 +23,20 @@ from muagent.schemas.db import TBConfig
 class TbaseHandler:
     def __init__(
             self, 
-            tbase_args, 
+            tb_config: TBConfig,
             index_name="test", 
             definition_value="message",
-            tb_config: TBConfig = None
         ):
         self.client = redis.Redis(
-            host=tbase_args['host'],
-            port=tbase_args['port'],
-            username=tbase_args['username'],
-            password=tbase_args['password']
+            host=tb_config.host,
+            port=tb_config.port,
+            username=tb_config.username,
+            password=tb_config.password,
         )
         self.index_name = index_name
         self.definition_value = definition_value
         self.tb_config = tb_config
+        self.expire_time = tb_config.extra_kwargs.get("expire_time", 86400)
 
     def create_index(self, index_name=None, schema=None, definition: list =None):
         '''
@@ -59,7 +59,13 @@ class TbaseHandler:
         # logger.debug(self.client.ft(index_name).info())
         return True
 
-    def insert_data_hash(self, data_list, key="message_index", expire_time=86400):
+    def insert_data_hash(
+            self, 
+            data_list: Union[list[dict], dict], 
+            key: str = "message_index", 
+            expire_time: int = 86400, 
+            need_etime: bool = True
+        ):
         '''
         insert data into hash index
         :param index_name:
@@ -74,7 +80,8 @@ class TbaseHandler:
         for data in data_list:
             key_value = f"{self.definition_value}:" + data.get(key, "")
             r = self.client.hset(key_value, mapping=data)
-            rr = self.client.expire(key_value, expire_time)
+            if need_etime:
+                rr = self.client.expire(key_value, expire_time or self.expire_time)
         return len(data_list)
 
     def search(self, query, index_name: str = None, query_params: dict = {}):

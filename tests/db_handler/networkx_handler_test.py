@@ -12,7 +12,7 @@ print(src_dir)
 sys.path.append(src_dir)
 from  muagent import db_handler
 from muagent.db_handler import NetworkxHandler
-from muagent.schemas.memory import GNode, GRelation
+from muagent.schemas.common import GNode, GRelation
 
 
 node1 = GNode(**{"id": "node1", "attributes": {"name": "test" }})

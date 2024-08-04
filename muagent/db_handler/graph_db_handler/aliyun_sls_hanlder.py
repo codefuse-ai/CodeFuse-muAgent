@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import time
 
 from aliyun.log import *
-from muagent.schemas.memory import *
+from muagent.schemas.common import *
 from muagent.schemas.db import SLSConfig
 
     
@@ -141,6 +141,6 @@ class AliYunSLSHandler:
         relation_list = [
             [('start_id', relation.start_id), ('end_id', relation.start_id)] +\
                 [(k, v) if k!="operation_type" else (k, crud_type) for k,v in relation.attributes.items()]
-            for node in nodes
+            for relation in relations
         ]
         return relation_list

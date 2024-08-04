@@ -204,3 +204,102 @@ memory_auto_schema_prompt_zh = """## 角色
 
 ## 输出
 """
+
+
+
+text2EKG_prompt_en = '''你是一个结构化信息抽取的专家，你需要根据输入的文档，抽取其中的关键节点及节点间的连接顺序。请用json结构返回。
+
+json结构定义如下:
+{
+  "nodes": {
+    "节点序号": {
+      "type": "节点类型",
+      "content": "节点内容"
+    }
+  },
+  "edges": [
+    {
+      "start": "起始节点序号",
+      "end": "终止节点序号"
+    }
+  ]
+}
+其中 nodes 用来存放抽取的节点，每个 node 的 key 通过从0开始对递增序列表示，value 是一个字典，包含 type 和 content 两个属性， type 对应下面定义的三种节点类型，content 为抽取的节点内容。
+edges 用来存放节点间的连接顺序，它是一个列表，每个元素是一个字典，包含 start 和 end 两个属性， start 为起始 node 的 节点序号, end 为结束 node 的 节点序号。
+
+节点类型定义如下:
+Schedule:
+  表示整篇输入文档所做的事情，是对整篇输入文档的总结；
+  第一个节点永远是Schedule节点。
+Task: 
+  表示需要执行的任务。
+Phenomenon:
+  表示依据Task节点的执行结果，得到的事实结论。
+  Phenomenon节点只能连接在Task节点之后。
+Analysis:
+  表示依据Phenomenon节点的事实进行推断的过程；
+  Analysis节点只能连接在Phenomenon节点之后。
+
+以下是一个例子：
+input: 路径：排查网络问题
+1. 通过观察sofagw网关监控发现，BOLT失败数突增
+2. 且失败曲线与退保成功率曲线相关性较高，判定是网络问题。
+
+output: {
+  "nodes": {
+    "0": {
+      "type": "Schedule",
+      "content": "排查网络问题"
+    },
+    "1": {
+      "type": "Task",
+      "content": "查询sofagw网关监控BOLT失败数"
+    },
+    "2": {
+      "type": "Task",
+      "content": "查询sofagw网关监控退保成功率"
+    },
+    "3": {
+      "type": "Task",
+      "content": "判断两条时序相关性"
+    },
+    "4": {
+      "type": "Phenomenon",
+      "content": "相关性较高"
+    },
+    "5": {
+      "type": "Analysis",
+      "content": "网络问题"
+    }
+  },
+  "edges": [
+    {
+      "start": "0",
+      "end": "1"
+    },
+    {
+      "start": "1",
+      "end": "2"
+    },
+    {
+      "start": "2",
+      "end": "3"
+    },
+    {
+      "start": "3",
+      "end": "4"
+    },
+    {
+      "start": "4",
+      "end": "5"
+    }
+  ]
+}
+
+请根据上述说明和例子来对以下的输入文档抽取结构化信息:
+
+input: {text}
+
+output:'''
+
+text2EKG_prompt_zh = text2EKG_prompt_en

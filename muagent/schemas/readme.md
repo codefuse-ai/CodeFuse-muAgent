@@ -11,8 +11,8 @@ xxResp as the http output
 ## xxRequest
 xxRequest as the http input 
 
-## xx
-xx as the function/method output
+## xxData
+xxData as the function/method output
 
 ## xxParam
 xxParam as the function/method input

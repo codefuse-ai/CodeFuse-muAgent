@@ -2,7 +2,7 @@ import os
 import networkx as nx
 from typing import List, Tuple, Dict
 
-from muagent.schemas.memory import *
+from muagent.schemas.common import *
 from muagent.base_configs.env_config import KB_ROOT_PATH
 from muagent.schemas.db import GBConfig
 

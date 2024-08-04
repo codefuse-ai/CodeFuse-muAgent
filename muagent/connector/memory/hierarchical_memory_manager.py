@@ -10,7 +10,7 @@ from langchain_community.docstore.document import Document
 from muagent.connector.configs.generate_prompt import *
 from muagent.connector.schema import Memory, Message
 from muagent.schemas.db import DBConfig, GBConfig, VBConfig, TBConfig
-from muagent.schemas.memory import *
+from muagent.schemas.common import *
 from muagent.db_handler import *
 from muagent.connector.memory_manager import BaseMemoryManager
 from muagent.llm_models import *

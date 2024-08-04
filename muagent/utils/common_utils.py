@@ -16,6 +16,8 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 def getCurrentDatetime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def getCurrentTimestap():
+    return int(datetime.now().timestamp())
 
 def addMinutesToTime(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
     dt = datetime.strptime(input_time, dateformat)

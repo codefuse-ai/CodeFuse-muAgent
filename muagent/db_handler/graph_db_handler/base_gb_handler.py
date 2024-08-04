@@ -3,7 +3,7 @@ import uuid
 from loguru import logger
 import json
 
-from muagent.schemas.memory import *
+from muagent.schemas.common import *
 
 
 
@@ -58,20 +58,20 @@ class GBHandler:
     def search_edges_by_attr(self, attributes: dict, edge_type: str = None) -> List[GEdge]:
         pass
     
-    def get_current_node(self, attributes: dict, node_type: str = None, return_keys: list = []) -> Dict:
+    def get_current_node(self, attributes: dict, node_type: str = None, return_keys: list = []) -> GNode:
         pass
 
-    def get_current_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> Dict:
+    def get_current_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GNode]:
         pass
     
-    def get_current_edge(self, src_id, dst_id, edge_type:str = None, return_keys: list = []) -> Dict:
+    def get_current_edge(self, src_id, dst_id, edge_type:str = None, return_keys: list = []) -> GEdge:
         pass
     
-    def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[Dict]:
+    def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GNode]:
         pass
     
-    def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[Dict]:
+    def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GEdge]:
         pass
 
-    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []):
+    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}) -> Graph:
         pass        

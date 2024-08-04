@@ -24,7 +24,7 @@ src_dir = os.path.join(
 )
 sys.path.append(src_dir)
 from muagent.db_handler import GeaBaseHandler
-from muagent.schemas.memory import GNode, GRelation
+from muagent.schemas.common import GNode, GEdge
 from muagent.schemas.db import GBConfig
 
 import copy
@@ -46,8 +46,8 @@ geabase_handler = GeaBaseHandler(gb_config)
 # it's a case, you should use your node and edge attributes
 node1 = GNode(**{
     "id": "antshanshi311395_1", 
+    "type": "opsgptkg_intent",
     "attributes": {
-        "type": "opsgptkg_intent", 
         "path": "shanshi_test",
         "name": "shanshi_test",
         "description":'shanshi_test', 
@@ -55,24 +55,26 @@ node1 = GNode(**{
     }
 })
 
-edge1 = GRelation(**{
+edge1 = GEdge(**{
     "start_id": "antshanshi311395_1", 
     "end_id": "antshanshi311395_2", 
+    "type": "opsgptkg_intent_route_opsgptkg_intent",
     "attributes": {
-        "type": "opsgptkg_intent_route_opsgptkg_intent",
-        "original_dst_id2__": "antshanshi311395_1", 
-        "original_src_id1__": "antshanshi311395_2", 
+        "@timestamp": 1719276995619,
+        "original_src_id1__": "antshanshi311395_1",  
+        "original_dst_id2__": "antshanshi311395_2", 
         "gdb_timestamp": 1719276995619
     }
 })
 
-edge2 = GRelation(**{
+edge2 = GEdge(**{
     "start_id": "antshanshi311395_2", 
     "end_id": "antshanshi311395_3", 
+    "type": "opsgptkg_intent_route_opsgptkg_intent",
     "attributes": {
-        "type": "opsgptkg_intent_route_opsgptkg_intent",
-        "original_dst_id2__": "antshanshi311395_2", 
-        "original_src_id1__": "antshanshi311395_3", 
+        "@timestamp": 1719276995619,
+        "original_src_id1__": "antshanshi311395_2",  
+        "original_dst_id2__": "antshanshi311395_3", 
         "gdb_timestamp": 1719276995619
     }
 })
@@ -85,9 +87,6 @@ node3.id = "antshanshi311395_3"
 
 # 添加节点
 t = geabase_handler.add_node(node1)
-print(t)
-
-t = geabase_handler.add_nodes([node2, node3])
 print(t)
 
 t = geabase_handler.add_nodes([node2, node3])
