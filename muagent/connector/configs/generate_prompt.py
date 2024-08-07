@@ -60,7 +60,5 @@ def createMKGPrompt(conversation, schemas, language="en", **kwargs) -> str:
 def createText2EKGPrompt(text, language="en", **kwargs) -> str:
     prompt = text2EKG_prompt_zh if language == "zh" else text2EKG_prompt_en
     prompt = replacePrompt(prompt, keys=["text"])
-    from loguru import logger
-    logger.debug(f"{prompt}")
     prompt = prompt.format(**{"text": text,})
     return cleanPrompt(prompt)

@@ -58,6 +58,9 @@ class GBHandler:
     def search_edges_by_attr(self, attributes: dict, edge_type: str = None) -> List[GEdge]:
         pass
     
+    def get_nodes_by_ids(self, ids: List[int]) -> List[GNode]:
+        pass
+
     def get_current_node(self, attributes: dict, node_type: str = None, return_keys: list = []) -> GNode:
         pass
 
@@ -73,5 +76,5 @@ class GBHandler:
     def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GEdge]:
         pass
 
-    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}) -> Graph:
+    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}, reverse: bool =False) -> Graph:
         pass        

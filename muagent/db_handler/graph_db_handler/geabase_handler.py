@@ -132,19 +132,26 @@ class GeaBaseHandler(GBHandler):
     def get_current_nodeID(self, attributes: dict, node_type: str) -> int:
         result = self.get_current_node(attributes, node_type)
         return result.attributes.get("ID")
-        return result.get("ID")
     
     def get_current_edgeID(self, src_id, dst_id, edeg_type:str = None):
         if not isinstance(src_id, int) or not isinstance(dst_id, int):
             result = self.get_current_edge(src_id, dst_id, edeg_type)
             logger.debug(f"{result}")
             return result.attributes.get("srcId"), result.attributes.get("dstId"), result.attributes.get("timestamp")
-            return result.get("srcId"), result.get("dstId"), 
         else:
             return src_id, dst_id, 1
     
     def get_current_node(self, attributes: dict, node_type: str = None, return_keys: list = []) -> GNode:
         return self.get_current_nodes(attributes, node_type, return_keys)[0]
+    
+    def get_nodes_by_ids(self, ids: List[int] = []) -> List[GNode]:
+        where_str = f'@id in {ids}'
+        gql = f"MATCH (n0 WHERE {where_str}) RETURN n0"
+        # 
+        result = self.execute(gql, return_keys=[])
+        result = self.decode_result(result, gql)
+        nodes = result.get("n0", []) or result.get("n0.attr", []) 
+        return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
 
     def get_current_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GNode]:
         # 
@@ -170,8 +177,6 @@ class GeaBaseHandler(GBHandler):
 
         edges = result.get("e", []) or result.get("e.attr", [])
         return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges][0]
-        
-        return result[0]
     
     def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GNode]:
         # 
@@ -184,7 +189,6 @@ class GeaBaseHandler(GBHandler):
         result = self.decode_result(result, gql)
         nodes = result.get("n1", []) or result.get("n1.attr", [])
         return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
-        return result.get("n1", []) or result.get("n1.attr", [])
     
     def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GEdge]:
         # 
@@ -198,22 +202,23 @@ class GeaBaseHandler(GBHandler):
 
         edges = result.get("e", []) or result.get("e.attr", [])
         return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges]
-        return result.get("e", []) or result.get("e.attr", [])
 
     def check_neighbor_exist(self, attributes: dict, node_type: str = None, check_attributes: dict = {}) -> bool:
         result = self.get_neighbor_nodes(attributes, node_type,)
         filter_result = [i for i in result if all([item in i.attributes.items() for item in check_attributes.items()])]
         return len(filter_result) > 0
 
-    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}) -> Graph:
+    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}, reverse=False) -> Graph:
         '''
         hop >= 2， 表面需要至少两跳
         '''
         hop_max = 10
-        hop_list = []
         # 
         where_str = ' and '.join([f"n0.{k}='{v}'" for k, v in attributes.items()])
-        gql = f"MATCH p = (n0:{node_type} WHERE {where_str})-[e]->{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+        if reverse:
+            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})<-[e]-{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+        else:
+            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})-[e]->{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
         last_node_ids, last_node_types = [], []
 
         result = {}
@@ -238,19 +243,16 @@ class GeaBaseHandler(GBHandler):
         nodes = [GNode(id=node["id"], type=node["type"], attributes=node) for node in result.get("n1", [])]
         edges = [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in result.get("e", [])]
         return Graph(nodes=nodes, edges=edges, paths=result.get("p", []))
-        return result
-        
+    
     def get_hop_nodes(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GNode]:
         # 
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.nodes
-        return result.get("n1", []) or result.get("n1.attr", [])
 
     def get_hop_edges(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GEdge]:
         # 
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.edges
-        return result.get("e", []) or result.get("e.attr", [])
 
     def get_hop_paths(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[str]:
         # 
@@ -353,14 +355,28 @@ class GeaBaseHandler(GBHandler):
         return output
 
     def decode_path(self, col_data, k) -> List:
-        path = []
         steps = col_data.get("pathVal", {}).get("steps", [])
+        connections = {}
         for step in steps:
             props = step["props"]
-            if path == []:
-                path.append(props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1))
-                
-            path.append(props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1))
+            # if path == []:
+            #     path.append(props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1))
+            # path.append(props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1))
+
+            start = props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1)
+            end = props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1)
+            connections[start] = end
+
+        # 找到头部（1）
+        for k in connections:
+            if k not in connections.values():
+                head = k
+                path = [head]
+
+        # 根据连通关系构建路径
+        while head in connections:
+            head = connections[head]
+            path.append(head)
     
         return path
     
