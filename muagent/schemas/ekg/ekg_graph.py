@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Dict
 from enum import Enum
+import json
 
 
 SHAPE2TYPE = {
@@ -54,39 +55,77 @@ class NodeTypesEnum(Enum):
     TOOL_INSTANCE = 'opsgptkg_tool_instance'
     TEAM = 'opsgptkg_team'
     OWNER = 'opsgptkg_owner'
-    edge = 'edge'
-
+    EDGE = 'edge'
 
 # EKG Node and Edge Schemas
 class EKGNodeSchema(NodeSchema):
-    teamid: str
-    version:str # yyyy-mm-dd HH:MM:SS
+    teamids: str
+    # version:str # yyyy-mm-dd HH:MM:SS
     extra: str = ''
+
 
 
 class EKGEdgeSchema(EdgeSchema):
-    teamid: str
-    version:str # yyyy-mm-dd HH:MM:SS
+    # teamids: str
+    # version:str # yyyy-mm-dd HH:MM:SS
     extra: str = ''
+
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return extra_attr
 
 
 class EKGIntentNodeSchema(EKGNodeSchema):
     path: str = ''
 
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return {
+            **{
+                "name": self.name,
+                "description": self.description,
+                "teamids": self.teamids,
+                "path": self.path
+            }, 
+            **extra_attr
+        }
 
 class EKGScheduleNodeSchema(EKGNodeSchema):
     # do action or not
-    switch: bool
+    enable: bool
 
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return {
+            **{
+                "name": self.name,
+                "description": self.description,
+                "teamids": self.teamids,
+                "enable": self.enable
+            }, 
+            **extra_attr
+        }
 
 class EKGTaskNodeSchema(EKGNodeSchema):
-    tool: str
-    needCheck: bool
+    # tool: str
+    # needCheck: bool
     # when to access
     accessCriteria: str
     # 
-    owner: str
+    # owner: str
 
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return {
+            **{
+                "name": self.name,
+                "description": self.description,
+                "teamids": self.teamids,
+                "accessCriteria": self.accessCriteria
+            }, 
+            **extra_attr
+        }
+    
 
 class EKGAnalysisNodeSchema(EKGNodeSchema):
     # when to access
@@ -96,19 +135,38 @@ class EKGAnalysisNodeSchema(EKGNodeSchema):
     # summary template
     dslTemplate: str
 
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return {
+            **{
+                "name": self.name,
+                "description": self.description,
+                "teamids": self.teamids,
+                "accessCriteria": self.accessCriteria,
+                "summarySwtich": self.summarySwtich,
+                "dslTemplate": self.dslTemplate 
+            }, 
+            **extra_attr
+        }
+    
 
 class EKGPhenomenonNodeSchema(EKGNodeSchema):
-    pass
 
-
-class EKGPhenomenonNodeSchema(EKGNodeSchema):
-    pass
-
+    def attrbutes(self, ):
+        extra_attr = json.loads(self.extra)
+        return {
+            **{
+                "name": self.name,
+                "description": self.description,
+                "teamids": self.teamids,
+            }, 
+            **extra_attr
+        }
+    
 
 # Ekg Tool Schemas
 class ToolSchema(NodeSchema):
-    teamid: str
-    version:str # yyyy-mm-dd HH:MM:SS
+    # version:str # yyyy-mm-dd HH:MM:SS
     extra: str = ''
 
 
@@ -137,15 +195,21 @@ class EKGGraphSlsSchema(BaseModel):
     # {tool_id},{tool_id},{tool_id}
     tool: str = ''
     access_criteria: str = ''
-    teamid: str = ''
+    teamids: str = ''
+    extra: str = ''
+    enable: bool = False
+    dslTemplate: str = ''
 
 
 class EKGNodeTbaseSchema(BaseModel):
     node_id: str
     node_type: str
-    # node_str = 'graph_id={graph_id}'/teamid, use for searching by graph_id/teamid
+    # node_str = 'graph_id={graph_id}'/teamids, use for searching by graph_id/teamids
     node_str: str
-    node_vector: List
+    name_keyword: str
+    desc_keyword: str
+    name_vector: List
+    desc_vector: List
 
 
 class EKGEdgeTbaseSchema(BaseModel):
@@ -156,7 +220,7 @@ class EKGEdgeTbaseSchema(BaseModel):
     edge_source: str
     # end_id
     edge_target: str
-    # edge_str = 'graph_id={graph_id}'/teamid, use for searching by graph_id/teamid
+    # edge_str = 'graph_id={graph_id}'/teamids, use for searching by graph_id/teamids
     edge_str: str
 
 
@@ -178,7 +242,7 @@ TYPE2SCHEMA = {
     NodeTypesEnum.SCHEDULE.value: EKGScheduleNodeSchema,
     NodeTypesEnum.TOOL.value: EKGPToolTypeSchema,
     NodeTypesEnum.TOOL_INSTANCE.value: EKGPToolSchema,
-    NodeTypesEnum.edge.value: EKGEdgeSchema
+    NodeTypesEnum.EDGE.value: EKGEdgeSchema
 }
 
 

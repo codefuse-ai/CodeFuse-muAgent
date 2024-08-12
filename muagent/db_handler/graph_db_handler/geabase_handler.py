@@ -34,6 +34,7 @@ class GeaBaseHandler(GBHandler):
     def execute(self, gql: str, option=None, return_keys: list = []) -> Dict:
         option = option or self.option
         logger.info(f"{gql}")
+        # return {"error": True}
         result = self.geabase_client.executeGQL(gql, option)
         result = json.loads(str(result.getJsonGQLResponse()))
         return result
@@ -178,12 +179,15 @@ class GeaBaseHandler(GBHandler):
         edges = result.get("e", []) or result.get("e.attr", [])
         return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges][0]
     
-    def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GNode]:
+    def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = [], reverse=False) -> List[GNode]:
         # 
         extra_keys = list(set(return_keys + ["@ID", "id", "@node_type"]))
         return_str = ", ".join([f"n1.{k}" for k in extra_keys]) if return_keys else "n1"
         where_str = ' and '.join([f"n0.{k}='{v}'" for k, v in attributes.items()])
-        gql = f"MATCH (n0:{node_type})-[e]->(n1) WHERE {where_str} RETURN {return_str}"
+        if reverse:
+            gql = f"MATCH (n0:{node_type} WHERE {where_str})<-[e]-(n1) RETURN {return_str}"
+        else:
+            gql = f"MATCH (n0:{node_type})-[e]->(n1) WHERE {where_str} RETURN {return_str}"
         # 
         result = self.execute(gql, return_keys=return_keys)
         result = self.decode_result(result, gql)

@@ -30,6 +30,7 @@ from muagent.base_configs.env_config import KB_ROOT_PATH
 
 from muagent.llm_models.get_embedding import get_embedding
 from muagent.utils.common_utils import getCurrentDatetime, getCurrentTimestap
+from muagent.utils.common_utils import double_hashing
 
 
 def getClassFields(model):
@@ -65,10 +66,12 @@ class EKGConstructService:
         self.kb_root_path = kb_root_path
         self.embed_config: EmbedConfig = embed_config
         self.llm_config: LLMConfig = llm_config
+        self.node_indexname = "shanshi_node" # "opsgptkg_node"
+        self.edge_indexname = "shanshi_edge" # "opsgptkg_edge"
 
+        # get llm model
         self.model = getChatModelFromConfig(self.llm_config)
-
-
+        # init db handler
         self.init_handler()
 
     def init_handler(self, ):
@@ -121,14 +124,17 @@ class EKGConstructService:
         if self.tb_config:
             tb_dict = {"TbaseHandler": TbaseHandler}
             tb_class =  tb_dict.get(self.tb_config.tb_type, TbaseHandler)
-            self.tb: TbaseHandler = tb_class(tb_config=self.tb_config, index_name=self.tb_config.index_name, definition_value="opsgptkg")
+            self.tb: TbaseHandler = tb_class(
+                tb_config=self.tb_config, index_name=self.tb_config.index_name, 
+                definition_value=self.tb_config.extra_kwargs.get("definition_value", "muagent_ekg")
+            )
             # # create index
-            if not self.tb.is_index_exists("opsgptkg_node"):
-                res = self.tb.create_index(index_name="opsgptkg_node", schema=NODE_SCHEMA)
+            if not self.tb.is_index_exists(self.node_indexname):
+                res = self.tb.create_index(index_name=self.node_indexname, schema=NODE_SCHEMA)
                 logger.info(f"tb init: {res}")
 
-            if not self.tb.is_index_exists("opsgptkg_edge"):
-                res = self.tb.create_index(index_name="opsgptkg_edge", schema=EDGE_SCHEMA)
+            if not self.tb.is_index_exists(self.edge_indexname):
+                res = self.tb.create_index(index_name=self.edge_indexname, schema=EDGE_SCHEMA)
                 logger.info(f"tb init: {res}")
         else:
             self.tb = None
@@ -136,7 +142,7 @@ class EKGConstructService:
     def init_gb(self, do_init: bool=None):
         if self.gb_config:
             gb_dict = {"NebulaHandler": NebulaHandler, "NetworkxHandler": NetworkxHandler, "GeaBaseHandler": GeaBaseHandler,}
-            gb_class =  gb_dict.get(self.gb_config.gb_type, NetworkxHandler)
+            gb_class =  gb_dict.get(self.gb_config.gb_type, NebulaHandler)
             self.gb: GBHandler = gb_class(self.gb_config)
         else:
             self.gb = None
@@ -165,81 +171,82 @@ class EKGConstructService:
             self.sls: AliYunSLSHandler = sls_class(self.embed_config, vb_config=self.vb_config)
         else:
             self.sls = None
+    
+    def update_graph(
+            self, 
+            origin_nodes: List[GNode], origin_edges: List[GEdge], 
+            nodes: List[GNode], edges: List[GEdge],  teamid: str
+        ):
+        # 
+        origin_nodeids = set([node["id"] for node in origin_nodes])
+        origin_edgeids = set([f"{edge['start_id']}__{edge['end_id']}" for edge in origin_edges])
+        nodeids = set([node["id"] for node in nodes])
+        edgeids = set([f"{edge['start_id']}__{edge['end_id']}" for edge in edges])
+        unique_nodeids = origin_nodeids&nodeids
+        unique_edgeids = origin_edgeids&edgeids
+        nodeid2nodes_dict = {}
+        for node in origin_nodes + nodes:
+            nodeid2nodes_dict.setdefault(node["id"], []).append(node)
+
+        edgeid2edges_dict = {}
+        for edge in origin_edges + edges:
+            edgeid2edges_dict.setdefault(f"{edge['start_id']}__{edge['end_id']}", []).append(edge)
+
+        # get add nodes & edges 
+        add_nodes = [node for node in nodes if node["id"] not in origin_nodeids]
+        add_edges = [edge for edge in edges if f"{edge['start_id']}__{edge['end_id']}" not in origin_edgeids]
+
+        # get delete nodes & edges
+        delete_nodes = [node for node in origin_nodes if node["id"] not in nodeids]
+        delete_edges = [edge for edge in origin_edges if f"{edge['start_id']}__{edge['end_id']}" not in edgeids]
+
+        # get update nodes & edges
+        update_nodes = [
+            nodeid2nodes_dict[nodeid][1] 
+            for nodeid in unique_nodeids 
+            if nodeid2nodes_dict[nodeid][0]!=nodeid2nodes_dict[nodeid][1]
+        ]
+        update_edges = [
+            edgeid2edges_dict[edgeid][1] 
+            for edgeid in unique_edgeids 
+            if edgeid2edges_dict[edgeid][0]!=edgeid2edges_dict[edgeid][1]
+        ]
+
+
+        self.add_nodes([GNode(**n) for n in add_nodes], teamid)
+        self.add_edges([GEdge(**e) for e in add_edges], teamid)
+
+        self.delete_edges([GEdge(**e) for e in delete_edges], teamid)
+        self.delete_nodes([GNode(**n) for n in delete_nodes], teamid)
+
+        self.update_nodes([GNode(**n) for n in update_nodes], teamid)
+        self.update_edges([GEdge(**e) for e in update_edges], teamid)
+
 
     def add_nodes(self, nodes: List[GNode], teamid: str):
-        nodetype2fields_dict = {}
-        for node in nodes:
-            node_type = node.type
-            node.attributes["teamid"] = teamid
-            node.attributes["gdb_timestamp"] = getCurrentTimestap()
-            node.attributes["version"] = getCurrentDatetime()
-            node.attributes.setdefault("extra", '{}')
+        nodes = self._update_new_attr_for_nodes(nodes, teamid, do_check=True)
 
-            # check the data's key-value by node_type
-            schema = TYPE2SCHEMA.get(node_type,)
-            if node_type in nodetype2fields_dict:
-                fields = nodetype2fields_dict[node_type]
-            else:
-                fields = list(getClassFields(schema))
-                nodetype2fields_dict[node_type] = fields
-
-            flag = any([
-                field not in node.attributes 
-                for field in fields 
-                if field not in ["start_id", "end_id", "id", "ID"]
-            ])
-            if flag:
-                raise Exception(f"node is wrong, type is {node_type}, fields is {fields}, data is {node.attributes}")
-        
         tbase_nodes = []
         for node in nodes:
-            name = node.attributes.get("name", "")
-            description = node.attributes.get("description", "")
-            name_vector = self._get_embedding(name)
-            desc_vector = self._get_embedding(description)
             tbase_nodes.append({
-                # "node_id": f'''ekg_node:{teamid}:{node.id}''',
-                "node_id": f'''{node.id}''',
-                "node_type": node.type, 
-                "node_str": f"graph_id={teamid}", 
-                "name_vector": np.array(name_vector[name]).astype(dtype=np.float32).tobytes(),
-                "desc_vector": np.array(desc_vector[description]).astype(dtype=np.float32).tobytes(),
-                "name_keyword": " | ".join(extract_tags(name, topK=None)),
-                "desc_keyword": " | ".join(extract_tags(description, topK=None)),
-            })
+                **{
+                    "node_id": f"{node.id}",
+                    "node_type": node.type, 
+                    "node_str": f"graph_id={teamid}",
+                }, 
+                **self._update_tbase_attr_for_nodes(node.attributes)
+                })
 
-        tb_result = {"error": True}
+        tb_result, gb_result = [], []
         try: 
-            # gb_result = self.gb.add_nodes(nodes)
+            gb_result = [self.gb.add_node(node) for node in nodes]
             tb_result = self.tb.insert_data_hash(tbase_nodes, key='node_id', need_etime=False)
         except Exception as e:
             logger.error(e)
-        return tb_result
-
         return gb_result or tb_result
 
     def add_edges(self, edges: List[GEdge], teamid: str):
-        edgetype2fields_dict = {}
-        for edge in edges:
-            edge_type = edge.type
-            edge.attributes["teamid"] = teamid
-            edge.attributes["@timestamp"] = getCurrentTimestap()
-            edge.attributes["gdb_timestamp"] = getCurrentTimestap()
-            edge.attributes["version"] = getCurrentDatetime()
-            edge.attributes["extra"] = '{}'
-
-            # check the data's key-value by edge_type
-            schema = TYPE2SCHEMA.get("edge",)
-            if edge_type in edgetype2fields_dict:
-                fields = edgetype2fields_dict[edge_type]
-            else:
-                fields = list(getClassFields(schema))
-                edgetype2fields_dict[edge_type] = fields
-
-            flag = any([field not in edge.attributes for field in fields if field not in ["dst_id", "src_id", "timestamp", "id"]])
-            if flag:
-                raise Exception(f"edge is wrong, type is {edge_type}, fields is {fields}, data is {edge.attributes}")
-            
+        edges = self._update_new_attr_for_edges(edges, teamid, do_check=True)
         tbase_edges = [{
             # 'edge_id': f"ekg_edge:{teamid}{edge.start_id}:{edge.end_id}",
             'edge_id': f"{edge.start_id}__{edge.end_id}",
@@ -251,131 +258,156 @@ class EKGConstructService:
             for edge in edges
         ]
 
-        tb_result = {"error": True}
+        tb_result, gb_result = [], []
         try:
-            # gb_result = self.gb.add_edges(edges)
+            gb_result = [self.gb.add_edge(edge) for edge in edges]
             tb_result = self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False)
         except Exception as e:
             logger.error(e)
-
-        return tb_result
-
         return gb_result or tb_result
 
-    def delete_nodes(self, nodes: List[GNode], teamid: str):
+    def delete_nodes(self, nodes: List[GNode], teamid: str=''):
         # delete tbase nodes
-        r = self.tb.search(f"@node_str: 'graph_id={teamid}'", index_name='opsgptkg_node')
+        # r = self.tb.search(f"@node_str: 'graph_id={teamid}'", index_name=self.node_indexname)
+        r = self.tb.search(f"@node_str: *{teamid}*", index_name=self.node_indexname, limit=len(nodes))
 
         tbase_nodeids = [data['node_id'] for data in r.docs] # 附带了definition信息
-        tbase_nodeids_dict = {data["node_id"]:data['id'] for data in r.docs} # 附带了definition信息
+        # tbase_nodeids_dict = {data["node_id"]:data['id'] for data in r.docs} # 附带了definition信息
         delete_nodeids = [node.id for node in nodes]
         tbase_missing_nodeids = [nodeid for nodeid in delete_nodeids if nodeid not in tbase_nodeids]
-        delete_tbase_nodeids = [tbase_nodeids_dict[nodeid] for nodeid in delete_nodeids if nodeid in tbase_nodeids]
+        # delete_tbase_nodeids = [nodeid for nodeid in delete_nodeids if nodeid in tbase_nodeids]
+        # delete_tbase_nodeids = [tbase_nodeids_dict[nodeid] for nodeid in delete_nodeids if nodeid in tbase_nodeids]
 
         if len(tbase_missing_nodeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_nodeids}")
 
+        node_neighbor_lens = [len(self.gb.get_neighbor_nodes({"id": node.id}, node.type)) for node in nodes]
         # delete the nodeids in tbase
         tb_result = []
-        for nodeid in delete_tbase_nodeids:
-            self.tb.delete(nodeid)
-            resp = self.tb.delete(nodeid)
+        for node, node_len in zip(nodes, node_neighbor_lens):
+            if node_len >= 2: continue
+            resp = self.tb.delete(node.id)
             tb_result.append(resp)
-        # logger.info(f'id={nodeid}, delete resp={resp}')
 
         # # delete the nodeids in geabase
-        # gb_result = self.gb.delete_nodes(delete_tbase_nodeids)
-        return tb_result
-        return gb_result or tb_result
+        gb_result = []
+        for node, node_len in zip(nodes, node_neighbor_lens):
+            if node_len >= 2: continue
+            gb_result.append(self.gb.delete_node({"id": node.id}, node.type, ID=double_hashing(node.id)))
+        return gb_result + tb_result
     
     def delete_edges(self, edges: List[GEdge], teamid: str):
         # delete tbase nodes
-        r = self.tb.search(f"@edge_str: 'graph_id={teamid}'", index_name='opsgptkg_edge')
+        # r = self.tb.search(f"@edge_str: 'graph_id={teamid}'", index_name=self.edge_indexname)
+        r = self.tb.search(f"@edge_str: *{teamid}*", index_name=self.edge_indexname, limit=len(edges))
+
         tbase_edgeids = [data['edge_id'] for data in r.docs]
-        tbase_edgeids_dict = {data["edge_id"]:data['id'] for data in r.docs} # id附带了definition信息
+        # tbase_edgeids_dict = {data["edge_id"]:data['id'] for data in r.docs} # id附带了definition信息
         delete_edgeids = [f"{edge.start_id}__{edge.end_id}" for edge in edges]
         tbase_missing_edgeids = [edgeid for edgeid in delete_edgeids if edgeid not in tbase_edgeids]
-        delete_tbase_edgeids = [tbase_edgeids_dict[edgeid] for edgeid in delete_edgeids if edgeid in tbase_edgeids]
+        # delete_tbase_edgeids = [edgeid for edgeid in delete_edgeids if edgeid in tbase_edgeids]
+        # delete_tbase_edgeids = [tbase_edgeids_dict[edgeid] for edgeid in delete_edgeids if edgeid in tbase_edgeids]
 
         if len(tbase_missing_edgeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_edgeids}")
-
         # delete the edgeids in tbase
         tb_result = []
-        for edgeid in delete_tbase_edgeids:
-            self.tb.delete(edgeid)
+        for edgeid in delete_edgeids:
             resp = self.tb.delete(edgeid)
             tb_result.append(resp)
-        # logger.info(f'id={edgeid}, delete resp={resp}')
 
         # # delete the nodeids in geabase
-        # gb_result = self.gb.delete_edges(delete_tbase_edgeids)
-        return tb_result
+        gb_result = []
+        for edge in edges:
+            gb_result.append(self.gb.delete_edge(double_hashing(edge.start_id), double_hashing(edge.end_id), edge.type))
+        return gb_result + tb_result
     
     def update_nodes(self, nodes: List[GNode], teamid: str):
         # delete tbase nodes
-        r = self.tb.search(f"@node_str: 'graph_id={teamid}'", index_name='opsgptkg_node')
+        # r = self.tb.search(f"@node_str: 'graph_id={teamid}'", index_name=self.node_indexname)
+        r = self.tb.search(f"@node_str: *{teamid}*", index_name=self.node_indexname, limit=len(nodes))
+        teamids_by_nodeid = {data['node_id']: data["node_str"]  for data in r.docs}
+
         tbase_nodeids = [data['node_id'] for data in r.docs] # 附带了definition信息
         update_nodeids = [node.id for node in nodes]
         tbase_missing_nodeids = [nodeid for nodeid in update_nodeids if nodeid not in tbase_nodeids]
-        update_tbase_nodeids = [nodeid for nodeid in update_nodeids if nodeid in tbase_nodeids]
+        # update_tbase_nodeids = [nodeid for nodeid in update_nodeids if nodeid in tbase_nodeids]
 
         if len(tbase_missing_nodeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_nodeids}")
+            for node in nodes:
+                r = self.tb.search(f"@node_id: {node.id}", index_name=self.node_indexname)
+                teamids_by_nodeid.update({data['node_id']: data["node_str"]  for data in r.docs})
 
         tb_result = []
-        random_vector = np.array([random.random() for _ in range(768)]).astype(dtype=np.float32).tobytes()
         for node in nodes:
-            if node.id not in tbase_nodeids: continue
-
+            # 
             tbase_data = {}
-            for key in ["name", "description"]:
-                if key not in node.attributes: continue
-                
-                if key == "name":
-                    text = node.attributes.get("name", "")
-                    tbase_data["name_keyword"] =  " | ".join(extract_tags(text, topK=None))
-                    tbase_data["name_vector"] = np.array(self._get_embedding(text)[text]
-                        ).astype(dtype=np.float32).tobytes()
-
-                if key == "description":
-                    text = node.attributes.get("description", "")
-                    tbase_data["desc_keyword"] = " | ".join(extract_tags(text, topK=None))
-                    tbase_data["desc_vector"] = np.array(self._get_embedding(text)[text]
-                        ).astype(dtype=np.float32).tobytes()
-                tbase_data["node_id"] = node.id
-
+            tbase_data["node_id"] = node.id
+            if teamid not in teamids_by_nodeid[node.id]:
+                tbase_data["teamids"] = teamids_by_nodeid[node.id] + f", {teamid}"
+            tbase_data.update(self._update_tbase_attr_for_nodes(node.attributes))
+            # 
             resp = self.tb.insert_data_hash(tbase_data, key="node_id", need_etime=False)
             tb_result.append(resp)
 
         # update the nodeids in geabase
+        nodes = self._update_new_attr_for_nodes(nodes, teamid, teamids_by_nodeid, do_check=False)
         gb_result = []
-        # for node in nodes:
-        #     if node.id not in update_tbase_nodeids: continue
-        #     resp = self.gb.update_node({}, node.attributes, node_type=node.type, ID=node.id)
-        #     gb_result.append(resp)
+        for node in nodes:
+            # if node.id not in update_tbase_nodeids: continue
+            resp = self.gb.update_node({}, node.attributes, node_type=node.type, ID=double_hashing(node.id))
+            gb_result.append(resp)
         return gb_result or tb_result
 
+    def update_edges(self, edges: List[GEdge], teamid: str):
+        r = self.tb.search(f"@edge_str: *{teamid}*", index_name=self.node_indexname, limit=len(edges))
+        teamids_by_edgeid = {data['edge_id']: data["edge_str"]  for data in r.docs}
+
+        tbase_edgeids = [data['edge_id'] for data in r.docs]
+        delete_edgeids = [f"{edge.start_id}__{edge.end_id}" for edge in edges]
+        tbase_missing_edgeids = [edgeid for edgeid in delete_edgeids if edgeid not in tbase_edgeids]
+
+        if len(tbase_missing_edgeids) > 0:
+            logger.error(f"there must something wrong! ID not match, such as {tbase_missing_edgeids}")
+            for edge in edges:
+                r = self.tb.search(f"@edge_id: {edge.start_id}__{edge.end_id}", index_name=self.node_indexname)
+                teamids_by_edgeid.update({data['edge_id']: data["node_str"]  for data in r.docs})
+
+        # update the nodeids in geabase
+        edges = self._update_new_attr_for_edges(edges, teamid, teamids_by_edgeid, do_check=False)
+        gb_result = []
+        for edge in edges:
+            # if node.id not in update_tbase_nodeids: continue
+            resp = self.gb.update_edge(
+                double_hashing(edge.start_id), double_hashing(edge.end_id), 
+                edge.attributes, edge_type=edge.type
+            )
+            gb_result.append(resp)
+        return gb_result
+
     def get_node_by_id(self, nodeid: str, node_type:str = None) -> GNode:
-        return self.gb.get_current_node({'id': nodeid}, node_type=node_type)
+        node = self.gb.get_current_node({'id': nodeid}, node_type=node_type)
+        extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+        node.attributes.update(extra_attrs)
+        return node
     
-    def get_graph_by_nodeid(self, nodeid: str, node_type: str, teamid: str, hop: int = 10) -> Graph:
+    def get_graph_by_nodeid(self, nodeid: str, node_type: str, teamid: str=None, hop: int = 10) -> Graph:
         if hop > 14:
             raise Exception(f"hop can't be larger than 14, now hop is {hop}")
         # filter the node which dont match teamid
-        result = self.gb.get_hop_infos({'id': nodeid}, node_type=node_type, hop=hop, select_attributes={"teamid": teamid})
+        result = self.gb.get_hop_infos({'id': nodeid}, node_type=node_type, hop=hop)
+        for node in result.nodes:
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            node.attributes.update(extra_attrs)
+        for edge in result.edges:
+            extra_attrs = json.loads(edge.attributes.pop("extra", "{}"))
+            edge.attributes.update(extra_attrs)
         return result
 
     def search_nodes_by_text(self, text: str, node_type: str = None, teamid: str = None, top_k=5) -> List[GNode]:
 
         if text is None: return []
-
-        # if self.embed_config:
-        #     raise Exception(f"can't use vector search, because there is no {self.embed_config}")
-
-        # 直接检索文本
-        keywords = extract_tags(text)
-        keyword = "|".join(keywords)
 
         nodeids = []
         # 
@@ -385,7 +417,8 @@ class EKGConstructService:
 
             nodeid_with_dist = []
             for key in ["name_vector", "desc_vector"]:
-                base_query = f'(@node_str: graph_id={teamid})=>[KNN {top_k} @{key} $vector AS distance]'
+                # base_query = f'(@node_str: graph_id={teamid})=>[KNN {top_k} @{key} $vector AS distance]'
+                base_query = f'(*)=>[KNN {top_k} @{key} $vector AS distance]'
                 query_params = {"vector": query_embedding}
                 r = self.tb.vector_search(base_query, query_params=query_params)
 
@@ -397,8 +430,11 @@ class EKGConstructService:
                 if nodeid not in nodeids:
                     nodeids.append(nodeid)
 
+        # search keyword by jieba spliting text
+        keywords = extract_tags(text)
+        keyword = "|".join(keywords)
         for key in ["name_keyword", "desc_keyword"]:
-            r = self.tb.search(f"(@{key}:{{{keyword}}})")
+            r = self.tb.search(f"(@{key}:{{{keyword}}})", limit=30)
             for i in r.docs:
                 if i["node_id"] not in nodeids:
                     nodeids.append(i["node_id"])
@@ -411,6 +447,12 @@ class EKGConstructService:
     def search_rootpath_by_nodeid(self, nodeid: str, node_type: str, rootid: str) -> Graph:
         # rootid = f"{teamid}" # todo check the rootid
         result = self.gb.get_hop_infos({"id": nodeid}, node_type=node_type, hop=15, reverse=True)
+        for node in result.nodes:
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            node.attributes.update(extra_attrs)
+        for edge in result.edges:
+            extra_attrs = json.loads(edge.attributes.pop("extra", "{}"))
+            edge.attributes.update(extra_attrs)
 
         # paths must be ordered from start to end
         paths = result.paths
@@ -523,11 +565,22 @@ class EKGConstructService:
         pass
 
     def write2kg(self, ekg_sls_data: EKGSlsData, ekg_tbase_data: EKGTbaseData):
+        # everytimes, it will add new nodes and edges
 
-        # self.gb.add_nodes(result)
-        # self.gb.add_edges(result)
-        # self.tb.insert_data_hash(result)
+        nodes = [TYPE2SCHEMA.get(node.type,)(**node.dict()) for node in ekg_sls_data.nodes]
+        nodes = [GNode(id=node.id, type=node.type, attributes=node.attrbutes()) for node in nodes]
+        gb_result = self.gb.add_nodes(nodes)
+
+        edges = [TYPE2SCHEMA.get("edge",)(**edge.dict()) for edge in ekg_sls_data.edges]
+        edges = [GEdge(start_id=edge.start_id, end_id=edge.end_id, type=edge.type, attributes=edge.attrbutes()) for edge in edges]
+        gb_result = self.gb.add_edges(edges)
+
+        nodes = [node.dict() for node in ekg_tbase_data.nodes]
+        tb_result = self.tb.insert_data_hash(nodes)
         
+        edges = [edge.dict() for edge in ekg_tbase_data.edges]
+        tb_result = self.tb.insert_data_hash(edges)
+
         # dsl2graph => write2kg
         ## delete tbase/graph by graph_id
         ### diff the tabse within newest by graph_id
@@ -565,7 +618,7 @@ class EKGConstructService:
             all_intent_list.append(all_intent)
 
         return list(ancestor_list), all_intent_list
-    
+
     def get_intents_by_alarms(self, alarm_list: list[dict], ) -> EKGIntentResp:
         '''according contents search intents'''
         ancestor_list = set()
@@ -612,7 +665,7 @@ class EKGConstructService:
                 tool='',
                 need_check='false',
                 operation_type='ADD',
-                teamid=teamid
+                teamids=teamid
             )
             sls_nodes.append(ekg_slsdata)
 
@@ -625,7 +678,7 @@ class EKGConstructService:
                             type=f'edge_route_intent_{node_type}', # 需要注意与老逻辑的兼容
                             end_id=node_id,
                             operation_type='ADD',
-                            teamid=teamid
+                            teamids=teamid
                         )
                     )
         # edges
@@ -644,7 +697,7 @@ class EKGConstructService:
                     type=edge_type,
                     end_id=end_id,
                     operation_type='ADD',
-                    teamid=teamid
+                    teamids=teamid
                 )
             )
         return EKGSlsData(nodes=sls_nodes, edges=sls_edges)
@@ -653,13 +706,19 @@ class EKGConstructService:
         tbase_nodes, tbase_edges = [], []
 
         for node in ekg_sls_data.nodes:
+            name = node.name
+            description = node.description
+            name_vector = self._get_embedding(name)
+            desc_vector = self._get_embedding(description)
             tbase_nodes.append(
                 EKGNodeTbaseSchema(
                     node_id=node.id,
                     node_type=node.type,
                     node_str=f'graph_id={teamid}',
-                    # 后续可用embedding完成替换
-                    node_vector=[random.random() for _ in range(768)],
+                    name_keyword=" | ".join(extract_tags(name, topK=None)),
+                    desc_keyword=" | ".join(extract_tags(description, topK=None)),
+                    name_vector=np.array(name_vector[name]).astype(dtype=np.float32).tobytes(),
+                    desc_vector= np.array(desc_vector[description]).astype(dtype=np.float32).tobytes(),
                 )
             )
         for edge in ekg_sls_data.edges:
@@ -709,6 +768,7 @@ class EKGConstructService:
         for pid in pnode_ids:
             dsl_pid = get_md5(pid)
             dsl_pid = f'ekg_node:{teamid}:intent:{dsl_pid}'
+            dsl_pid = f'ekg_node:intent:{dsl_pid}'
             if dsl_pid not in intent_names_dict:
                 intent_names_dict[dsl_pid] = self.gb.get_current_node(
                     {'id': pid}, 'opsgptkg_intent').attributes["name"]
@@ -728,6 +788,7 @@ class EKGConstructService:
 
                 intent_id = get_md5(intent)
                 intent_id = f'ekg_node:{teamid}:intent:{intent_id}'
+                intent_id = f'ekg_node:intent:{intent_id}'
                 if intent_id not in intent_names_dict:
                     intent_names_dict[intent_id] = self.gb.get_current_node(
                             {'id': intent}, 'opsgptkg_intent').attributes["name"]
@@ -800,7 +861,7 @@ class EKGConstructService:
     
     def _get_embedding(self, text):
         text_vector = {}
-        if self.embed_config:
+        if self.embed_config and text:
             text_vector = get_embedding(
                 self.embed_config.embed_engine, [text],
                 self.embed_config.embed_model_path, self.embed_config.model_device,
@@ -860,3 +921,97 @@ class EKGConstructService:
                 i_strip = f'{i_strip}'
                 res += i_strip
         return res
+
+    def _update_tbase_attr_for_nodes(self, attrs):
+        tbase_attrs = {}
+        for k in ["name", "description"]:
+            if k in attrs:
+                text = attrs.get(k, "")
+                text_vector = self._get_embedding(text)
+                tbase_attrs[f"{k}_vector"] = np.array(text_vector[text]).astype(dtype=np.float32).tobytes()
+                tbase_attrs[f"{k}_keyword"] = " | ".join(extract_tags(text, topK=None))
+        return tbase_attrs
+    
+    def _update_new_attr_for_nodes(self, nodes: List[GNode], teamid: str, teamids_by_nodeid={}, do_check=False):
+        '''update new attributes for nodes'''
+        nodetype2fields_dict = {}
+        for node in nodes:
+            node_type = node.type
+
+            if node.id in teamids_by_nodeid:
+                node.attributes["teamids"] = teamids_by_nodeid.get(node.id, "").split("=")[1] + f", {teamid}"
+            else:
+                node.attributes["teamids"] = f"{teamid}"
+
+            node.attributes["gdb_timestamp"] = getCurrentTimestap()
+            # node.attributes["version"] = getCurrentDatetime()
+
+            # check the data's key-value by node_type
+            schema = TYPE2SCHEMA.get(node_type,)
+            if node_type in nodetype2fields_dict:
+                fields = nodetype2fields_dict[node_type]
+            else:
+                fields = list(getClassFields(schema))
+                nodetype2fields_dict[node_type] = fields
+
+            flag = any([
+                field not in node.attributes 
+                for field in fields 
+                if field not in ["start_id", "end_id", "ID", "id", "extra"]
+            ])
+            if flag and do_check:
+                raise Exception(f"node is wrong, type is {node_type}, fields is {fields}, data is {node.attributes}")
+        
+            # update extra infomations to extra
+            extra_fields = [k for k in node.attributes.keys() if k not in fields]
+            node.attributes.setdefault(
+                "extra", 
+                json.dumps({
+                    k: node.attributes.pop(k, "")
+                    for k in extra_fields
+                }, ensure_ascii=False)
+            )
+        return nodes
+    
+    def _update_new_attr_for_edges(self, edges: List[GEdge], teamid: str, teamids_by_edgeid={}, do_check=False):
+        '''update new attributes for nodes'''
+        edgetype2fields_dict = {}
+        for edge in edges:
+            edge_type = edge.type
+            edge_id = f"{edge.start_id}__{edge.end_id}"
+            if edge_id in teamids_by_edgeid:
+                edge.attributes["teamids"] = teamids_by_edgeid.get(edge_id, "").split("=")[1] + f", {teamid}"
+            else:
+                edge.attributes["teamids"] = f"{teamid}"
+
+            edge.attributes["@timestamp"] = getCurrentTimestap()
+            edge.attributes["gdb_timestamp"] = getCurrentTimestap()
+            edge.attributes['original_dst_id2__'] = edge.end_id
+            edge.attributes['original_src_id1__'] = edge.start_id
+            # edge.attributes["version"] = getCurrentDatetime()
+            # edge.attributes["extra"] = '{}'
+
+            # check the data's key-value by edge_type
+            schema = TYPE2SCHEMA.get("edge",)
+            if edge_type in edgetype2fields_dict:
+                fields = edgetype2fields_dict[edge_type]
+            else:
+                fields = list(getClassFields(schema))
+                edgetype2fields_dict[edge_type] = fields
+
+            flag = any([
+                field not in edge.attributes for field in fields 
+                if field not in ["dst_id", "src_id", "timestamp", "ID", "id", "extra"]])
+            if flag and do_check:
+                raise Exception(f"edge is wrong, type is {edge_type}, fields is {fields}, data is {edge.attributes}")
+
+            # update extra infomations to extra
+            extra_fields = [k for k in edge.attributes.keys() if k not in fields+["@timestamp"]]
+            edge.attributes.setdefault(
+                "extra", 
+                json.dumps({
+                    k: edge.attributes.pop(k, "")
+                    for k in extra_fields
+                }, ensure_ascii=False)
+            )
+        return edges

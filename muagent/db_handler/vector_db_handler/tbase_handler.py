@@ -84,7 +84,7 @@ class TbaseHandler:
                 rr = self.client.expire(key_value, expire_time or self.expire_time)
         return len(data_list)
 
-    def search(self, query, index_name: str = None, query_params: dict = {}):
+    def search(self, query, index_name: str = None, query_params: dict = {}, limit=10):
         '''
         search
         :param index_name:
@@ -96,7 +96,7 @@ class TbaseHandler:
         index = self.client.ft(index_name)
 
         if type(query) == str:
-            query = Query(query)
+            query = Query(query).paging(0, limit)
 
         res = index.search(query, query_params=query_params)
         return res
