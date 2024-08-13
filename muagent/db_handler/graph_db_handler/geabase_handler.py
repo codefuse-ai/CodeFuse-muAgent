@@ -396,7 +396,7 @@ class GeaBaseHandler(GBHandler):
         vertextVal = col_data.get("vertexVal", {})
         node_val_json = {
             **{"ID": int(vertextVal.get("id", "")), "type": vertextVal.get("type", "")}, 
-            **{k: v.get("strVal", "") or v.get("intVal", "0") for k, v in vertextVal.get("props", {}).items()}
+            **{k: v.get("strVal", "") if "strVal" in v else v.get("intVal", "0") for k, v in vertextVal.get("props", {}).items()}
         }
         node_val_json.pop("biz_node_id", "")
         return node_val_json
@@ -406,7 +406,7 @@ class GeaBaseHandler(GBHandler):
             edgeVal= data.get("edgeVal", {})
             edge_val_json = {
                 **{"SRCID": int(edgeVal.get("srcId", "")), "DSTID": int(edgeVal.get("dstId", "")), "type": edgeVal.get("type", "")}, 
-                **{k: v.get("strVal", "") or v.get("intVal", "0") for k, v in edgeVal.get("props", {}).items()}
+                **{k: v.get("strVal", "") if "strVal" in v else v.get("intVal", "0") for k, v in edgeVal.get("props", {}).items()}
             }
             # 存在业务逻辑
             edge_val_json["start_id"] = edge_val_json.pop("original_src_id1__")

@@ -408,7 +408,7 @@ class EKGConstructService:
 
     def get_node_by_id(self, nodeid: str, node_type:str = None) -> GNode:
         node = self.gb.get_current_node({'id': nodeid}, node_type=node_type)
-        extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+        extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
         node.attributes.update(extra_attrs)
         return node
     
@@ -418,10 +418,10 @@ class EKGConstructService:
         # filter the node which dont match teamid
         result = self.gb.get_hop_infos({'id': nodeid}, node_type=node_type, hop=hop)
         for node in result.nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
             node.attributes.update(extra_attrs)
         for edge in result.edges:
-            extra_attrs = json.loads(edge.attributes.pop("extra", "{}"))
+            extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
             edge.attributes.update(extra_attrs)
         return result
 
@@ -463,7 +463,7 @@ class EKGConstructService:
         nodes_by_desc = self.gb.get_current_nodes({"description": text}, node_type=node_type)
         nodes = self.gb.get_nodes_by_ids(nodeids)
         for node in nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
             node.attributes.update(extra_attrs)
         return nodes_by_name + nodes_by_desc + nodes
 
@@ -471,10 +471,10 @@ class EKGConstructService:
         # rootid = f"{teamid}" # todo check the rootid
         result = self.gb.get_hop_infos({"id": nodeid}, node_type=node_type, hop=15, reverse=True)
         for node in result.nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
             node.attributes.update(extra_attrs)
         for edge in result.edges:
-            extra_attrs = json.loads(edge.attributes.pop("extra", "{}"))
+            extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
             edge.attributes.update(extra_attrs)
 
         # paths must be ordered from start to end

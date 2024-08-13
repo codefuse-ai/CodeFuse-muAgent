@@ -247,5 +247,5 @@ nodes = ekg_construct_service.search_nodes_by_text(text, teamid=teamid)
 print(len(nodes))
 
 # search path by node and rootid
-graph = ekg_construct_service.search_rootpath_by_nodeid(nodeid="shanshi_opsgptkg_analysis_3", node_type="opsgptkg_analysis", rootid="shanshi_opsgptkg_intent_0")
+graph = ekg_construct_service.search_rootpath_by_nodeid(nodeid="shanshi_opsgptkg_analysis_2", node_type="opsgptkg_analysis", rootid="shanshi_opsgptkg_intent_0")
 print(len(graph.nodes), len(graph.edges))
