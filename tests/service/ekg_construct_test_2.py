@@ -103,12 +103,12 @@ def generate_node(id, type):
         extra_attr["enable"] = False
         
     if type == "opsgptkg_task":
-        extra_attr["accessCriteria"] = "hello"
+        extra_attr["accesscriteria"] = "hello"
         
     if type == "opsgptkg_analysis":
-        extra_attr["accessCriteria"] = "hello"
-        extra_attr["summarySwtich"] = False
-        extra_attr['dslTemplate'] = "hello"        
+        extra_attr["accesscriteria"] = "hello"
+        extra_attr["summaryswtich"] = False
+        extra_attr['dsltemplate'] = "hello"             
         
     return GNode(**{
         "id": id, 

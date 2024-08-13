@@ -76,7 +76,7 @@ class EKGEdgeSchema(EdgeSchema):
 
 
 class EKGIntentNodeSchema(EKGNodeSchema):
-    path: str = ''
+    # path: str = ''
 
     def attrbutes(self, ):
         extra_attr = json.loads(self.extra)
@@ -107,8 +107,8 @@ class EKGScheduleNodeSchema(EKGNodeSchema):
         }
 
 class EKGTaskNodeSchema(EKGNodeSchema):
-    tool: str
-    needcheck: bool
+    # tool: str
+    # needcheck: bool
     # when to access
     accesscriteria: str
     # 
@@ -123,7 +123,7 @@ class EKGTaskNodeSchema(EKGNodeSchema):
                 "teamids": self.teamids,
                 "accesscriteria": self.accesscriteria,
                 "needcheck": self.needcheck,
-                "tool": self.tool
+                # "tool": self.tool
             }, 
             **extra_attr
         }

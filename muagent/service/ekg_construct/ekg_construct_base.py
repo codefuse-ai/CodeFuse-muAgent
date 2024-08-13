@@ -1041,47 +1041,4 @@ class EKGConstructService:
                 edge.attributes.pop("@timestamp")
             edge.attributes.pop("extra")
         return edges
-    
-    def get_intent_by_alarm(self, alarm: dict, ) -> EKGIntentResp:
-        '''according content search intent'''
-        import requests
-        error_type = alarm.get('errorType', '')
-        title = alarm.get('title', '')
-        content = alarm.get('content', '')
-        biz_code = alarm.get('bizCode', '')
 
-        if not error_type or not title or not content or not biz_code:
-            return None, None
-        
-        alarm = {
-            'type': 'ANTEMC_DINGTALK',
-            'user_input': {
-                'bizCode': biz_code,
-                'title': title,
-                'content': content,
-                'execute_type': 'gql',
-                'errorType': error_type
-            }
-        }
-        
-        body = {
-            'features': {
-                'query': alarm
-            }
-        }
-        intent_url = 'https://paiplusinferencepre.alipay.com/inference/ff998e48456308a9_EKG_route/0.1'
-        headers = {
-                'Content-Type': 'application/json;charset=utf-8',
-                'MPS-app-name': 'test',
-                'MPS-http-version': '1.0'
-            }
-        ans = requests.post(intent_url, json=body, headers=headers)
-
-        ans_json = ans.json()
-        output = ans_json.get('resultMap').get('output')
-        logger.debug(f"{body}")
-        logger.debug(f"{output}")
-        output_json = json.loads(output)
-        res = output_json[-1]
-        all_intent = output_json
-        return res, all_intent
