@@ -31,10 +31,10 @@ class NodeSchema(BaseModel):
 
 class EdgeSchema(BaseModel):
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
-    src_id: int = None
+    SRCID: int = None
     original_src_id1__: str
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
-    dst_id: int = None
+    DSTID: int = None
     original_dst_id2__: str
     # 
     timestamp: int
@@ -107,10 +107,10 @@ class EKGScheduleNodeSchema(EKGNodeSchema):
         }
 
 class EKGTaskNodeSchema(EKGNodeSchema):
-    # tool: str
-    # needCheck: bool
+    tool: str
+    needcheck: bool
     # when to access
-    accessCriteria: str
+    accesscriteria: str
     # 
     # owner: str
 
@@ -121,7 +121,9 @@ class EKGTaskNodeSchema(EKGNodeSchema):
                 "name": self.name,
                 "description": self.description,
                 "teamids": self.teamids,
-                "accessCriteria": self.accessCriteria
+                "accesscriteria": self.accesscriteria,
+                "needcheck": self.needcheck,
+                "tool": self.tool
             }, 
             **extra_attr
         }
@@ -129,11 +131,11 @@ class EKGTaskNodeSchema(EKGNodeSchema):
 
 class EKGAnalysisNodeSchema(EKGNodeSchema):
     # when to access
-    accessCriteria: str
+    accesscriteria: str
     # do summary or not
-    summarySwtich: bool
+    summaryswtich: bool
     # summary template
-    dslTemplate: str
+    dsltemplate: str
 
     def attrbutes(self, ):
         extra_attr = json.loads(self.extra)
@@ -142,9 +144,9 @@ class EKGAnalysisNodeSchema(EKGNodeSchema):
                 "name": self.name,
                 "description": self.description,
                 "teamids": self.teamids,
-                "accessCriteria": self.accessCriteria,
-                "summarySwtich": self.summarySwtich,
-                "dslTemplate": self.dslTemplate 
+                "accesscriteria": self.accesscriteria,
+                "summaryswtich": self.summaryswtich,
+                "dsltemplate": self.dsltemplate 
             }, 
             **extra_attr
         }

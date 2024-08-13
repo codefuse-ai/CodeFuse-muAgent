@@ -46,11 +46,11 @@ class GeaBaseHandler(GBHandler):
         node_str_list = []
         for node in nodes:
             node_type = node.type
-            node_attributes = {"@id": double_hashing(node.id), "id": node.id}
+            node_attributes = {"id": node.id}
+            node_attributes["@id"] = node.attributes.pop("ID", "") or double_hashing(node.id)
             node_attributes.update(node.attributes)
-            # _ = node_attributes.pop("type")
-            # logger.debug(f"{node_attributes}")
-            node_str = ", ".join([f"{k}: '{v}'" if isinstance(v, str) else f"{k}: {v}" for k, v in node_attributes.items()])
+
+            node_str = ", ".join([f"{k}: '{v}'" if isinstance(v, (str, bool)) else f"{k}: {v}" for k, v in node_attributes.items()])
             node_str_list.append(f"(:{node_type} {{{node_str}}})")
 
         gql = f"INSERT {','.join(node_str_list)}"
@@ -64,11 +64,13 @@ class GeaBaseHandler(GBHandler):
         edge_str_list = []
         for edge in edges:
             edge_type = edge.type
-            src_id, dst_id = double_hashing(edge.start_id,), double_hashing(edge.end_id,)
-            edge_attributes = {"@src_id": src_id, "@dst_id": dst_id}
+            edge_attributes = {
+                "@src_id": edge.attributes.pop("SRCID", 0) or double_hashing(edge.start_id,),
+                "@dst_id": edge.attributes.pop("DSTID", 0) or double_hashing(edge.end_id,)
+            }
             edge_attributes.update(edge.attributes)
-            # _ = edge_attributes.pop("type")
-            edge_str = ", ".join([f"{k}: '{v}'" if isinstance(v, str) else f"{k}: {v}" for k, v in edge_attributes.items()])
+
+            edge_str = ", ".join([f"{k}: '{v}'" if isinstance(v, (str, bool)) else f"{k}: {v}" for k, v in edge_attributes.items()])
             edge_str_list.append(f"()-[:{edge_type} {{{edge_str}}}]->()")
 
         gql = f"INSERT {','.join(edge_str_list)}"
@@ -76,7 +78,7 @@ class GeaBaseHandler(GBHandler):
 
     def update_node(self, attributes: dict, set_attributes: dict, node_type: str = None, ID: int = None) -> dict:
         # demo: "MATCH (n:opsgptkg_employee {@ID: xxxx}) SET n.originname = 'xxx', n.description = 'xxx'"
-        set_str = ", ".join([f"n.{k}='{v}'" if isinstance(v, str) else f"n.{k}={v}" for k, v in set_attributes.items()])
+        set_str = ", ".join([f"n.{k}='{v}'" if isinstance(v, (str, bool)) else f"n.{k}={v}" for k, v in set_attributes.items()])
 
         if (ID is None) or (not isinstance(ID, int)):
             ID = self.get_current_nodeID(attributes, node_type)
@@ -89,7 +91,7 @@ class GeaBaseHandler(GBHandler):
         src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
         src_type, dst_type = self.get_nodetypes_by_edgetype(edge_type)
         # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
-        set_str = ", ".join([f"e.{k}='{v}'"  if isinstance(v, str) else f"e.{k}={v}"  for k, v in set_attributes.items()])
+        set_str = ", ".join([f"e.{k}='{v}'"  if isinstance(v, (str, bool)) else f"e.{k}={v}"  for k, v in set_attributes.items()])
         # demo： MATCH ()-[r:PlayFor{@src_id:1, @dst_id:100, @timestamp:0}]->() SET r.contract = 0;
         # gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}, timestamp:{timestamp}}}]->() SET {set_str}"
         gql = f"MATCH (n0:{src_type} {{@id: {src_id}}})-[e]->(n1:{dst_type} {{@id:{dst_id}}}) SET {set_str}"
@@ -102,7 +104,7 @@ class GeaBaseHandler(GBHandler):
         gql = f"MATCH (n:{node_type}) WHERE n.@ID={ID} DELETE n"
         return self.execute(gql)
 
-    def delete_nodes(self, attributes: dict, node_type: str = None, IDs: List[int] = None) -> dict:
+    def delete_nodes(self, attributes: dict, node_type: str = None, IDs: List[int] = []) -> dict:
         if (IDs is None) or len(IDs)==0:
             IDs = self.get_nodeIDs(attributes, node_type)
             # ID = double_hashing(ID)
@@ -138,7 +140,7 @@ class GeaBaseHandler(GBHandler):
         if not isinstance(src_id, int) or not isinstance(dst_id, int):
             result = self.get_current_edge(src_id, dst_id, edeg_type)
             logger.debug(f"{result}")
-            return result.attributes.get("srcId"), result.attributes.get("dstId"), result.attributes.get("timestamp")
+            return result.attributes.get("SRCID"), result.attributes.get("DSTID"), result.attributes.get("timestamp")
         else:
             return src_id, dst_id, 1
     
@@ -164,7 +166,8 @@ class GeaBaseHandler(GBHandler):
         result = self.execute(gql, return_keys=return_keys)
         result = self.decode_result(result, gql)
 
-        nodes = result.get("n0", []) or result.get("n0.attr", []) 
+        nodes = result.get("n0", []) or result.get("n0.attr", [])
+        return self.convert2GNodes(nodes)
         return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
     
     def get_current_edge(self, src_id, dst_id, edge_type:str = None, return_keys: list = []) -> GEdge:
@@ -177,6 +180,7 @@ class GeaBaseHandler(GBHandler):
         result = self.decode_result(result, gql)
 
         edges = result.get("e", []) or result.get("e.attr", [])
+        return self.convert2GEdges(edges)[0]
         return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges][0]
     
     def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = [], reverse=False) -> List[GNode]:
@@ -192,6 +196,7 @@ class GeaBaseHandler(GBHandler):
         result = self.execute(gql, return_keys=return_keys)
         result = self.decode_result(result, gql)
         nodes = result.get("n1", []) or result.get("n1.attr", [])
+        return self.convert2GNodes(nodes)
         return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
     
     def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GEdge]:
@@ -205,6 +210,7 @@ class GeaBaseHandler(GBHandler):
         result = self.decode_result(result, gql)
 
         edges = result.get("e", []) or result.get("e.attr", [])
+        return self.convert2GEdges(edges)
         return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges]
 
     def check_neighbor_exist(self, attributes: dict, node_type: str = None, check_attributes: dict = {}) -> bool:
@@ -244,8 +250,10 @@ class GeaBaseHandler(GBHandler):
             last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes)
             hop -= hop_max
 
-        nodes = [GNode(id=node["id"], type=node["type"], attributes=node) for node in result.get("n1", [])]
-        edges = [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in result.get("e", [])]
+        nodes = self.convert2GNodes(result.get("n1", []))
+        edges = self.convert2GEdges(result.get("e", []))
+        # nodes = [GNode(id=node["id"], type=node["type"], attributes=node) for node in result.get("n1", [])]
+        # edges = [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in result.get("e", [])]
         return Graph(nodes=nodes, edges=edges, paths=result.get("p", []))
     
     def get_hop_nodes(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GNode]:
@@ -387,16 +395,17 @@ class GeaBaseHandler(GBHandler):
     def decode_vertex(self, col_data, k) -> Dict:
         vertextVal = col_data.get("vertexVal", {})
         node_val_json = {
-            **{"ID": vertextVal.get("id", ""), "type": vertextVal.get("type", "")}, 
+            **{"ID": int(vertextVal.get("id", "")), "type": vertextVal.get("type", "")}, 
             **{k: v.get("strVal", "") or v.get("intVal", "0") for k, v in vertextVal.get("props", {}).items()}
         }
+        node_val_json.pop("biz_node_id", "")
         return node_val_json
     
     def decode_edge(self, col_data, k) -> Dict:
         def _decode_edge(data):
             edgeVal= data.get("edgeVal", {})
             edge_val_json = {
-                **{"srcId": edgeVal.get("srcId", ""), "dstId": edgeVal.get("dstId", ""), "type": edgeVal.get("type", "")}, 
+                **{"SRCID": int(edgeVal.get("srcId", "")), "DSTID": int(edgeVal.get("dstId", "")), "type": edgeVal.get("type", "")}, 
                 **{k: v.get("strVal", "") or v.get("intVal", "0") for k, v in edgeVal.get("props", {}).items()}
             }
             # 存在业务逻辑
@@ -423,3 +432,20 @@ class GeaBaseHandler(GBHandler):
                 src_type, dst_type = edge_type.split(edge_bridge)
                 break
         return src_type, dst_type
+    
+    def convert2GNodes(self, raw_nodes: List[Dict]) -> List[GNode]:
+        nodes = []
+        for node in raw_nodes:
+            node_id = node.pop("id")
+            node_type = node.pop("type")
+            nodes.append(GNode(id=node_id, type=node_type, attributes=node))
+        return nodes
+    
+    def convert2GEdges(self, raw_edges: List[Dict]) -> List[GEdge]:
+        edges = []
+        for edge in raw_edges:
+            start_id = edge.pop("start_id")
+            end_id = edge.pop("end_id")
+            edge_type = edge.pop("type")
+            edges.append(GEdge(start_id=start_id, end_id=end_id, type=edge_type, attributes=edge))
+        return edges

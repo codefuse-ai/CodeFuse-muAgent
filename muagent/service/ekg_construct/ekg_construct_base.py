@@ -91,6 +91,7 @@ class EKGConstructService:
 
         DIM = 768 # it depends on your embedding model vector
         NODE_SCHEMA = [
+            NumericField("ID", ),
             TextField("node_id", ),
             TextField("node_type", ),
             TextField("node_str", ),
@@ -175,26 +176,26 @@ class EKGConstructService:
     def update_graph(
             self, 
             origin_nodes: List[GNode], origin_edges: List[GEdge], 
-            nodes: List[GNode], edges: List[GEdge],  teamid: str
+            new_nodes: List[GNode], new_edges: List[GEdge],  teamid: str
         ):
         # 
         origin_nodeids = set([node["id"] for node in origin_nodes])
         origin_edgeids = set([f"{edge['start_id']}__{edge['end_id']}" for edge in origin_edges])
-        nodeids = set([node["id"] for node in nodes])
-        edgeids = set([f"{edge['start_id']}__{edge['end_id']}" for edge in edges])
+        nodeids = set([node["id"] for node in new_nodes])
+        edgeids = set([f"{edge['start_id']}__{edge['end_id']}" for edge in new_edges])
         unique_nodeids = origin_nodeids&nodeids
         unique_edgeids = origin_edgeids&edgeids
         nodeid2nodes_dict = {}
-        for node in origin_nodes + nodes:
+        for node in origin_nodes + new_nodes:
             nodeid2nodes_dict.setdefault(node["id"], []).append(node)
 
         edgeid2edges_dict = {}
-        for edge in origin_edges + edges:
+        for edge in origin_edges + new_edges:
             edgeid2edges_dict.setdefault(f"{edge['start_id']}__{edge['end_id']}", []).append(edge)
 
         # get add nodes & edges 
-        add_nodes = [node for node in nodes if node["id"] not in origin_nodeids]
-        add_edges = [edge for edge in edges if f"{edge['start_id']}__{edge['end_id']}" not in origin_edgeids]
+        add_nodes = [node for node in new_nodes if node["id"] not in origin_nodeids]
+        add_edges = [edge for edge in new_edges if f"{edge['start_id']}__{edge['end_id']}" not in origin_edgeids]
 
         # get delete nodes & edges
         delete_nodes = [node for node in origin_nodes if node["id"] not in nodeids]
@@ -211,16 +212,18 @@ class EKGConstructService:
             for edgeid in unique_edgeids 
             if edgeid2edges_dict[edgeid][0]!=edgeid2edges_dict[edgeid][1]
         ]
+        
+        # 
+        add_node_result = self.add_nodes([GNode(**n) for n in add_nodes], teamid)
+        add_edge_result = self.add_edges([GEdge(**e) for e in add_edges], teamid)
 
+        delete_edge_result = self.delete_nodes([GNode(**n) for n in delete_nodes], teamid)
+        delete_node_result = self.delete_edges([GEdge(**e) for e in delete_edges], teamid)
 
-        self.add_nodes([GNode(**n) for n in add_nodes], teamid)
-        self.add_edges([GEdge(**e) for e in add_edges], teamid)
+        update_node_result = self.update_nodes([GNode(**n) for n in update_nodes], teamid)
+        update_edge_result = self.update_edges([GEdge(**e) for e in update_edges], teamid)
 
-        self.delete_edges([GEdge(**e) for e in delete_edges], teamid)
-        self.delete_nodes([GNode(**n) for n in delete_nodes], teamid)
-
-        self.update_nodes([GNode(**n) for n in update_nodes], teamid)
-        self.update_edges([GEdge(**e) for e in update_edges], teamid)
+        return [add_node_result, add_edge_result, delete_edge_result, delete_node_result, update_node_result, update_edge_result]
 
 
     def add_nodes(self, nodes: List[GNode], teamid: str):
@@ -230,6 +233,7 @@ class EKGConstructService:
         for node in nodes:
             tbase_nodes.append({
                 **{
+                    "ID": node.attributes.get("ID", 0) or double_hashing(node.id),
                     "node_id": f"{node.id}",
                     "node_type": node.type, 
                     "node_str": f"graph_id={teamid}",
@@ -240,13 +244,13 @@ class EKGConstructService:
         tb_result, gb_result = [], []
         try: 
             gb_result = [self.gb.add_node(node) for node in nodes]
-            tb_result = self.tb.insert_data_hash(tbase_nodes, key='node_id', need_etime=False)
+            tb_result.append(self.tb.insert_data_hash(tbase_nodes, key='node_id', need_etime=False))
         except Exception as e:
             logger.error(e)
-        return gb_result or tb_result
+        return gb_result + tb_result
 
     def add_edges(self, edges: List[GEdge], teamid: str):
-        edges = self._update_new_attr_for_edges(edges, teamid, do_check=True)
+        edges = self._update_new_attr_for_edges(edges, teamid)
         tbase_edges = [{
             # 'edge_id': f"ekg_edge:{teamid}{edge.start_id}:{edge.end_id}",
             'edge_id': f"{edge.start_id}__{edge.end_id}",
@@ -261,10 +265,10 @@ class EKGConstructService:
         tb_result, gb_result = [], []
         try:
             gb_result = [self.gb.add_edge(edge) for edge in edges]
-            tb_result = self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False)
+            tb_result.append(self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False))
         except Exception as e:
             logger.error(e)
-        return gb_result or tb_result
+        return gb_result + tb_result
 
     def delete_nodes(self, nodes: List[GNode], teamid: str=''):
         # delete tbase nodes
@@ -281,19 +285,27 @@ class EKGConstructService:
         if len(tbase_missing_nodeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_nodeids}")
 
-        node_neighbor_lens = [len(self.gb.get_neighbor_nodes({"id": node.id}, node.type)) for node in nodes]
+        node_neighbor_lens = [
+            len([
+                n.id # reverse neighbor nodes which are not in delete nodes
+                for n in self.gb.get_neighbor_nodes({"id": node.id}, node.type, reverse=False)
+                if n.id not in delete_nodeids])
+            for node in nodes
+        ]
         # delete the nodeids in tbase
         tb_result = []
         for node, node_len in zip(nodes, node_neighbor_lens):
-            if node_len >= 2: continue
+            if node_len >= 1: continue
             resp = self.tb.delete(node.id)
             tb_result.append(resp)
 
         # # delete the nodeids in geabase
         gb_result = []
         for node, node_len in zip(nodes, node_neighbor_lens):
-            if node_len >= 2: continue
-            gb_result.append(self.gb.delete_node({"id": node.id}, node.type, ID=double_hashing(node.id)))
+            if node_len >= 1: continue
+            gb_result.append(self.gb.delete_node(
+                {"id": node.id}, node.type, ID=node.attributes.get("ID") or double_hashing(node.id)
+            ))
         return gb_result + tb_result
     
     def delete_edges(self, edges: List[GEdge], teamid: str):
@@ -319,7 +331,11 @@ class EKGConstructService:
         # # delete the nodeids in geabase
         gb_result = []
         for edge in edges:
-            gb_result.append(self.gb.delete_edge(double_hashing(edge.start_id), double_hashing(edge.end_id), edge.type))
+            gb_result.append(self.gb.delete_edge(
+                edge.attributes.get("SRCID") or double_hashing(edge.start_id), 
+                edge.attributes.get("DSTID") or double_hashing(edge.end_id), 
+                edge.type
+            ))
         return gb_result + tb_result
     
     def update_nodes(self, nodes: List[GNode], teamid: str):
@@ -356,7 +372,10 @@ class EKGConstructService:
         gb_result = []
         for node in nodes:
             # if node.id not in update_tbase_nodeids: continue
-            resp = self.gb.update_node({}, node.attributes, node_type=node.type, ID=double_hashing(node.id))
+            resp = self.gb.update_node(
+                {}, node.attributes, node_type=node.type, 
+                ID=node.attributes.get("ID") or double_hashing(node.id)
+            )
             gb_result.append(resp)
         return gb_result or tb_result
 
@@ -375,12 +394,13 @@ class EKGConstructService:
                 teamids_by_edgeid.update({data['edge_id']: data["node_str"]  for data in r.docs})
 
         # update the nodeids in geabase
-        edges = self._update_new_attr_for_edges(edges, teamid, teamids_by_edgeid, do_check=False)
+        edges = self._update_new_attr_for_edges(edges, teamid, teamids_by_edgeid, do_check=False, do_update=True)
         gb_result = []
         for edge in edges:
             # if node.id not in update_tbase_nodeids: continue
             resp = self.gb.update_edge(
-                double_hashing(edge.start_id), double_hashing(edge.end_id), 
+                edge.attributes.get("SRCID") or double_hashing(edge.start_id), 
+                edge.attributes.get("DSTID") or double_hashing(edge.end_id), 
                 edge.attributes, edge_type=edge.type
             )
             gb_result.append(resp)
@@ -423,7 +443,7 @@ class EKGConstructService:
                 r = self.tb.vector_search(base_query, query_params=query_params)
 
                 for i in r.docs:
-                    nodeid_with_dist.append((i["node_id"], float(i["distance"])))
+                    nodeid_with_dist.append((i["ID"], float(i["distance"])))
             
             nodeid_with_dist = sorted(nodeid_with_dist, key=lambda x:x[1], reverse=False)
             for nodeid, dis in nodeid_with_dist:
@@ -434,14 +454,17 @@ class EKGConstructService:
         keywords = extract_tags(text)
         keyword = "|".join(keywords)
         for key in ["name_keyword", "desc_keyword"]:
-            r = self.tb.search(f"(@{key}:{{{keyword}}})", limit=30)
+            r = self.tb.search(f"(@{key}:{{{keyword}}})", index_name=self.node_indexname, limit=30)
             for i in r.docs:
-                if i["node_id"] not in nodeids:
-                    nodeids.append(i["node_id"])
+                if i["ID"] not in nodeids:
+                    nodeids.append(i["ID"])
 
         nodes_by_name = self.gb.get_current_nodes({"name": text}, node_type=node_type)
         nodes_by_desc = self.gb.get_current_nodes({"description": text}, node_type=node_type)
         nodes = self.gb.get_nodes_by_ids(nodeids)
+        for node in nodes:
+            extra_attrs = json.loads(node.attributes.pop("extra", "{}"))
+            node.attributes.update(extra_attrs)
         return nodes_by_name + nodes_by_desc + nodes
 
     def search_rootpath_by_nodeid(self, nodeid: str, node_type: str, rootid: str) -> Graph:
@@ -973,7 +996,7 @@ class EKGConstructService:
             )
         return nodes
     
-    def _update_new_attr_for_edges(self, edges: List[GEdge], teamid: str, teamids_by_edgeid={}, do_check=False):
+    def _update_new_attr_for_edges(self, edges: List[GEdge], teamid: str, teamids_by_edgeid={}, do_check=True, do_update=False):
         '''update new attributes for nodes'''
         edgetype2fields_dict = {}
         for edge in edges:
@@ -984,7 +1007,7 @@ class EKGConstructService:
             else:
                 edge.attributes["teamids"] = f"{teamid}"
 
-            edge.attributes["@timestamp"] = getCurrentTimestap()
+            edge.attributes["@timestamp"] = edge.attributes.pop("timestamp", 0) or 1 # getCurrentTimestap()
             edge.attributes["gdb_timestamp"] = getCurrentTimestap()
             edge.attributes['original_dst_id2__'] = edge.end_id
             edge.attributes['original_src_id1__'] = edge.start_id
@@ -1001,7 +1024,7 @@ class EKGConstructService:
 
             flag = any([
                 field not in edge.attributes for field in fields 
-                if field not in ["dst_id", "src_id", "timestamp", "ID", "id", "extra"]])
+                if field not in ["dst_id", "src_id", "DSTID", "SRCID", "timestamp", "ID", "id", "extra"]])
             if flag and do_check:
                 raise Exception(f"edge is wrong, type is {edge_type}, fields is {fields}, data is {edge.attributes}")
 
@@ -1014,4 +1037,51 @@ class EKGConstructService:
                     for k in extra_fields
                 }, ensure_ascii=False)
             )
+            if do_update:
+                edge.attributes.pop("@timestamp")
+            edge.attributes.pop("extra")
         return edges
+    
+    def get_intent_by_alarm(self, alarm: dict, ) -> EKGIntentResp:
+        '''according content search intent'''
+        import requests
+        error_type = alarm.get('errorType', '')
+        title = alarm.get('title', '')
+        content = alarm.get('content', '')
+        biz_code = alarm.get('bizCode', '')
+
+        if not error_type or not title or not content or not biz_code:
+            return None, None
+        
+        alarm = {
+            'type': 'ANTEMC_DINGTALK',
+            'user_input': {
+                'bizCode': biz_code,
+                'title': title,
+                'content': content,
+                'execute_type': 'gql',
+                'errorType': error_type
+            }
+        }
+        
+        body = {
+            'features': {
+                'query': alarm
+            }
+        }
+        intent_url = 'https://paiplusinferencepre.alipay.com/inference/ff998e48456308a9_EKG_route/0.1'
+        headers = {
+                'Content-Type': 'application/json;charset=utf-8',
+                'MPS-app-name': 'test',
+                'MPS-http-version': '1.0'
+            }
+        ans = requests.post(intent_url, json=body, headers=headers)
+
+        ans_json = ans.json()
+        output = ans_json.get('resultMap').get('output')
+        logger.debug(f"{body}")
+        logger.debug(f"{output}")
+        output_json = json.loads(output)
+        res = output_json[-1]
+        all_intent = output_json
+        return res, all_intent

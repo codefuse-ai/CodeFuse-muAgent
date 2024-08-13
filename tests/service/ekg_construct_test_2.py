@@ -33,8 +33,6 @@ import os, sys
 from loguru import logger
 
 sys.path.append("/ossfs/workspace/muagent")
-sys.path.append("/ossfs/workspace/notebooks/custom_funcs")
-from muagent.db_handler import GeaBaseHandler
 from muagent.schemas.common import GNode, GEdge
 from muagent.schemas.db import GBConfig, TBConfig
 from muagent.service.ekg_construct import EKGConstructService
@@ -232,3 +230,22 @@ ekg_construct_service.add_edges(origin_edges, teamid)
 # 
 teamid = "shanshi_test_2"
 ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid)
+
+
+
+# do search
+node = ekg_construct_service.get_node_by_id(nodeid="shanshi_opsgptkg_task_3", node_type="opsgptkg_task")
+print(node)
+graph = ekg_construct_service.get_graph_by_nodeid(nodeid="shanshi_opsgptkg_intent_0", node_type="opsgptkg_intent")
+print(len(graph.nodes), len(graph.edges))
+
+
+# search nodes by text
+text = 'shanshi_test'
+teamid = "shanshi_test"
+nodes = ekg_construct_service.search_nodes_by_text(text, teamid=teamid)
+print(len(nodes))
+
+# search path by node and rootid
+graph = ekg_construct_service.search_rootpath_by_nodeid(nodeid="shanshi_opsgptkg_analysis_3", node_type="opsgptkg_analysis", rootid="shanshi_opsgptkg_intent_0")
+print(len(graph.nodes), len(graph.edges))
