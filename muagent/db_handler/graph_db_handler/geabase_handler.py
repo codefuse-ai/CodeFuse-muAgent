@@ -285,15 +285,22 @@ class GeaBaseHandler(GBHandler):
             for i in n0+n1
             if select_attributes and not all(item not in i.items() for item in select_attributes.items())
         ]
-        # 路径去重
+        p = [_p for _p in p if all([_pid not in block_node_ids for _pid in _p])]
+        # deduplicate the paths
         path_strs = ["&&".join(_p) for _p in p]
         new_p = []
-        new_path_strs_set = set()
         for path_str, _p in zip(path_strs, p):
             if not any(path_str in other for other in path_strs if path_str != other):
-                if path_str not in new_path_strs_set and all([_pid not in block_node_ids for _pid in _p]):
-                    new_p.append(_p)
-                    new_path_strs_set.add(path_str)
+                new_p.append(_p)
+        # # 路径去重
+        # path_strs = ["&&".join(_p) for _p in p]
+        # new_p = []
+        # new_path_strs_set = set()
+        # for path_str, _p in zip(path_strs, p):
+        #     if not any(path_str in other for other in path_strs if path_str != other):
+        #         if path_str not in new_path_strs_set and all([_pid not in block_node_ids for _pid in _p]):
+        #             new_p.append(_p)
+        #             new_path_strs_set.add(path_str)
             
         # 根据保留路径进行合并
         nodeid2type = {i["id"]: i["type"] for i in n0+n1}

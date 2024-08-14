@@ -412,14 +412,35 @@ class EKGConstructService:
         node.attributes.update(extra_attrs)
         return node
     
-    def get_graph_by_nodeid(self, nodeid: str, node_type: str, teamid: str=None, hop: int = 10) -> Graph:
-        if hop > 14:
+    def get_graph_by_nodeid(
+            self, 
+            nodeid: str, 
+            node_type: str, 
+            hop: int = 10, 
+            block_attributes: dict = {}
+        ) -> Graph:
+        if hop<2:
+            raise Exception(f"hop must be smaller than 2, now hop is {hop}")
+        if hop >= 14:
             raise Exception(f"hop can't be larger than 14, now hop is {hop}")
         # filter the node which dont match teamid
-        result = self.gb.get_hop_infos({'id': nodeid}, node_type=node_type, hop=hop)
+        result = self.gb.get_hop_infos(
+            {'id': nodeid}, node_type=node_type, 
+            hop=hop, block_attributes=block_attributes
+        )
+
+        if block_attributes:
+            leaf_nodeids = [node.id for node in result.nodes if node.type=="opsgptkg_schedule"]
+        else:
+            leaf_nodeids = [path[-1] for path in result.paths if len(path)==hop+1]
+
         for node in result.nodes:
             extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
             node.attributes.update(extra_attrs)
+            if node.id in leaf_nodeids:
+                neighbor_nodes = self.gb.get_neighbor_nodes({"id": node.id}, node_type=node.type)
+                node.attributes["cnode_nums"] = len(neighbor_nodes)
+
         for edge in result.edges:
             extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
             edge.attributes.update(extra_attrs)
