@@ -104,6 +104,7 @@ def generate_node(id, type):
         
     if type == "opsgptkg_task":
         extra_attr["accesscriteria"] = "hello"
+        extra_attr["executetype"] = "hello"
         
     if type == "opsgptkg_analysis":
         extra_attr["accesscriteria"] = "hello"

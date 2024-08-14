@@ -111,6 +111,7 @@ class EKGTaskNodeSchema(EKGNodeSchema):
     # needcheck: bool
     # when to access
     accesscriteria: str
+    executetype: str
     # 
     # owner: str
 
@@ -122,7 +123,7 @@ class EKGTaskNodeSchema(EKGNodeSchema):
                 "description": self.description,
                 "teamids": self.teamids,
                 "accesscriteria": self.accesscriteria,
-                "needcheck": self.needcheck,
+                "executetype": self.executetype,
                 # "tool": self.tool
             }, 
             **extra_attr
