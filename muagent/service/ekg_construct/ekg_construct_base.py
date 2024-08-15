@@ -527,8 +527,8 @@ class EKGConstructService:
 
         if intent_nodes:
             ancestor_list = intent_nodes
-        elif intent_text:
-            ancestor_list, all_intent_list = self.get_intents(intent_text)
+        elif intent_text or text:
+            ancestor_list, all_intent_list = self.get_intents(intent_text or text)
         else:
             raise Exception(f"must have intent infomation")
         
@@ -539,9 +539,8 @@ class EKGConstructService:
             result = self.text2graph(text, ancestor_list, all_intent_list, teamid)
 
         # do write
-        if do_save:
-            self.write2kg(result)
-
+        graph = self.write2kg(result["sls_graph"], result["tbase_graph"], teamid, do_save=do_save)
+        result["graph"] = graph
         return result
 
     def alarm2graph(
@@ -608,29 +607,42 @@ class EKGConstructService:
         # dsl2graph => write2kg
         pass
 
-    def write2kg(self, ekg_sls_data: EKGSlsData, ekg_tbase_data: EKGTbaseData):
+    def write2kg(self, ekg_sls_data: EKGSlsData, ekg_tbase_data: EKGTbaseData, teamid, do_save: bool=False) -> Graph:
         # everytimes, it will add new nodes and edges
 
-        nodes = [TYPE2SCHEMA.get(node.type,)(**node.dict()) for node in ekg_sls_data.nodes]
-        nodes = [GNode(id=node.id, type=node.type, attributes=node.attrbutes()) for node in nodes]
-        gb_result = self.gb.add_nodes(nodes)
+        gbase_nodes = [TYPE2SCHEMA.get(node.type,)(**node.dict()) for node in ekg_sls_data.nodes]
+        gbase_nodes = [GNode(id=node.id, type=node.type, attributes=node.attributes()) for node in gbase_nodes]
 
-        edges = [TYPE2SCHEMA.get("edge",)(**edge.dict()) for edge in ekg_sls_data.edges]
-        edges = [GEdge(start_id=edge.start_id, end_id=edge.end_id, type=edge.type, attributes=edge.attrbutes()) for edge in edges]
-        gb_result = self.gb.add_edges(edges)
+        gbase_edges = [TYPE2SCHEMA.get("edge",)(**edge.dict()) for edge in ekg_sls_data.edges]
+        gbase_edges = [
+            GEdge(start_id=edge.original_src_id1__, end_id=edge.original_dst_id2__, 
+                type="opsgptkg_"+edge.type.split("_")[2] + "_route_" + "opsgptkg_"+edge.type.split("_")[3], 
+                attributes=edge.attributes()) 
+            for edge in gbase_edges
+        ]
 
-        nodes = [node.dict() for node in ekg_tbase_data.nodes]
-        tb_result = self.tb.insert_data_hash(nodes)
-        
-        edges = [edge.dict() for edge in ekg_tbase_data.edges]
-        tb_result = self.tb.insert_data_hash(edges)
+        tbase_nodes = [
+            {
+                k: np.array(v).astype(dtype=np.float32).tobytes() if k in ["name_vector", "desc_vector"] else v
+                for k, v in node.dict().items()
+            }
+            for node in ekg_tbase_data.nodes 
+        ]
+        tbase_edges = [edge.dict() for edge in ekg_tbase_data.edges]
 
-        # dsl2graph => write2kg
-        ## delete tbase/graph by graph_id
-        ### diff the tabse within newest by graph_id
-        ### diff the graph within newest by graph_id
-        ## update tbase/graph by graph_id
-        pass
+        if do_save:
+            # gb_node_result = self.gb.add_nodes(gbase_nodes)
+            # gb_node_result = [self.gb.add_node(node) for node in gbase_nodes]
+            node_result = self.add_nodes(gbase_nodes, teamid)
+            edge_result = self.add_edges(gbase_edges, teamid)
+            logger.info(f"{node_result}\n{edge_result}")
+            # gb_edge_result = self.gb.add_edges(gbase_edges)
+            # gb_edge_result = [self.gb.add_edge(edge) for edge in gbase_edges]
+            # tb_node_result = self.tb.insert_data_hash(tbase_nodes, key="node_id", need_etime=False)
+            # tb_edge_result = self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False)
+            # logger.info(f"{gb_node_result}\n{gb_edge_result}\n{tb_node_result}\n{tb_edge_result}")
+
+        return Graph(nodes=gbase_nodes, edges=gbase_edges, paths=[])
 
     def returndsl(self, graph_datas_by_path: dict, intents: List[str], ) -> dict:
         # 返回值需要返回 dsl 结构的数据用于展示，这里稍微做下数据处理，但主要就需要 dsl 对应的值
@@ -703,13 +715,13 @@ class EKGConstructService:
 
             ekg_slsdata = EKGGraphSlsSchema(
                 id=node_id,
-                type='node_' + node_type,
+                type='opsgptkg_' + node_type,
                 name=node_info['content'],
                 description=node_info['content'],
-                tool='',
                 need_check='false',
                 operation_type='ADD',
-                teamids=teamid
+                teamids=teamid,
+                gdb_timestamp=getCurrentTimestap(),
             )
             sls_nodes.append(ekg_slsdata)
 
@@ -722,7 +734,10 @@ class EKGConstructService:
                             type=f'edge_route_intent_{node_type}', # 需要注意与老逻辑的兼容
                             end_id=node_id,
                             operation_type='ADD',
-                            teamids=teamid
+                            teamids=teamid,
+                            original_src_id1__=pid,
+                            original_dst_id2__=node_id,
+                            gdb_timestamp=getCurrentTimestap(),
                         )
                     )
         # edges
@@ -741,7 +756,10 @@ class EKGConstructService:
                     type=edge_type,
                     end_id=end_id,
                     operation_type='ADD',
-                    teamids=teamid
+                    teamids=teamid,
+                    original_src_id1__=start_id,
+                    original_dst_id2__=end_id,
+                    gdb_timestamp=getCurrentTimestap(),
                 )
             )
         return EKGSlsData(nodes=sls_nodes, edges=sls_edges)
@@ -761,15 +779,16 @@ class EKGConstructService:
                     node_str=f'graph_id={teamid}',
                     name_keyword=" | ".join(extract_tags(name, topK=None)),
                     desc_keyword=" | ".join(extract_tags(description, topK=None)),
-                    name_vector=np.array(name_vector[name]).astype(dtype=np.float32).tobytes(),
-                    desc_vector= np.array(desc_vector[description]).astype(dtype=np.float32).tobytes(),
+                    name_vector= name_vector[name], # np.array(name_vector[name]).astype(dtype=np.float32).tobytes(),
+                    desc_vector= desc_vector[description], # np.array(desc_vector[description]).astype(dtype=np.float32).tobytes(),
                 )
             )
         for edge in ekg_sls_data.edges:
+            edge_type = "opsgptkg_"+edge.type.split("_")[2] + "_route_" + "opsgptkg_"+edge.type.split("_")[3]
             tbase_edges.append(
                 EKGEdgeTbaseSchema(
-                    edge_id=edge.id,
-                    edge_type=edge.type,
+                    edge_id=f"{edge.start_id}__{edge.end_id}",
+                    edge_type=edge_type,
                     edge_source=edge.start_id,
                     edge_target=edge.end_id,
                     edge_str=f'graph_id={teamid}',
@@ -799,10 +818,10 @@ class EKGConstructService:
         for node in ekg_sls_data.nodes:
             # 需要注意下 dsl的id md编码
             nodes.append(
-                YuqueDslNodeData(id=node.id, type=type_dict.get(node.type.split("node_")[-1]), label=node.description)
+                YuqueDslNodeData(id=node.id, type=type_dict.get(node.type.split("opsgptkg_")[-1]), label=node.description)
             )
             # 记录 schedule id 用于添加意图节点的边
-            if node.type.split("node_")[-1] == 'schedule':
+            if node.type.split("opsgptkg_")[-1] == 'schedule':
                 schedule_id = node.id
 
         # 添加意图节点
@@ -1001,7 +1020,7 @@ class EKGConstructService:
             flag = any([
                 field not in node.attributes 
                 for field in fields 
-                if field not in ["start_id", "end_id", "ID", "id", "extra"]
+                if field not in ["type", "start_id", "end_id", "ID", "id", "extra"]
             ])
             if flag and do_check:
                 raise Exception(f"node is wrong, type is {node_type}, fields is {fields}, data is {node.attributes}")
@@ -1045,7 +1064,7 @@ class EKGConstructService:
 
             flag = any([
                 field not in edge.attributes for field in fields 
-                if field not in ["dst_id", "src_id", "DSTID", "SRCID", "timestamp", "ID", "id", "extra"]])
+                if field not in ["type", "dst_id", "src_id", "DSTID", "SRCID", "timestamp", "ID", "id", "extra"]])
             if flag and do_check:
                 raise Exception(f"edge is wrong, type is {edge_type}, fields is {fields}, data is {edge.attributes}")
 
@@ -1063,3 +1082,48 @@ class EKGConstructService:
             edge.attributes.pop("extra")
         return edges
 
+
+    
+    def get_intent_by_alarm(self, alarm: dict, ) -> EKGIntentResp:
+        '''according content search intent'''
+        import requests
+        error_type = alarm.get('errorType', '')
+        title = alarm.get('title', '')
+        content = alarm.get('content', '')
+        biz_code = alarm.get('bizCode', '')
+
+        if not error_type or not title or not content or not biz_code:
+            return None, None
+        
+        alarm = {
+            'type': 'ANTEMC_DINGTALK',
+            'user_input': {
+                'bizCode': biz_code,
+                'title': title,
+                'content': content,
+                'execute_type': 'gql',
+                'errorType': error_type
+            }
+        }
+        
+        body = {
+            'features': {
+                'query': alarm
+            }
+        }
+        intent_url = 'https://paiplusinferencepre.alipay.com/inference/ff998e48456308a9_EKG_route/0.1'
+        headers = {
+                'Content-Type': 'application/json;charset=utf-8',
+                'MPS-app-name': 'test',
+                'MPS-http-version': '1.0'
+            }
+        ans = requests.post(intent_url, json=body, headers=headers)
+
+        ans_json = ans.json()
+        output = ans_json.get('resultMap').get('output')
+        logger.debug(f"{body}")
+        logger.debug(f"{output}")
+        output_json = json.loads(output)
+        res = output_json[-1]
+        all_intent = output_json
+        return res, all_intent

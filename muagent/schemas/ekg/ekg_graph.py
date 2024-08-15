@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Dict
 from enum import Enum
+import copy
 import json
 
 
@@ -19,6 +20,7 @@ SHAPE2TYPE = {
 ############################ Base Schema #############################
 #####################################################################
 class NodeSchema(BaseModel):
+    type: str
     ID: int = None # depend on id-str
     id: str
     # depend on user's difine
@@ -27,9 +29,16 @@ class NodeSchema(BaseModel):
     description: str
     gdb_timestamp: int
 
+    def attributes(self, ):
+        attrs = copy.deepcopy(vars(self))
+        for k in ["ID", "type", "id"]:
+            attrs.pop(k)
+        attrs.update(json.loads(attrs.pop("extra", '{}') or '{}'))
+        return attrs
 
 
 class EdgeSchema(BaseModel):
+    type: str
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
     SRCID: int = None
     original_src_id1__: str
@@ -37,10 +46,15 @@ class EdgeSchema(BaseModel):
     DSTID: int = None
     original_dst_id2__: str
     # 
-    timestamp: int
+    timestamp: int = None
     gdb_timestamp: int
 
-
+    def attributes(self, ):
+        attrs = copy.deepcopy(vars(self))
+        for k in ["SRCID", "DSTID", "type", "timestamp", "original_src_id1__", "original_dst_id2__"]:
+            attrs.pop(k)
+        attrs.update(json.loads(attrs.pop("extra", '{}') or '{}'))
+        return attrs
 #####################################################################
 ############################ EKG Schema #############################
 #####################################################################
@@ -64,47 +78,20 @@ class EKGNodeSchema(NodeSchema):
     extra: str = ''
 
 
-
 class EKGEdgeSchema(EdgeSchema):
     # teamids: str
     # version:str # yyyy-mm-dd HH:MM:SS
     extra: str = ''
 
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return extra_attr
-
 
 class EKGIntentNodeSchema(EKGNodeSchema):
-    # path: str = ''
+    pass
 
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return {
-            **{
-                "name": self.name,
-                "description": self.description,
-                "teamids": self.teamids,
-                "path": self.path
-            }, 
-            **extra_attr
-        }
 
 class EKGScheduleNodeSchema(EKGNodeSchema):
     # do action or not
     enable: bool
 
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return {
-            **{
-                "name": self.name,
-                "description": self.description,
-                "teamids": self.teamids,
-                "enable": self.enable
-            }, 
-            **extra_attr
-        }
 
 class EKGTaskNodeSchema(EKGNodeSchema):
     # tool: str
@@ -114,20 +101,6 @@ class EKGTaskNodeSchema(EKGNodeSchema):
     executetype: str
     # 
     # owner: str
-
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return {
-            **{
-                "name": self.name,
-                "description": self.description,
-                "teamids": self.teamids,
-                "accesscriteria": self.accesscriteria,
-                "executetype": self.executetype,
-                # "tool": self.tool
-            }, 
-            **extra_attr
-        }
     
 
 class EKGAnalysisNodeSchema(EKGNodeSchema):
@@ -138,33 +111,9 @@ class EKGAnalysisNodeSchema(EKGNodeSchema):
     # summary template
     dsltemplate: str
 
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return {
-            **{
-                "name": self.name,
-                "description": self.description,
-                "teamids": self.teamids,
-                "accesscriteria": self.accesscriteria,
-                "summaryswtich": self.summaryswtich,
-                "dsltemplate": self.dsltemplate 
-            }, 
-            **extra_attr
-        }
-    
 
 class EKGPhenomenonNodeSchema(EKGNodeSchema):
-
-    def attrbutes(self, ):
-        extra_attr = json.loads(self.extra)
-        return {
-            **{
-                "name": self.name,
-                "description": self.description,
-                "teamids": self.teamids,
-            }, 
-            **extra_attr
-        }
+    pass
     
 
 # Ekg Tool Schemas
@@ -196,13 +145,17 @@ class EKGGraphSlsSchema(BaseModel):
     # ADD/DELETE
     operation_type: str = ''
     # {tool_id},{tool_id},{tool_id}
-    tool: str = ''
-    access_criteria: str = ''
+    executetype: str = ''
+    accesscriteria: str = ''
     teamids: str = ''
     extra: str = ''
     enable: bool = False
-    dslTemplate: str = ''
+    dsltemplate: str = ''
+    summaryswtich: bool = False
 
+    gdb_timestamp: int
+    original_src_id1__: str = ""
+    original_dst_id2__: str = ""
 
 class EKGNodeTbaseSchema(BaseModel):
     node_id: str
