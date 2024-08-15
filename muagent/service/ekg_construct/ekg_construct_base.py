@@ -621,26 +621,10 @@ class EKGConstructService:
             for edge in gbase_edges
         ]
 
-        tbase_nodes = [
-            {
-                k: np.array(v).astype(dtype=np.float32).tobytes() if k in ["name_vector", "desc_vector"] else v
-                for k, v in node.dict().items()
-            }
-            for node in ekg_tbase_data.nodes 
-        ]
-        tbase_edges = [edge.dict() for edge in ekg_tbase_data.edges]
-
         if do_save:
-            # gb_node_result = self.gb.add_nodes(gbase_nodes)
-            # gb_node_result = [self.gb.add_node(node) for node in gbase_nodes]
             node_result = self.add_nodes(gbase_nodes, teamid)
             edge_result = self.add_edges(gbase_edges, teamid)
             logger.info(f"{node_result}\n{edge_result}")
-            # gb_edge_result = self.gb.add_edges(gbase_edges)
-            # gb_edge_result = [self.gb.add_edge(edge) for edge in gbase_edges]
-            # tb_node_result = self.tb.insert_data_hash(tbase_nodes, key="node_id", need_etime=False)
-            # tb_edge_result = self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False)
-            # logger.info(f"{gb_node_result}\n{gb_edge_result}\n{tb_node_result}\n{tb_edge_result}")
 
         return Graph(nodes=gbase_nodes, edges=gbase_edges, paths=[])
 
@@ -649,17 +633,26 @@ class EKGConstructService:
         res = {'dsl': '', 'details': {}, 'intent_node_list': intents}
 
         merge_dsl_nodes, merge_dsl_edges = [], []
+        merge_gbase_nodes, merge_gbase_edges = [], []
         id_sets = set()
+        gid_sets = set()
         for path_id, graph_datas in graph_datas_by_path.items():
             res['details'][path_id] = {
                 'dsl': graph_datas["dsl_graph"],
-                'sls': graph_datas["sls_graph"]
+                'sls': graph_datas["sls_graph"],
             }
             merge_dsl_nodes.extend([node for node in graph_datas["dsl_graph"].nodes if node.id not in id_sets])
             id_sets.update([i.id for i in graph_datas["dsl_graph"].nodes])
             merge_dsl_edges.extend([edge for edge in graph_datas["dsl_graph"].edges if edge.id not in id_sets])
             id_sets.update([i.id for i in graph_datas["dsl_graph"].edges])
+            
+            merge_gbase_nodes.extend([node for node in graph_datas["graph"].nodes if node.id not in gid_sets])
+            gid_sets.update([i.id for i in graph_datas["graph"].nodes])
+            merge_gbase_edges.extend([edge for edge in graph_datas["graph"].edges if f"{edge.start_id}__{edge.end_id}" not in gid_sets])
+            gid_sets.update([f"{i.start_id}__{i.end_id}" for i in graph_datas["graph"].edges])
+
         res["dsl"] = {"nodes": merge_dsl_nodes, "edges": merge_dsl_edges}
+        res["graph"] = Graph(nodes=merge_gbase_nodes, edges=merge_gbase_edges, paths=[])
         return res
 
     def get_intents(self, alarm_list: list[dict], ) -> EKGIntentResp:
@@ -814,15 +807,12 @@ class EKGConstructService:
         }
 
         nodes, edges = [], []
-        schedule_id = ''
+        # schedule_id = ''
         for node in ekg_sls_data.nodes:
             # 需要注意下 dsl的id md编码
             nodes.append(
-                YuqueDslNodeData(id=node.id, type=type_dict.get(node.type.split("opsgptkg_")[-1]), label=node.description)
+                YuqueDslNodeData(id=f"ekg_node:{node.type}:{node.id}", type=type_dict.get(node.type.split("opsgptkg_")[-1]), label=node.description)
             )
-            # 记录 schedule id 用于添加意图节点的边
-            if node.type.split("opsgptkg_")[-1] == 'schedule':
-                schedule_id = node.id
 
         # 添加意图节点
         # 需要记录哪些是被添加过的
@@ -838,7 +828,7 @@ class EKGConstructService:
 
             nodes.append(
                 YuqueDslNodeData(
-                    id=node.id, type='display',
+                    id=dsl_pid, type='display',
                     label=intent_names_dict.get(dsl_pid, pid),)
             )
             added_intent.add(dsl_pid)
@@ -865,35 +855,17 @@ class EKGConstructService:
                     added_intent.add(intent_id)
         
         for edge in ekg_sls_data.edges:
+            start_type, end_type = edge.type.split("_")[2:]
             edges.append(
                 YuqueDslEdgeData(
-                    id=f'{edge.start_id}___{edge.end_id}',
-                    source=edge.start_id,
-                    target=edge.end_id,
+                    id=f'{start_type}:{edge.start_id}___{end_type}:{edge.end_id}',
+                    source=f"{start_type}:{edge.start_id}",
+                    target=f"{end_type}:{edge.end_id}",
                     label=''
                 )
             )
-        
-        # 添加意图边
+        # # 添加意图边
         added_edges = set()
-        for pid in pnode_ids:
-            # 处理意图节点展示样式
-            dsl_pid = get_md5(pid)
-            dsl_pid = f'ekg_node:{teamid}:intent:{dsl_pid}'
-
-            # 处理意图节点展示样式
-            edge_id = f'{dsl_pid}___{schedule_id}'
-            if edge_id not in added_edges:
-                edges.append(
-                    YuqueDslEdgeData(
-                        id=edge_id,
-                        source=dsl_pid,
-                        target=schedule_id,
-                        label=''
-                    )
-                )
-                added_edges.add(edge_id)
-        
         for intent_list in all_intents:
             for idx in range(len(intent_list[0:-1])):
                 if 'SRE_Agent' in intent_list[idx]:
@@ -907,14 +879,14 @@ class EKGConstructService:
 
                 end_id = get_md5(intent_list[idx+1])
                 end_id = f'ekg_node:{teamid}:intent:{end_id}'
-                edge_id = f'{start_id}___{end_id}'
+                edge_id = f'intent:{start_id}___intent:{end_id}'
 
                 if edge_id not in added_edges:
                     edges.append(
                         YuqueDslEdgeData(
                             id=edge_id,
-                            source=start_id,
-                            target=end_id,
+                            source=f"intent:{start_id}",
+                            target=f"intent:{end_id}",
                             label=''
                         )
                     )
@@ -1081,49 +1053,3 @@ class EKGConstructService:
                 edge.attributes.pop("@timestamp")
             edge.attributes.pop("extra")
         return edges
-
-
-    
-    def get_intent_by_alarm(self, alarm: dict, ) -> EKGIntentResp:
-        '''according content search intent'''
-        import requests
-        error_type = alarm.get('errorType', '')
-        title = alarm.get('title', '')
-        content = alarm.get('content', '')
-        biz_code = alarm.get('bizCode', '')
-
-        if not error_type or not title or not content or not biz_code:
-            return None, None
-        
-        alarm = {
-            'type': 'ANTEMC_DINGTALK',
-            'user_input': {
-                'bizCode': biz_code,
-                'title': title,
-                'content': content,
-                'execute_type': 'gql',
-                'errorType': error_type
-            }
-        }
-        
-        body = {
-            'features': {
-                'query': alarm
-            }
-        }
-        intent_url = 'https://paiplusinferencepre.alipay.com/inference/ff998e48456308a9_EKG_route/0.1'
-        headers = {
-                'Content-Type': 'application/json;charset=utf-8',
-                'MPS-app-name': 'test',
-                'MPS-http-version': '1.0'
-            }
-        ans = requests.post(intent_url, json=body, headers=headers)
-
-        ans_json = ans.json()
-        output = ans_json.get('resultMap').get('output')
-        logger.debug(f"{body}")
-        logger.debug(f"{output}")
-        output_json = json.loads(output)
-        res = output_json[-1]
-        all_intent = output_json
-        return res, all_intent
