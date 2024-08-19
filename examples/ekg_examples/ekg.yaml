@@ -1,0 +1,43 @@
+# geabase config
+geabase_config:
+  metaserver_address: 'deafault'
+  project: 'deafault'
+  city: 'deafault'
+  lib_path: 'deafault'
+
+
+# nebula config
+nebula_config:
+  host: 'localhost'
+  port: 7070
+  username: 'default'
+  password: 'default'
+  space_name: 'default'
+
+# tbase config
+tbase_config:
+  host: 'localhost'
+  port: 321321
+  username: 'default'
+  password: ''
+  definition_value: 'opsgptkg'
+
+
+# model
+llm:
+  model_type: 'openai'
+  model_name: 'default'
+  stop: ''
+  temperature: 0.3
+  top_p: 0.95
+  top_k: 50
+  url: ''
+  token: ''
+
+
+# embedding
+embedding:
+  embedding_type: 'openai'
+  model_name: 'default'
+  url: ''
+  token: ''

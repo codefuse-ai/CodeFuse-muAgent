@@ -543,53 +543,6 @@ class EKGConstructService:
         result["graph"] = graph
         return result
 
-    def alarm2graph(
-            self, 
-            alarms: List[dict],
-            alarm_analyse_content: dict,
-            teamid: str,   
-            do_save: bool = False
-        ):
-        ancestor_list, all_intent_list = self.get_intents_by_alarms(alarms)
-        
-        graph_datas_by_pathid = {}
-        for path_id, diagnose_path in enumerate(alarm_analyse_content["diagnose_path"]):
-
-            content = f"路径:{diagnose_path['name']}\n"
-            cur_count = 1
-            for idx, step in enumerate(diagnose_path['diagnose_step']):
-                step_text = step['content'] if type(step['content']) == str else \
-                    step['content']['textInfo']['text']
-                step_text = step_text.strip('[').strip(']')
-                step_text_no_time = EKGConstructService.remove_time(step_text)
-                # continue update
-                content += f'''{cur_count}. {step_text_no_time}\n'''
-                cur_count += 1
-            
-            result = self.create_ekg(
-                content, teamid, service_name="text2graph", 
-                intent_nodes=ancestor_list, all_intent_list=all_intent_list, 
-                do_save= do_save
-            )
-            graph_datas_by_pathid[path_id] = result
-        
-        return self.returndsl(graph_datas_by_pathid, intents=ancestor_list)
-
-    def yuque2graph(self, **kwargs):
-        # get yuque loader
-        
-        # 
-        self.create_ekg()
-        # yuque_url, write2kg, intent_node
-
-        # get_graph(yuque_url)
-        # graph_id from md(yuque_content)
-
-        # yuque_dsl ==|code2graph|==> node_dict, edge_list, abnormal_dict
-
-        # dsl2graph => write2kg
-        pass
-
     def text2graph(self, text: str, intents: List[str], all_intent_list: List[str], teamid: str) -> dict:
         # generate graph by llm
         result = self.get_graph_by_text(text, ) 
@@ -599,14 +552,6 @@ class EKGConstructService:
         dsl_graph = self.transform2dsl(sls_graph, intents, all_intent_list, teamid=teamid)
         return {"tbase_graph": tbase_graph, "sls_graph": sls_graph, "dsl_graph": dsl_graph}
     
-    def dsl2graph(self, ) -> dict:
-        # dsl, write2kg, intent_node, graph_id
-
-        # dsl ==|code2graph|==> node_dict, edge_list, abnormal_dict
-
-        # dsl2graph => write2kg
-        pass
-
     def write2kg(self, ekg_sls_data: EKGSlsData, ekg_tbase_data: EKGTbaseData, teamid, do_save: bool=False) -> Graph:
         # everytimes, it will add new nodes and edges
 
@@ -654,6 +599,9 @@ class EKGConstructService:
         res["dsl"] = {"nodes": merge_dsl_nodes, "edges": merge_dsl_edges}
         res["graph"] = Graph(nodes=merge_gbase_nodes, edges=merge_gbase_edges, paths=[])
         return res
+
+    def get_intent_by_alarm(self, ):
+        pass 
 
     def get_intents(self, alarm_list: list[dict], ) -> EKGIntentResp:
         '''according contents search intents'''
@@ -905,57 +853,6 @@ class EKGConstructService:
         else:
             text_vector = {text: [random.random() for _ in range(768)]}
         return text_vector
-
-    @staticmethod
-    def preprocess_json_contingency(content_dict, remove_time_flag=True):
-        # 专门处理告警数据合并成文本
-        # 将对应的 content json 预处理为需要的样子，由于可能含有多个 path，用 dict 存储结果
-        diagnose_path_list = content_dict.get('diagnose_path', [])
-        res = {}
-        if diagnose_path_list:
-            for idx, diagnose_path in enumerate(diagnose_path_list):
-                path_id = idx
-                path_name = diagnose_path['name']
-                content = f'路径:{path_name}\n'
-                cur_count = 1
-
-                for idx, step in enumerate(diagnose_path['diagnose_step']):
-                    step_name = step['name']
-
-                    if type(step['content']) == str:
-                        step_text = step['content']
-                    else:
-                        step_text = step['content']['textInfo']['text']
-                    
-                    step_text = step_text.strip('[')
-                    step_text = step_text.strip(']')
-
-                    # step_text = step['step_summary']
-
-                    step_text_no_time = EKGConstructService.remove_time(step_text)
-                    to_append = f'''{cur_count}. {step_text_no_time}\n'''
-                    cur_count += 1
-
-                    content += to_append
-                    
-                res[path_id] = {
-                    'path_id': path_id,
-                    'path_name': path_name,
-                    'content': content
-                }
-        return res
-    
-    @staticmethod
-    def remove_time(text):
-        re_pat = '''\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}(:\d{2})*'''
-        text_res = re.split(re_pat, text)
-        res = ''
-        for i in text_res:
-            if i:
-                i_strip = i.strip('，。\n')
-                i_strip = f'{i_strip}'
-                res += i_strip
-        return res
 
     def _update_tbase_attr_for_nodes(self, attrs):
         tbase_attrs = {}

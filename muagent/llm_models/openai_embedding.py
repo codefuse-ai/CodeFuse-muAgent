@@ -48,12 +48,11 @@ class OpenAIEmbedding:
 
         res = {}
         # logger.debug(emb_all_result)
-        logger.debug(f'len of result={len(emb_all_result["data"])}')
-        for emb_result in emb_all_result['data']:
-            index = emb_result['index']
-            # logger.debug(index)
+        logger.debug(f'len of result={len(emb_all_result.data)}')
+        for emb_result in emb_all_result.data:
+            index = emb_result.index
             text = text_list[index]
-            emb = emb_result['embedding']
+            emb = emb_result.embedding
             res[text] = emb
 
         return res
