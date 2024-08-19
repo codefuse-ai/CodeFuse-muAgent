@@ -28,6 +28,7 @@ from muagent.llm_models import *
 
 from muagent.base_configs.env_config import KB_ROOT_PATH
 
+from muagent.service.ekg_inference.intention_router import IntentionRouter
 from muagent.llm_models.get_embedding import get_embedding
 from muagent.utils.common_utils import getCurrentDatetime, getCurrentTimestap
 from muagent.utils.common_utils import double_hashing
@@ -53,6 +54,7 @@ class EKGConstructService:
             gb_config: GBConfig = None,
             tb_config: TBConfig = None,
             sls_config: SLSConfig = None,
+            intention_router: IntentionRouter = None,
             do_init: bool = False,
             kb_root_path: str = KB_ROOT_PATH,
         ):
@@ -71,6 +73,7 @@ class EKGConstructService:
 
         # get llm model
         self.model = getChatModelFromConfig(self.llm_config)
+        self.intention_router = IntentionRouter(self.model, embed_config=self.embed_config)
         # init db handler
         self.init_handler()
 
@@ -519,16 +522,17 @@ class EKGConstructService:
             text: str, 
             teamid: str, 
             service_name: str, 
+            rootid: str,
             intent_text: str = None, 
             intent_nodes: List[str] = [], 
             all_intent_list: List=[],
-            do_save: bool = False
+            do_save: bool = False,
         ):
 
         if intent_nodes:
             ancestor_list = intent_nodes
         elif intent_text or text:
-            ancestor_list, all_intent_list = self.get_intents(intent_text or text)
+            ancestor_list, all_intent_list = self.get_intents(rootid, intent_text or text)
         else:
             raise Exception(f"must have intent infomation")
         
@@ -542,6 +546,9 @@ class EKGConstructService:
         graph = self.write2kg(result["sls_graph"], result["tbase_graph"], teamid, do_save=do_save)
         result["graph"] = graph
         return result
+    
+    def dsl2graph(self, ):
+        pass
 
     def text2graph(self, text: str, intents: List[str], all_intent_list: List[str], teamid: str) -> dict:
         # generate graph by llm
@@ -600,34 +607,17 @@ class EKGConstructService:
         res["graph"] = Graph(nodes=merge_gbase_nodes, edges=merge_gbase_edges, paths=[])
         return res
 
-    def get_intent_by_alarm(self, ):
-        pass 
-
-    def get_intents(self, alarm_list: list[dict], ) -> EKGIntentResp:
+    def get_intents(self, rootid, text: str):
         '''according contents search intents'''
-        ancestor_list = set()
-        all_intent_list = []
-        for alarm in alarm_list:
-            ancestor, all_intent = self.get_intent_by_alarm(alarm)
-            if ancestor is None:
-                continue
-            ancestor_list.add(ancestor)
-            all_intent_list.append(all_intent)
-
-        return list(ancestor_list), all_intent_list
-
-    def get_intents_by_alarms(self, alarm_list: list[dict], ) -> EKGIntentResp:
-        '''according contents search intents'''
-        ancestor_list = set()
-        all_intent_list = []
-        for alarm in alarm_list:
-            ancestor, all_intent = self.get_intent_by_alarm(alarm)
-            if ancestor is None:
-                continue
-            ancestor_list.add(ancestor)
-            all_intent_list.append(all_intent)
-
-        return list(ancestor_list), all_intent_list
+        result = self.intention_router.get_intention_by_node_info_nlp(
+            root_node_id=rootid,
+            query=text,
+            start_from_root=True,
+            gb_handler=self.gb,
+            tb_handler=self.tb,
+            agent=self.model
+        )
+        return result.get("node_id", ), []
     
     def get_graph_by_text(self, text: str) -> EKGSlsData:
         '''according text generate ekg's raw datas'''

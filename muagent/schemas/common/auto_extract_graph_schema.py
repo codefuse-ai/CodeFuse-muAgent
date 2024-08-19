@@ -33,6 +33,9 @@ class GNode(BaseModel):
     type: str
     attributes: Dict
 
+    def __getattr__(self, name: str):
+        return self.attributes.get(name)
+
 
 class GEdge(BaseModel):
     start_id: str

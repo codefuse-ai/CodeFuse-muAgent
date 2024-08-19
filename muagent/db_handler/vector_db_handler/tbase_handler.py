@@ -101,7 +101,7 @@ class TbaseHandler:
         res = index.search(query, query_params=query_params)
         return res
 
-    def vector_search(self, base_query: str, index_name: str = None, query_params: dict={}):
+    def vector_search(self, base_query: str, index_name: str = None, query_params: dict={}, limit=10):
         '''
         vector_search
         :param base_query:
@@ -114,7 +114,7 @@ class TbaseHandler:
                 .sort_by('distance')
                 .dialect(2)
         )
-        r = self.search(query, index_name, query_params)
+        r = self.search(query, index_name, query_params, limit=limit)
         return r
 
     def delete(self, content):
