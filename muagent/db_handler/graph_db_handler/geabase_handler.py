@@ -13,7 +13,7 @@ from .base_gb_handler import GBHandler
 from muagent.db_handler.utils import deduplicate_dict
 from muagent.schemas.db import GBConfig
 from muagent.schemas.common import *
-from muagent.utils.common_utils import double_hashing
+from muagent.utils.common_utils import double_hashing, func_timer
 
 
 class GeaBaseHandler(GBHandler):
@@ -142,7 +142,6 @@ class GeaBaseHandler(GBHandler):
     def get_current_edgeID(self, src_id, dst_id, edeg_type:str = None):
         if not isinstance(src_id, int) or not isinstance(dst_id, int):
             result = self.get_current_edge(src_id, dst_id, edeg_type)
-            logger.debug(f"{result}")
             return result.attributes.get("SRCID"), result.attributes.get("DSTID"), result.attributes.get("timestamp")
         else:
             return src_id, dst_id, 1
@@ -225,7 +224,7 @@ class GeaBaseHandler(GBHandler):
         '''
         hop >= 2， 表面需要至少两跳
         '''
-        hop_max = 10
+        hop_max = 8
         # 
         where_str = ' and '.join([f"n0.{k}='{v}'" for k, v in attributes.items()])
         if reverse:
@@ -235,6 +234,7 @@ class GeaBaseHandler(GBHandler):
         last_node_ids, last_node_types = [], []
 
         result = {}
+        iter_index = 0
         while hop > 1:
             if last_node_ids == []:
                 # 
@@ -247,11 +247,13 @@ class GeaBaseHandler(GBHandler):
                     # 
                     _result = self.execute(gql)
                     _result = self.decode_result(_result, gql)
+                    # logger.info(f"p_lens: {len(_result['p'])}")
         
                     result = self.merge_hotinfos(result, _result)
             # 
-            last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes)
+            last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes, hop=min(hop, hop_max)+iter_index*hop_max)
             hop -= hop_max
+            iter_index += 1
 
         nodes = self.convert2GNodes(result.get("n1", []))
         edges = self.convert2GEdges(result.get("e", []))
@@ -274,7 +276,7 @@ class GeaBaseHandler(GBHandler):
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.paths
 
-    def deduplicate_paths(self, result, block_attributes: dict = {}, select_attributes: dict = {}):
+    def deduplicate_paths(self, result, block_attributes: dict = {}, select_attributes: dict = {}, hop:int=None):
         # 获取数据
         n0, n1, e, p = result["n0"], result["n1"], result["e"], result["p"]
         block_node_ids = [
@@ -308,24 +310,26 @@ class GeaBaseHandler(GBHandler):
         # 根据保留路径进行合并
         nodeid2type = {i["id"]: i["type"] for i in n0+n1}
         unique_node_ids = [j for i in new_p for j in i]
-        last_node_ids = [i[-1] for i in new_p]
+        last_node_ids = list(set([i[-1] for i in new_p if len(i)>=hop]))
         last_node_types = [nodeid2type[i] for i in last_node_ids]
         new_n0 = deduplicate_dict([i for i in n0 if i["id"] in unique_node_ids])
         new_n1 = deduplicate_dict([i for i in n1 if i["id"] in unique_node_ids])
         new_e = deduplicate_dict([i for i in e if i["start_id"] in unique_node_ids and i["end_id"] in unique_node_ids])
 
         return last_node_ids, last_node_types, {"n0": new_n0, "n1": new_n1, "e": new_e, "p": new_p}
-        
+
     def merge_hotinfos(self, result1, result2) -> Dict:
-        new_n0 = result1["n0"] + result2["n0"]
-        new_n1 = result1["n1"] + result2["n1"]
+        old_n0_sets = set([n["id"] for n in result1["n0"]])
+        old_n1_sets = set([n["id"] for n in result1["n1"]])
+        new_n0 = result1["n0"] + [n for n in result2["n0"] if n["id"] not in old_n0_sets]
+        new_n1 = result1["n1"] + [n for n in result2["n1"] if n["id"] not in old_n1_sets]
         new_e = result1["e"] + result2["e"]
-        new_p = result1["p"] + result2["p"] + [
+        new_p = result1["p"] + [
             p_old_1 + p_old_2[1:] 
             for p_old_1 in result1["p"] 
             for p_old_2 in result2["p"] 
             if p_old_2[0] == p_old_1[-1]
-        ]
+        ] # + result2["p"]
         new_result = {"n0": new_n0, "n1": new_n1, "e": new_e, "p": new_p}
         return new_result
     

@@ -38,7 +38,7 @@ def datefromatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
     return int(datetime.strptime(dt, dateformat).timestamp()*interval)
 
 
-def func_timer():
+def func_timer(function):
     '''
     用装饰器实现函数计时
     :param function: 需要计时的函数
@@ -46,13 +46,13 @@ def func_timer():
     '''
     @wraps(function)
     def function_timer(*args, **kwargs):
+        # logger.info('[Function: {name} start...]'.format(name=function.__name__))
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
         logger.info('[Function: {name} finished, spent time: {time:.3f}s]'.format(
             name=function.__name__,
-            time=t1 - t0
-        ))
+            time=t1 - t0))
         return result
     return function_timer
 

@@ -609,6 +609,9 @@ class EKGConstructService:
 
     def get_intents(self, rootid, text: str):
         '''according contents search intents'''
+        if rootid is None or rootid=="":
+            raise Exception(f"rootid={rootid}, it is empty")
+        
         result = self.intention_router.get_intention_by_node_info_nlp(
             root_node_id=rootid,
             query=text,
