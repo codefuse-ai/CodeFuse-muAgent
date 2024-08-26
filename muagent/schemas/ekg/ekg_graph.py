@@ -31,7 +31,8 @@ class NodeSchema(BaseModel):
 
     def attributes(self, ):
         attrs = copy.deepcopy(vars(self))
-        for k in ["ID", "type", "id"]:
+        # for k in ["ID", "type", "id"]:
+        for k in ["type", "id"]:
             attrs.pop(k)
         attrs.update(json.loads(attrs.pop("extra", '{}') or '{}'))
         return attrs
@@ -51,7 +52,8 @@ class EdgeSchema(BaseModel):
 
     def attributes(self, ):
         attrs = copy.deepcopy(vars(self))
-        for k in ["SRCID", "DSTID", "type", "timestamp", "original_src_id1__", "original_dst_id2__"]:
+        # for k in ["SRCID", "DSTID", "type", "timestamp", "original_src_id1__", "original_dst_id2__"]:
+        for k in ["type", "original_src_id1__", "original_dst_id2__"]:
             attrs.pop(k)
         attrs.update(json.loads(attrs.pop("extra", '{}') or '{}'))
         return attrs

@@ -170,7 +170,6 @@ class GeaBaseHandler(GBHandler):
 
         nodes = result.get("n0", []) or result.get("n0.attr", [])
         return self.convert2GNodes(nodes)
-        return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
     
     def get_current_edge(self, src_id, dst_id, edge_type:str = None, return_keys: list = []) -> GEdge:
         # todo 业务逻辑
@@ -183,7 +182,6 @@ class GeaBaseHandler(GBHandler):
 
         edges = result.get("e", []) or result.get("e.attr", [])
         return self.convert2GEdges(edges)[0]
-        return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges][0]
     
     def get_neighbor_nodes(self, attributes: dict, node_type: str = None, return_keys: list = [], reverse=False) -> List[GNode]:
         # 
@@ -213,7 +211,6 @@ class GeaBaseHandler(GBHandler):
 
         edges = result.get("e", []) or result.get("e.attr", [])
         return self.convert2GEdges(edges)
-        return [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in edges]
 
     def check_neighbor_exist(self, attributes: dict, node_type: str = None, check_attributes: dict = {}) -> bool:
         result = self.get_neighbor_nodes(attributes, node_type,)
@@ -255,10 +252,8 @@ class GeaBaseHandler(GBHandler):
             hop -= hop_max
             iter_index += 1
 
-        nodes = self.convert2GNodes(result.get("n1", []))
+        nodes = self.convert2GNodes(result.get("n1", [])+result.get("n0", []))
         edges = self.convert2GEdges(result.get("e", []))
-        # nodes = [GNode(id=node["id"], type=node["type"], attributes=node) for node in result.get("n1", [])]
-        # edges = [GEdge(start_id=edge["start_id"], end_id=edge["end_id"], type=edge["type"], attributes=edge) for edge in result.get("e", [])]
         return Graph(nodes=nodes, edges=edges, paths=result.get("p", []))
     
     def get_hop_nodes(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GNode]:
@@ -385,10 +380,6 @@ class GeaBaseHandler(GBHandler):
         connections = {}
         for step in steps:
             props = step["props"]
-            # if path == []:
-            #     path.append(props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1))
-            # path.append(props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1))
-
             start = props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1)
             end = props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1)
             connections[start] = end
@@ -449,10 +440,13 @@ class GeaBaseHandler(GBHandler):
     
     def convert2GNodes(self, raw_nodes: List[Dict]) -> List[GNode]:
         nodes = []
+        nodeids_set = set()
         for node in raw_nodes:
             node_id = node.pop("id")
             node_type = node.pop("type")
-            nodes.append(GNode(id=node_id, type=node_type, attributes=node))
+            if node_id not in nodeids_set:
+                nodes.append(GNode(id=node_id, type=node_type, attributes=node))
+                nodeids_set.add(node_id)
         return nodes
     
     def convert2GEdges(self, raw_edges: List[Dict]) -> List[GEdge]:

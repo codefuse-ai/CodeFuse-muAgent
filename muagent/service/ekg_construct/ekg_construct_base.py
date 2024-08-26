@@ -179,8 +179,31 @@ class EKGConstructService:
     def update_graph(
             self, 
             origin_nodes: List[GNode], origin_edges: List[GEdge], 
-            new_nodes: List[GNode], new_edges: List[GEdge],  teamid: str
+            new_nodes: List[GNode], new_edges: List[GEdge], 
+            teamid: str, rootid: str
         ):
+
+        # search unconnect nodes and edges
+        connections = {}
+        for edge in new_edges:
+            connections.setdefault(edge.start_id, []).append(edge.end_id)
+
+        if rootid not in connections:
+            raise Exception(f"Error: rootid not in this graph")
+
+        # dfs for those nodes from rootid
+        visited = set()
+        rootid_can_arrive_nodeids = []
+        def _dfs(node):
+            if node not in visited:
+                visited.add(node)
+                rootid_can_arrive_nodeids.append(node)
+                for neighbor in connections.get(node, []):
+                    _dfs(neighbor)
+        _dfs(rootid)
+
+        # rootid_can_arrive_node = [n for n in new_nodes if n.id in rootid_can_arrive_nodeids]
+        # rootid_can_arrive_edge = [e for e in new_edges if (e.start_id in rootid_can_arrive_nodeids) and (e.end_id in rootid_can_arrive_nodeids)]
 
         origin_nodeids = set([node.id for node in origin_nodes])
         origin_edgeids = set([f"{edge.start_id}__{edge.end_id}" for edge in origin_edges])
@@ -197,9 +220,11 @@ class EKGConstructService:
         for edge in origin_edges + new_edges:
             edgeid2edges_dict.setdefault(f"{edge.start_id}__{edge.end_id}", []).append(edge)
 
-        # get add nodes & edges 
+        # get add nodes & edges and filter those nodes/edges cant be arrived from rootid
         add_nodes = [node for node in new_nodes if node.id not in origin_nodeids]
+        add_nodes = [n for n in add_nodes if n.id in rootid_can_arrive_nodeids]
         add_edges = [edge for edge in new_edges if f"{edge.start_id}__{edge.end_id}" not in origin_edgeids]
+        add_edges = [edge for e in add_edges if (e.start_id in rootid_can_arrive_nodeids) and (e.end_id in rootid_can_arrive_nodeids)]
 
         # get delete nodes & edges
         delete_nodes = [node for node in origin_nodes if node.id not in nodeids]
@@ -254,7 +279,7 @@ class EKGConstructService:
         return gb_result + tb_result
 
     def add_edges(self, edges: List[GEdge], teamid: str):
-        edges = self._update_new_attr_for_edges(edges, teamid)
+        edges = self._update_new_attr_for_edges(edges)
         tbase_edges = [{
             # 'edge_id': f"ekg_edge:{teamid}{edge.start_id}:{edge.end_id}",
             'edge_id': f"{edge.start_id}__{edge.end_id}",
@@ -288,12 +313,39 @@ class EKGConstructService:
         node_neighbor_lens = [
             len([
                 n.id # reverse neighbor nodes which are not in delete nodes
-                for n in self.gb.get_neighbor_nodes({"id": node.id}, node.type, reverse=False)
+                for n in self.gb.get_neighbor_nodes({"id": node.id}, node.type, reverse=True)
                 if n.id not in delete_nodeids])
             for node in nodes
         ]
-        # delete the nodeids in tbase
+        
+        extra_delete_nodes, extra_delete_edges = [], []
+        extra_delete_nodeids = set()
+        for node in nodes:
+            if node.id in extra_delete_nodeids: continue
+
+            extra_delete_nodeids.add(node.id)
+            # 
+            graph = self.gb.get_hop_infos(attributes={"id": node.id,}, node_type=node.type, hop=30)
+            extra_delete_nodes.extend(graph.nodes)
+            extra_delete_edges.extend(graph.edges)
+            for _node in graph.nodes:
+                extra_delete_nodeids.add(_node.id)
+
+        
+        # directly delete extra_delete_nodes in tbase
         tb_result = []
+        for edge in extra_delete_edges:
+            resp = self.tb.delete(f"{edge.start_id}__{edge.end_id}")
+            tb_result.append(resp)
+
+        # directly delete extra_delete_edges in tbase
+        tb_result = []
+        for edge in extra_delete_edges:
+            resp = self.tb.delete(f"{edge.start_id}__{edge.end_id}")
+            tb_result.append(resp)
+
+        # delete the nodeids in tbase
+        # tb_result = []
         for node, node_len in zip(nodes, node_neighbor_lens):
             if node_len >= 1: continue
             resp = self.tb.delete(node.id)
@@ -355,7 +407,9 @@ class EKGConstructService:
             tbase_data = {}
             tbase_data["node_id"] = node.id
             if teamid not in teamids_by_nodeid[node.id]:
-                tbase_data["teamids"] = teamids_by_nodeid[node.id] + f", {teamid}"
+                teamids = list(set([i.strip() for i in teamids_by_nodeid[node.id].split(",") if i.strip()]))
+                tbase_data["teamids"] = ", ".join(teamids+[teamid]) # teamids_by_nodeid[node.id] + f", {teamid}"
+                # tbase_data["teamids"] = teamids_by_nodeid[node.id] + f", {teamid}"
             tbase_data.update(self._update_tbase_attr_for_nodes(node.attributes))
             # 
             resp = self.tb.insert_data_hash(tbase_data, key="node_id", need_etime=False)
@@ -375,7 +429,7 @@ class EKGConstructService:
 
     def update_edges(self, edges: List[GEdge], teamid: str):
         r = self.tb.search(f"@edge_str: *{teamid}*", index_name=self.node_indexname, limit=len(edges))
-        teamids_by_edgeid = {data['edge_id']: data["edge_str"]  for data in r.docs}
+        # teamids_by_edgeid = {data['edge_id']: data["edge_str"]  for data in r.docs}
 
         tbase_edgeids = [data['edge_id'] for data in r.docs]
         delete_edgeids = [f"{edge.start_id}__{edge.end_id}" for edge in edges]
@@ -383,12 +437,12 @@ class EKGConstructService:
 
         if len(tbase_missing_edgeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_edgeids}")
-            for edge in edges:
-                r = self.tb.search(f"@edge_id: {edge.start_id}__{edge.end_id}", index_name=self.node_indexname)
-                teamids_by_edgeid.update({data['edge_id']: data["node_str"]  for data in r.docs})
+            # for edge in edges:
+            #     r = self.tb.search(f"@edge_id: {edge.start_id}__{edge.end_id}", index_name=self.node_indexname)
+            #     teamids_by_edgeid.update({data['edge_id']: data["node_str"]  for data in r.docs})
 
         # update the nodeids in geabase
-        edges = self._update_new_attr_for_edges(edges, teamid, teamids_by_edgeid, do_check=False, do_update=True)
+        edges = self._update_new_attr_for_edges(edges, do_check=False, do_update=True)
         gb_result = []
         for edge in edges:
             # if node.id not in update_tbase_nodeids: continue
@@ -402,6 +456,7 @@ class EKGConstructService:
 
     def get_node_by_id(self, nodeid: str, node_type:str = None) -> GNode:
         node = self.gb.get_current_node({'id': nodeid}, node_type=node_type)
+        return self._normalized_nodes_type(nodes=[node])[0]
         extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
         node.attributes.update(extra_attrs)
         return node
@@ -422,22 +477,31 @@ class EKGConstructService:
             {'id': nodeid}, node_type=node_type, 
             hop=hop, block_attributes=block_attributes
         )
+        if result.nodes == []:
+            current_node = self.gb.get_current_node({"id": nodeid}, node_type=node_type)
+            current_node = self._normalized_nodes_type([current_node])[0]
+            result.nodes.append(current_node)
 
         if block_attributes:
             leaf_nodeids = [node.id for node in result.nodes if node.type=="opsgptkg_schedule"]
         else:
             leaf_nodeids = [path[-1] for path in result.paths if len(path)==hop+1]
 
-        for node in result.nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
-            node.attributes.update(extra_attrs)
+        nodes = self._normalized_nodes_type(result.nodes)
+        # for node in result.nodes:
+        #     extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
+        #     node.attributes.update(extra_attrs)
+        for node in nodes:
             if node.id in leaf_nodeids:
                 neighbor_nodes = self.gb.get_neighbor_nodes({"id": node.id}, node_type=node.type)
                 node.attributes["cnode_nums"] = len(neighbor_nodes)
-
-        for edge in result.edges:
-            extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
-            edge.attributes.update(extra_attrs)
+        
+        edges = self._normalized_edges_type(result.edges)
+        result.nodes = nodes
+        result.edges = edges
+        # for edge in result.edges:
+        #     extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
+        #     edge.attributes.update(extra_attrs)
         return result
 
     def search_nodes_by_text(self, text: str, node_type: str = None, teamid: str = None, top_k=5) -> List[GNode]:
@@ -452,8 +516,8 @@ class EKGConstructService:
 
             nodeid_with_dist = []
             for key in ["name_vector", "desc_vector"]:
-                # base_query = f'(@node_str: graph_id={teamid})=>[KNN {top_k} @{key} $vector AS distance]'
-                base_query = f'(*)=>[KNN {top_k} @{key} $vector AS distance]'
+                base_query = f'(@node_str: *{teamid}*)=>[KNN {top_k} @{key} $vector AS distance]'
+                # base_query = f'(*)=>[KNN {top_k} @{key} $vector AS distance]'
                 query_params = {"vector": query_embedding}
                 r = self.tb.vector_search(base_query, index_name=self.node_indexname, query_params=query_params)
 
@@ -479,20 +543,27 @@ class EKGConstructService:
         nodes_by_name = self.gb.get_current_nodes({"name": text}, node_type=node_type)
         nodes_by_desc = self.gb.get_current_nodes({"description": text}, node_type=node_type)
         nodes = self.gb.get_nodes_by_ids(nodeids)
-        for node in nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
-            node.attributes.update(extra_attrs)
-        return nodes_by_name + nodes_by_desc + nodes
+        # for node in nodes:
+        #     extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
+        #     node.attributes.update(extra_attrs)
+
+        nodes = self._normalized_nodes_type(nodes)
+        nodes = nodes_by_name + nodes_by_desc + nodes
+        # tmp iead to filter by teamid 
+        nodes = [node for node in nodes if teamid in str(node.attributes)]
+        return nodes
 
     def search_rootpath_by_nodeid(self, nodeid: str, node_type: str, rootid: str) -> Graph:
         # rootid = f"{teamid}" # todo check the rootid
         result = self.gb.get_hop_infos({"id": nodeid}, node_type=node_type, hop=15, reverse=True)
-        for node in result.nodes:
-            extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
-            node.attributes.update(extra_attrs)
-        for edge in result.edges:
-            extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
-            edge.attributes.update(extra_attrs)
+
+        # for node in result.nodes:
+        #     extra_attrs = json.loads(node.attributes.pop("extra", "{}") or "{}")
+        #     node.attributes.update(extra_attrs)
+
+        # for edge in result.edges:
+        #     extra_attrs = json.loads(edge.attributes.pop("extra", "{}") or "{}")
+        #     edge.attributes.update(extra_attrs)
 
         # paths must be ordered from start to end
         paths = result.paths
@@ -508,6 +579,9 @@ class EKGConstructService:
         nodeid_set = set([nodeid for path in paths for nodeid in path])
         new_nodes = [node for node in result.nodes if node.id in nodeid_set]
         new_edges = [edge for edge in result.edges if edge.start_id in nodeid_set and edge.end_id in nodeid_set]
+
+        new_nodes = self._normalized_nodes_type(new_nodes)
+        new_edges = self._normalized_edges_type(new_edges) 
         return Graph(nodes=new_nodes, edges=new_edges, paths=new_paths)
 
     def create_ekg(
@@ -865,7 +939,9 @@ class EKGConstructService:
             node_type = node.type
 
             if node.id in teamids_by_nodeid:
-                node.attributes["teamids"] = teamids_by_nodeid.get(node.id, "").split("=")[1] + f", {teamid}"
+                teamids = list(set([i.strip() for i in teamids_by_nodeid[node.id].split(",") if i.strip()]))
+                node.attributes["teamids"] = ", ".join(teamids+[teamid])
+                # node.attributes["teamids"] = teamids_by_nodeid.get(node.id, "").split("=")[1] + f", {teamid}"
             else:
                 node.attributes["teamids"] = f"{teamid}"
 
@@ -880,13 +956,14 @@ class EKGConstructService:
                 fields = list(getClassFields(schema))
                 nodetype2fields_dict[node_type] = fields
 
-            flag = any([
-                field not in node.attributes 
+            missing_fields = [
+                field
                 for field in fields 
-                if field not in ["type", "start_id", "end_id", "ID", "id", "extra"]
-            ])
-            if flag and do_check:
-                raise Exception(f"node is wrong, type is {node_type}, fields is {fields}, data is {node.attributes}")
+                if field not in ["type", "start_id", "end_id", "ID", "id", "extra"] 
+                and field not in node.attributes 
+            ]
+            if len(missing_fields)>0 and do_check:
+                raise Exception(f"node is wrong, type is {node_type}, missing_fields is {missing_fields}, fields is {fields}, data is {node.attributes}")
         
             # update extra infomations to extra
             extra_fields = [k for k in node.attributes.keys() if k not in fields]
@@ -899,16 +976,16 @@ class EKGConstructService:
             )
         return nodes
     
-    def _update_new_attr_for_edges(self, edges: List[GEdge], teamid: str, teamids_by_edgeid={}, do_check=True, do_update=False):
+    def _update_new_attr_for_edges(self, edges: List[GEdge], do_check=True, do_update=False):
         '''update new attributes for nodes'''
         edgetype2fields_dict = {}
         for edge in edges:
             edge_type = edge.type
-            edge_id = f"{edge.start_id}__{edge.end_id}"
-            if edge_id in teamids_by_edgeid:
-                edge.attributes["teamids"] = teamids_by_edgeid.get(edge_id, "").split("=")[1] + f", {teamid}"
-            else:
-                edge.attributes["teamids"] = f"{teamid}"
+            # edge_id = f"{edge.start_id}__{edge.end_id}"
+            # if edge_id in teamids_by_edgeid:
+            #     edge.attributes["teamids"] = teamids_by_edgeid.get(edge_id, "").split("=")[1] + f", {teamid}"
+            # else:
+            #     edge.attributes["teamids"] = f"{teamid}"
 
             edge.attributes["@timestamp"] = edge.attributes.pop("timestamp", 0) or 1 # getCurrentTimestap()
             edge.attributes["gdb_timestamp"] = getCurrentTimestap()
@@ -925,11 +1002,14 @@ class EKGConstructService:
                 fields = list(getClassFields(schema))
                 edgetype2fields_dict[edge_type] = fields
 
-            flag = any([
-                field not in edge.attributes for field in fields 
-                if field not in ["type", "dst_id", "src_id", "DSTID", "SRCID", "timestamp", "ID", "id", "extra"]])
-            if flag and do_check:
-                raise Exception(f"edge is wrong, type is {edge_type}, fields is {fields}, data is {edge.attributes}")
+            missing_fields = [
+                field
+                for field in fields 
+                if field not in ["type", "dst_id", "src_id", "DSTID", "SRCID", "timestamp", "ID", "id", "extra"]
+                and field not in edge.attributes
+            ]
+            if len(missing_fields)>0 and do_check:
+                raise Exception(f"edge is wrong, type is {edge_type}, missing_fields is {missing_fields}, fields is {fields}, data is {edge.attributes}")
 
             # update extra infomations to extra
             extra_fields = [k for k in edge.attributes.keys() if k not in fields+["@timestamp"]]
@@ -942,5 +1022,28 @@ class EKGConstructService:
             )
             if do_update:
                 edge.attributes.pop("@timestamp")
-            edge.attributes.pop("extra")
+            # edge.attributes.pop("extra")
         return edges
+
+    def _normalized_nodes_type(self, nodes: List[GNode]) -> List[GNode]:
+        '''将数据进行格式转换'''
+        valid_nodes = []
+        for node in nodes:
+            node_type = node.type
+            node_data: EKGNodeSchema = TYPE2SCHEMA[node_type](**{**{"id": node.id, "type": node_type}, **node.attributes})
+            valid_node = GNode(id=node.id, type=node_type, attributes=node_data.attributes())
+            valid_nodes.append(valid_node)
+        return valid_nodes
+
+    def _normalized_edges_type(self, edges: List[GEdge]) -> GEdge:
+        valid_edges = []
+        for edge in edges:
+            edge_data: EKGEdgeSchema = TYPE2SCHEMA["edge"](
+                **{**{"original_src_id1__": edge.start_id, "original_dst_id2__": edge.end_id, "type": edge.type}, **edge.attributes}
+            )
+            valid_edge = GEdge(
+                start_id=edge_data.original_src_id1__, end_id=edge_data.original_dst_id2__, 
+                type=edge.type, attributes=edge_data.attributes()
+            )
+            valid_edges.append(valid_edge)
+        return valid_edges

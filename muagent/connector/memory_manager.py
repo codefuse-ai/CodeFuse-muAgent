@@ -521,6 +521,7 @@ MESSAGE_SCHEMA = [
     TextField("role_type", ),
     TextField('input_query'),
     TextField("role_content", ),
+    TextField("role_tags"),
     TextField("parsed_output"),
     TextField("customed_kargs",),
     TextField("db_docs",),
@@ -561,7 +562,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         self.save_message_keys = [
             'chat_index', 'message_index', 'user_name', 'role_name', 'role_type', 'input_query', 'role_content', 'step_content', 
             'parsed_output', 'parsed_output_list', 'customed_kargs', "db_docs", "code_docs", "search_docs", 'start_datetime', 'end_datetime', 
-            "keyword", "vector",
+            "keyword", "vector", "role_tags"
         ]
         self.use_vector = use_vector
         self.init_tb()
@@ -623,6 +624,9 @@ class TbaseMemoryManager(BaseMemoryManager):
             except:
                 pass
             self.append(message)
+
+    def get_memory_by_tag(self, tag: str) -> Memory:
+        return self.get_memory_pool_by_key_content(key='tag', content=f'*{tag}*')
 
     def get_memory_pool(self, chat_index: str = "") -> Memory:
         return self.get_memory_pool_by_all({"chat_index": chat_index})

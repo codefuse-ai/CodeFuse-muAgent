@@ -15,6 +15,7 @@ class Message(BaseModel):
     input_query: str = ""
     start_datetime: str = None
     end_datetime: str = None
+    role_tags: str = ""
 
     # llm output
     role_content: str = ""
