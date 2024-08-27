@@ -11,6 +11,7 @@ from loguru import logger
 from muagent.llm_models.openai_model import getChatModelFromConfig
 from muagent.llm_models.llm_config import LLMConfig
 from muagent.utils.postprocess import replace_lt_gt
+from muagent.db_handler.graph_db_handler.nebula_handler import NebulaHandler
 from langchain.schema import (
     HumanMessage,
 )
@@ -25,8 +26,17 @@ Relationships: ['(:package)-[:contain]->(:class)', '(:class)-[:contain]->(:metho
 
 
 class CypherGenerator:
-    def __init__(self, llm_config: LLMConfig):
+    # TODO 这里应该是将图数据库的信息填入到默认的schema中property的，但没成果，不知道为什么
+    def __init__(self, llm_config: LLMConfig, nh: NebulaHandler):
         self.model = getChatModelFromConfig(llm_config)
+        self.nh = nh
+
+        # try:
+        #     resp = self.nh.cypher_info()
+        # except Exception as e:
+        #     print(e)
+        #     logger.error(f"{e}")
+
         NEBULAGRAPH_EXTRA_INSTRUCTIONS = """
         Instructions:
 
@@ -44,6 +54,7 @@ class CypherGenerator:
         self.NGQL_GENERATION_PROMPT = PromptTemplate(
             input_variables=["schema", "question"], template=NGQL_GENERATION_TEMPLATE
         )
+        # print(self.NGQL_GENERATION_PROMPT)
 
     def get_cypher(self, query: str):
         '''
@@ -51,15 +62,17 @@ class CypherGenerator:
         @param query:
         @return:
         '''
+        schema = self.nh.cypher_info()
         content = self.NGQL_GENERATION_PROMPT.format(schema=schema, question=query)
         # logger.info(content)
         ans = ''
         message = [HumanMessage(content=content)]
-        chat_res = self.model.predict_messages(message)
-        ans = chat_res.content
+        # chat_res = self.model.predict_messages(message)
+        # ans = chat_res.content
 
         ans = replace_lt_gt(ans)
 
+        ans = self.model(message)
         ans = self.post_process(ans)
         return ans
 

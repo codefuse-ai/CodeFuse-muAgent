@@ -8,6 +8,8 @@ os.environ["OPENAI_API_KEY"] = "sk-xxx"
 openai.api_key = "sk-xxx"
 os.environ["model_name"] = "gpt-3.5-turbo"
 os.environ["model_engine] = "openai"
+# os.environ["model_name"] = "qwen2:7b"
+# os.environ["model_engine"] = "ollama"
 
 # 
 os.environ["embed_model"] = "{{embed_model_name}}"

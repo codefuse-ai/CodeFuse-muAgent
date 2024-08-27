@@ -1,13 +1,18 @@
 import os
 from loguru import logger
-
+import sys
+sys.path.append('D:/CodeFuse-muAgent-main')
+from muagent.base_configs.env_config import JUPYTER_WORK_PATH
+from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
+from muagent.connector.phase import BasePhase
+from muagent.connector.schema import Message
 try:
     import os, sys
     src_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
@@ -36,10 +41,7 @@ except Exception as e:
 #     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # )
 # sys.path.append(src_dir)
-from muagent.base_configs.env_config import JUPYTER_WORK_PATH
-from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
-from muagent.connector.phase import BasePhase
-from muagent.connector.schema import Message
+
 
 # log-level，print prompt和llm predict
 os.environ["log_verbose"] = "0"
@@ -59,7 +61,7 @@ phase = BasePhase(
 
 # if you want to analyze a data.csv, please put the csv file into a jupyter_work_path (or your defined path)
 import shutil
-source_file = 'D://project/gitlab/llm/external/ant_code/Codefuse-chatbot/jupyter_work/employee_data.csv'
+source_file = 'D:\CodeFuse-muAgent-main\test_code\combined_stock_data.csv'
 shutil.copy(source_file, JUPYTER_WORK_PATH)
 
 # round-1

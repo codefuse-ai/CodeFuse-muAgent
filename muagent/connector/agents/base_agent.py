@@ -71,6 +71,7 @@ class BaseAgent:
             pass
         return message
     
+    # TODO outlines位置
     def astep(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str = "") -> Message:
         '''agent reponse from multi-message'''
         # insert query into memory
@@ -104,7 +105,7 @@ class BaseAgent:
             # parsed_output_list=[query.parsed_output],
             customed_kargs=query_c.customed_kargs
             )
-        
+
         # common parse llm' content to message
         output_message = self.message_utils.parser(output_message)
 
@@ -125,6 +126,7 @@ class BaseAgent:
 
         # update memory pool
         memory_manager.append(output_message)
+
         yield output_message
     
     def pre_print(self, query: Message, history: Memory = None, background: Memory = None, memory_manager: BaseMemoryManager=None, chat_index: str = ""):

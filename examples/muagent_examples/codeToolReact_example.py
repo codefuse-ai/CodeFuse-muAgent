@@ -1,3 +1,6 @@
+# TODO outline测例
+import sys
+sys.path.append('D:/CodeFuse-muAgent-main')
 import os
 from loguru import logger
 
@@ -7,7 +10,7 @@ try:
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
@@ -49,7 +52,8 @@ TOOL_SETS = [
 tools = toLangchainTools([TOOL_DICT[i] for i in TOOL_SETS if i in TOOL_DICT])
 
 # log-level，print prompt和llm predict
-os.environ["log_verbose"] = "0"
+# os.environ["log_verbose"] = "0"
+os.environ["log_verbose"] = "2"
 
 llm_config = LLMConfig(
     model_name=model_name, model_engine=model_engine, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
@@ -65,8 +69,10 @@ phase = BasePhase(
 )
 
 query_content = "查询贵州茅台的股票代码，并查询截止到当前日期(2023年12月24日)的最近10天的每日时序数据，然后用代码画出折线图并分析"
-
-query = Message(role_name="human", role_type="user", input_query=query_content, tools=tools)
+# 关键字丢失、标识符丢失，不稳定
+# query = Message(role_name="human", role_type="user", input_query=query_content, tools=tools)
+query = Message(tools=tools)
+# query = Message(role_name="human", role_type="user", input_query=query_content)
 
 output_message, output_memory = phase.step(query)
 print(output_memory.to_str_messages(return_all=True, content_key="parsed_output_list"))

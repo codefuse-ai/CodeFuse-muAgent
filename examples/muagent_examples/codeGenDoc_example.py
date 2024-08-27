@@ -1,3 +1,6 @@
+import sys
+sys.path.append('D:/CodeFuse-muAgent-main')
+import json
 import os
 from loguru import logger
 
@@ -7,7 +10,7 @@ try:
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
@@ -168,7 +171,7 @@ embed_config = EmbedConfig(
 # initialize codebase
 # delete codebase
 codebase_name = 'client_local'
-code_path = "D://chromeDownloads/devopschat-bot/client_v2/client"
+code_path = "E:/tmp/SSM-library-master/src/main/java/com/controller"
 use_nh = True
 do_interpret = False
 # cbh = CodeBaseHandler(codebase_name, code_path, crawl_type='dir', use_nh=use_nh, local_graph_path=CB_ROOT_PATH,

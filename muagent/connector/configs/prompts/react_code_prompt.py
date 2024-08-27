@@ -55,7 +55,7 @@ If it's 'code_executing', the action is to write the code.
 # Write your code here
 ...
 ```
-
+# TODO 先用kv形式做，不行再json
 **Observation:** Check the results and effects of the executed code.
 
 ... (Repeat this "Thoughts/Action Status/Action/Observation" cycle format as needed)

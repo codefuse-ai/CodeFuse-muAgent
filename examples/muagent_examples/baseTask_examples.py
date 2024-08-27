@@ -3,11 +3,13 @@ from loguru import logger
 
 try:
     import os, sys
+    sys.path.append('D:/CodeFuse-muAgent-main')
+    print(sys.path)
     src_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]
@@ -45,6 +47,7 @@ from muagent.base_configs.env_config import JUPYTER_WORK_PATH
 # log-level，print prompt or llm predict
 os.environ["log_verbose"] = "0"
 
+# ollama
 llm_config = LLMConfig(
     model_name=model_name, model_engine=model_engine, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
 )
@@ -56,7 +59,7 @@ embed_config = EmbedConfig(
 
 # if you want to analyze a data.csv, please put the csv file into a jupyter_work_path (or your defined path)
 import shutil
-source_file = 'D://project/gitlab/llm/external/ant_code/Codefuse-chatbot/jupyter_work/employee_data.csv'
+source_file = 'E:/tmp/combined_stock_data.csv'
 shutil.copy(source_file, JUPYTER_WORK_PATH)
 
 # 

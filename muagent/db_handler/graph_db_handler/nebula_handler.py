@@ -282,6 +282,31 @@ class NebulaHandler:
         return d
 
 
+    def cypher_info(self):
+        '''
+        提供 cypher 所需信息 
+        @return:
+        '''
+        cypher_tags = 'match (v) return v;'
+        cypher_edges = 'match ()-[e]->() return e;'
+        resp_tags = self.execute_cypher(cypher_tags, self.space_name)
+        resp_edges = self.execute_cypher(cypher_edges, self.space_name)
+        # resp_tags = self.result_to_dict(resp_tags)['v']
+        # resp_edges = self.result_to_dict(resp_edges)['e']
+        resp_tags = str(self.result_to_dict(resp_tags)['v'])
+        resp_edges = str(self.result_to_dict(resp_edges)['e'])
+        # print(type(resp_tags))
+        # print(type(resp_edges))
+        # print(resp_tags)
+        # resp_tags = self.execute_cypher(cypher_tags, self.space_name)._data_set_wrapper
+        # print(type(resp_tags))
+        # resp_edges = self.execute_cypher(cypher_edges, self.space_name)._data_set_wrapper['v']
 
+        # resp = {**resp_tags, **resp_edges}
+        resp = resp_tags + resp_edges
+        return resp
+    
 
-
+# if __name__ == '__main__':
+    # a={'v': [("com.controller#BookController.java" :package{}), ("com.controller.BookController" :class{}), ("com.controller.BookController#updateBook-Model-Books" :method{}), ("com.controller.BookController#addPaper-Books" :method{}), ("com.controller.BookController#list-Integer-Model" :method{}), ("com.controller.BookController#toUpdateBook-Model-int" :method{}), ("com.controller.BookController#queryBook-String-Model" :method{}), ("com.controller.BookController#deleteBook-int" :method{}), ("com.controller.BookController#toAddPaper" :method{})]}
+    # b={'e': [("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#addPaper-Books"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#deleteBook-int"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#list-Integer-Model"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#queryBook-String-Model"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#toAddPaper"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#toUpdateBook-Model-int"), ("com.controller.BookController")-[:contain@0{}]->("com.controller.BookController#updateBook-Model-Books"), ("com.controller#BookController.java")-[:contain@0{}]->("com.controller.BookController")]}

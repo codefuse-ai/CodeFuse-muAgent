@@ -63,7 +63,7 @@ class Message(BaseModel):
     history_node_list: List[str] = []
 
 
-    @root_validator(pre=True)
+    # @root_validator(pre=True)
     def check_card_number_omitted(cls, values):
         input_query = values.get("input_query")
         role_content = values.get("role_content")
@@ -73,7 +73,7 @@ class Message(BaseModel):
             values["role_content"] = input_query
         return values
     
-    @root_validator(pre=True)
+    # @root_validator(pre=True)
     def check_datetime(cls, values):
         start_datetime = values.get("start_datetime")
         end_datetime = values.get("end_datetime")
@@ -83,7 +83,7 @@ class Message(BaseModel):
             values["end_datetime"] = getCurrentDatetime()
         return values
 
-    @root_validator(pre=True)
+    # @root_validator(pre=True)
     def check_message_index(cls, values):
         message_index = values.get("message_index")
         chat_index = values.get("chat_index")

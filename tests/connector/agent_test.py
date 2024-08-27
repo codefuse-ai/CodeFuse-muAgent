@@ -1,7 +1,8 @@
 import os, sys
 from loguru import logger
 
-
+import os, sys
+sys.path.append('D:/CodeFuse-muAgent-main')
 os.environ["do_create_dir"] = "1"
 
 try:
@@ -9,7 +10,7 @@ try:
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]

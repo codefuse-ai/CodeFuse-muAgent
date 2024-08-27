@@ -16,3 +16,9 @@ build
 dist
 .ipynb_checkpoints
 zdatafront*
+examples/muagent_examples/yyb_test.py
+examples/muagent_examples/yyb_test2.py
+examples/muagent_examples/yyb_test3.py
+.gitignore
+yyb_note.md
+.vscode/launch.json

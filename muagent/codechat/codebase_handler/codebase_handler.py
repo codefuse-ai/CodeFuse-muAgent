@@ -158,7 +158,8 @@ class CodeBaseHandler:
         else:
             if search_type == 'tag':
                 search_type = 'tag_by_local_graph'
-            assert search_type in ['tag_by_local_graph', 'description']
+                # TODO 是不是这里就是写错的
+            assert search_type in ['cypher', 'tag_by_local_graph', 'description']
 
         code_search = CodeSearch(llm_config=self.llm_config, nh=self.nh, ch=self.ch, limit=limit,
                                  local_graph_file_path=self.local_graph_file_path)
