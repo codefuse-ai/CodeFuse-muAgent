@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from typing import Dict
 import asyncio
 import uvicorn
+from loguru import logger
 
 from muagent.service.ekg_construct.ekg_construct_base import EKGConstructService
 from muagent.schemas.apis.ekg_api_schema import *
@@ -17,6 +18,24 @@ def init_app(llm, embeddings):
     @app.get("/llm/params", response_model=LLMParamsResponse)
     async def llm_params():
         return llm.params()
+
+    # ~/llm/params
+    @app.post("/llm/generate", response_model=LLMResponse)
+    async def llm_predict(request: LLMRequest):
+        # 添加预测逻辑的代码
+        errorMessage = "ok"
+        successCode = True
+        try:
+            answer = llm.predict(request.text, request.stop)
+        except Exception as e:
+            errorMessage = str(e)
+            successCode = False
+            answer = "error"
+            
+        return LLMResponse(
+            successCode=successCode, errorMessage=errorMessage,
+            answer=answer
+        )
 
     # ~/llm/params/update
     @app.post("/llm/params/update", response_model=EKGResponse)
@@ -55,6 +74,23 @@ def init_app(llm, embeddings):
             successCode=successCode, errorMessage=errorMessage,
         )
     
+    @app.post("/embeddings/generate", response_model=EmbeddingsResponse)
+    async def embedding_predict(request: EmbeddingsRequest):
+        # 添加预测逻辑的代码
+        errorMessage = "ok"
+        successCode = True
+        try:
+            embeddings_list = embeddings.embed_documents(request.texts)
+        except Exception as e:
+            logger.exception(e)
+            errorMessage = str(e)
+            successCode = False
+            embeddings_list = []
+            
+        return EmbeddingsResponse(
+            successCode=successCode, errorMessage=errorMessage,
+            embeddings=embeddings_list
+        )
     # # ~/ekg/text2graph
     # @app.post("/ekg/text2graph", response_model=EKGGraphResponse)
     # async def text2graph(request: EKGT2GRequest):

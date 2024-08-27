@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from enum import Enum
 
 from muagent.schemas.common import GNode, GEdge
@@ -11,6 +11,24 @@ class EKGResponse(BaseModel):
     successCode: int
     errorMessage: str
 
+
+# embeddings
+class EmbeddingsResponse(EKGResponse):
+    successCode: int
+    errorMessage: str
+    embeddings: List[List[float]]
+
+class EmbeddingsRequest(BaseModel):
+    texts: List[str]
+
+class LLMRequest(BaseModel):
+    text: str
+    stop: Optional[str]
+
+class LLMResponse(EKGResponse):
+    successCode: int
+    errorMessage: str
+    answer: str
 
 # text2graph
 class EKGT2GRequest(BaseModel):
@@ -81,7 +99,7 @@ class LLMParamsResponse(BaseModel):
     model_name: str
     model_type: str
     api_key: str
-    stop: str
+    stop: Optional[str] = None
     temperature: float
     top_k: int
     top_p: float

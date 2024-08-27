@@ -1,22 +1,29 @@
 import time, sys
-st = time.time()
 import os
 import yaml
 import requests 
 from typing import List
 from loguru import logger
-import tqdm
+from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
-print(time.time()-st)
 from langchain.llms.base import LLM
 from langchain.embeddings.base import Embeddings
-print(time.time()-st)
 src_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-print(src_dir)
 sys.path.append(src_dir)
+
+try:
+    import os, sys
+    src_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    sys.path.append(src_dir)
+    import test_config
+except Exception as e:
+    # set your config
+    logger.error(f"{e}")
 
 from muagent.schemas.db import *
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
@@ -30,7 +37,7 @@ class CustomLLM(LLM, BaseModel):
     model_name: str = "qwen2:1b"
     model_type: str = "ollama"
     api_key: str = ""
-    stop: str = ""
+    stop: str = None
     temperature: float = 0.3
     top_k: int = 50
     top_p: float = 0.95
@@ -43,10 +50,8 @@ class CustomLLM(LLM, BaseModel):
             if k in keys}
     
     def update_params(self, **kwargs):
-        logger.debug(f"{kwargs}")
         # 更新属性
         for key, value in kwargs.items():
-            logger.debug(f"{key}, {value}")
             setattr(self, key, value)
 
     def _llm_type(self, *args):
@@ -114,10 +119,8 @@ class CustomEmbeddings(Embeddings):
         }
 
     def update_params(self, **kwargs):
-        logger.debug(f"{kwargs}")
         # 更新属性
         for key, value in kwargs.items():
-            logger.debug(f"{key}, {value}")
             setattr(self, key, value)
 
     def _get_sentence_emb(self, sentence: str) -> dict:
@@ -133,6 +136,8 @@ class CustomEmbeddings(Embeddings):
             return r.json()
         elif self.embedding_type == "openai":
             from muagent.llm_models.get_embedding import get_embedding
+            os.environ["OPENAI_API_KEY"] = self.api_key
+            os.environ["API_BASE_URL"] = self.url
             embed_config = EmbedConfig(
                 embed_engine="openai",
                 api_key=self.api_key,
