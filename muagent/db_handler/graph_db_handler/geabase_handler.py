@@ -81,7 +81,11 @@ class GeaBaseHandler(GBHandler):
 
     def update_node(self, attributes: dict, set_attributes: dict, node_type: str = None, ID: int = None) -> dict:
         # demo: "MATCH (n:opsgptkg_employee {@ID: xxxx}) SET n.originname = 'xxx', n.description = 'xxx'"
-        set_str = ", ".join([f"n.{k}='{v}'" if isinstance(v, (str, bool)) else f"n.{k}={v}" for k, v in set_attributes.items()])
+        set_str = ", ".join([
+            f"n.{k}='{v}'" if isinstance(v, (str, bool)) else f"n.{k}={v}"
+            for k, v in set_attributes.items()
+            if k not in ["ID"]
+        ])
 
         if (ID is None) or (not isinstance(ID, int)):
             ID = self.get_current_nodeID(attributes, node_type)
@@ -94,7 +98,10 @@ class GeaBaseHandler(GBHandler):
         src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
         src_type, dst_type = self.get_nodetypes_by_edgetype(edge_type)
         # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
-        set_str = ", ".join([f"e.{k}='{v}'"  if isinstance(v, (str, bool)) else f"e.{k}={v}"  for k, v in set_attributes.items()])
+        set_str = ", ".join([
+            f"e.{k}='{v}'"  if isinstance(v, (str, bool)) else f"e.{k}={v}" 
+            for k, v in set_attributes.items()
+        ])
         # demo： MATCH ()-[r:PlayFor{@src_id:1, @dst_id:100, @timestamp:0}]->() SET r.contract = 0;
         # gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}, timestamp:{timestamp}}}]->() SET {set_str}"
         gql = f"MATCH (n0:{src_type} {{@id: {src_id}}})-[e]->(n1:{dst_type} {{@id:{dst_id}}}) SET {set_str}"
@@ -197,7 +204,6 @@ class GeaBaseHandler(GBHandler):
         result = self.decode_result(result, gql)
         nodes = result.get("n1", []) or result.get("n1.attr", [])
         return self.convert2GNodes(nodes)
-        return [GNode(id=node["id"], type=node["type"], attributes=node) for node in nodes]
     
     def get_neighbor_edges(self, attributes: dict, node_type: str = None, return_keys: list = []) -> List[GEdge]:
         # 
@@ -233,22 +239,27 @@ class GeaBaseHandler(GBHandler):
         result = {}
         iter_index = 0
         while hop > 1:
-            if last_node_ids == []:
+            if last_node_ids == [] and iter_index==0:
                 # 
                 result = self.execute(gql)
                 result = self.decode_result(result, gql)
+            elif last_node_ids == []:
+                pass
             else:
                 for _node_id, _node_type in zip(last_node_ids, last_node_types):
                     where_str = f"n0.id='{_node_id}'"
-                    gql = f"MATCH p = (n0:{_node_type} WHERE {where_str})-[e]->{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+                    if reverse:
+                        gql = f"MATCH p = (n0:{_node_type} WHERE {where_str})<-[e]-{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+                    else:
+                        gql = f"MATCH p = (n0:{_node_type} WHERE {where_str})-[e]->{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
                     # 
                     _result = self.execute(gql)
                     _result = self.decode_result(_result, gql)
-                    # logger.info(f"p_lens: {len(_result['p'])}")
+                    # logger.info(f"p_lens: {_result['p']}")
         
-                    result = self.merge_hotinfos(result, _result)
+                    result = self.merge_hotinfos(result, _result, reverse=reverse)
             # 
-            last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes, hop=min(hop, hop_max)+iter_index*hop_max)
+            last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes, hop=min(hop, hop_max)+iter_index*hop_max, reverse=reverse)
             hop -= hop_max
             iter_index += 1
 
@@ -271,7 +282,7 @@ class GeaBaseHandler(GBHandler):
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.paths
 
-    def deduplicate_paths(self, result, block_attributes: dict = {}, select_attributes: dict = {}, hop:int=None):
+    def deduplicate_paths(self, result, block_attributes: dict = {}, select_attributes: dict = {}, hop:int=None, reverse=False):
         # 获取数据
         n0, n1, e, p = result["n0"], result["n1"], result["e"], result["p"]
         block_node_ids = [
@@ -292,20 +303,15 @@ class GeaBaseHandler(GBHandler):
         for path_str, _p in zip(path_strs, p):
             if not any(path_str in other for other in path_strs if path_str != other):
                 new_p.append(_p)
-        # # 路径去重
-        # path_strs = ["&&".join(_p) for _p in p]
-        # new_p = []
-        # new_path_strs_set = set()
-        # for path_str, _p in zip(path_strs, p):
-        #     if not any(path_str in other for other in path_strs if path_str != other):
-        #         if path_str not in new_path_strs_set and all([_pid not in block_node_ids for _pid in _p]):
-        #             new_p.append(_p)
-        #             new_path_strs_set.add(path_str)
             
         # 根据保留路径进行合并
         nodeid2type = {i["id"]: i["type"] for i in n0+n1}
         unique_node_ids = [j for i in new_p for j in i]
-        last_node_ids = list(set([i[-1] for i in new_p if len(i)>=hop]))
+        if reverse:
+            last_node_ids = list(set([i[0] for i in new_p if len(i)>=hop]))
+        else:
+            last_node_ids = list(set([i[-1] for i in new_p if len(i)>=hop]))
+
         last_node_types = [nodeid2type[i] for i in last_node_ids]
         new_n0 = deduplicate_dict([i for i in n0 if i["id"] in unique_node_ids])
         new_n1 = deduplicate_dict([i for i in n1 if i["id"] in unique_node_ids])
@@ -313,18 +319,26 @@ class GeaBaseHandler(GBHandler):
 
         return last_node_ids, last_node_types, {"n0": new_n0, "n1": new_n1, "e": new_e, "p": new_p}
 
-    def merge_hotinfos(self, result1, result2) -> Dict:
+    def merge_hotinfos(self, result1, result2, reverse=False) -> Dict:
         old_n0_sets = set([n["id"] for n in result1["n0"]])
         old_n1_sets = set([n["id"] for n in result1["n1"]])
         new_n0 = result1["n0"] + [n for n in result2["n0"] if n["id"] not in old_n0_sets]
         new_n1 = result1["n1"] + [n for n in result2["n1"] if n["id"] not in old_n1_sets]
         new_e = result1["e"] + result2["e"]
-        new_p = result1["p"] + [
-            p_old_1 + p_old_2[1:] 
-            for p_old_1 in result1["p"] 
-            for p_old_2 in result2["p"] 
-            if p_old_2[0] == p_old_1[-1]
-        ] # + result2["p"]
+        if reverse:
+            new_p = result1["p"] + [
+                p_old_2[:-1] + p_old_1
+                for p_old_1 in result1["p"] 
+                for p_old_2 in result2["p"] 
+                if p_old_2[-1] == p_old_1[0]
+            ] # + result2["p"]
+        else:
+            new_p = result1["p"] + [
+                p_old_1 + p_old_2[1:]
+                for p_old_1 in result1["p"] 
+                for p_old_2 in result2["p"] 
+                if p_old_2[0] == p_old_1[-1]
+            ] # + result2["p"]
         new_result = {"n0": new_n0, "n1": new_n1, "e": new_e, "p": new_p}
         return new_result
     

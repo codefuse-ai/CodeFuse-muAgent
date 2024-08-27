@@ -625,8 +625,20 @@ class TbaseMemoryManager(BaseMemoryManager):
                 pass
             self.append(message)
 
-    def get_memory_by_tag(self, tag: str) -> Memory:
-        return self.get_memory_pool_by_key_content(key='tag', content=f'*{tag}*')
+    def get_memory_by_chatindex_tags(self, chat_index: str, tags: List[str], limit: int = 10) -> Memory:
+        '''
+        :param chat_index: str,
+        :param tags: List[str], search message by any tag (match or)
+        '''
+        tags_str = '|'.join([f"*{tag}*" for tag in tags])
+        querys = [
+            f"@chat_index:{chat_index}",
+            f"@role_tags:{tags_str}",
+        ]
+        query = f"({')('.join(querys)})" if len(querys) >=2 else "".join(querys)
+        logger.debug(f"{query}")
+        r = self.th.search(query, limit=limit)
+        return self.tbasedoc2Memory(r)
 
     def get_memory_pool(self, chat_index: str = "") -> Memory:
         return self.get_memory_pool_by_all({"chat_index": chat_index})
