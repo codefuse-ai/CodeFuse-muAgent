@@ -212,7 +212,7 @@ class CodeSearch:
         @param engine:
         @return:
         '''
-        cg = CypherGenerator(self.llm_config)
+        cg = CypherGenerator(self.llm_config, self.nh)
         cypher = cg.get_cypher(query)
 
         if not cypher:

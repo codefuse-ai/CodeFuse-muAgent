@@ -14,7 +14,8 @@ class BaseResponse(BaseModel):
     msg: str = pydantic.Field("success", description="API status message")
 
     class Config:
-        schema_extra = {
+        # schema_extra1 = {
+        json_schema_extra = {
             "example": {
                 "code": 200,
                 "msg": "success",
@@ -25,7 +26,7 @@ class DataResponse(BaseResponse):
     data: Union[str, bytes] = pydantic.Field(..., description="data")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "code": 200,
                 "msg": "success",
@@ -37,7 +38,7 @@ class ListResponse(BaseResponse):
     data: List[str] = pydantic.Field(..., description="List of names")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "code": 200,
                 "msg": "success",
@@ -55,7 +56,7 @@ class ChatMessage(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "question": "工伤保险如何办理？",
                 "response": "根据已知信息，可以总结如下：\n\n1. 参保单位为员工缴纳工伤保险费，以保障员工在发生工伤时能够获得相应的待遇。\n"

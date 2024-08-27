@@ -1,13 +1,14 @@
 import os
 from loguru import logger
-
+import sys
+sys.path.append('D:/CodeFuse-muAgent-main')
 try:
     import os, sys
     src_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     sys.path.append(src_dir)
-    import test_config
+    import examples.test_config
     api_key = os.environ["OPENAI_API_KEY"]
     api_base_url= os.environ["API_BASE_URL"]
     model_name = os.environ["model_name"]

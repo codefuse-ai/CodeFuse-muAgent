@@ -1,3 +1,5 @@
+import sys
+sys.path.append('D:/CodeFuse-muAgent-main')
 import random
 from textwrap import dedent
 import copy

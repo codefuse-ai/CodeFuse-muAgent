@@ -253,6 +253,7 @@ class MessageUtils:
             logger.info(f"**Observation:** {message.action_status}, {observation_message.role_content}")
         return message, observation_message
 
+    # TODO outlines
     def parser(self, message: Message) -> Message:
         '''parse llm output into dict'''
         content = message.role_content
