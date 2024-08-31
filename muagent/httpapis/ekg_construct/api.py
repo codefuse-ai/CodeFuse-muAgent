@@ -247,7 +247,7 @@ def init_app(llm, embeddings):
 
 def create_api(llm, embeddings):
     app = init_app(llm, embeddings)
-    uvicorn.run(app, host="localhost", port=3737)
+    uvicorn.run(app, host="127.0.0.1", port=3737)
 
 # def create_api(ekg_construct_service: EKGConstructService):
 #     app = init_app(ekg_construct_service)

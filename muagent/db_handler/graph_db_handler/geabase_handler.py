@@ -223,7 +223,7 @@ class GeaBaseHandler(GBHandler):
         filter_result = [i for i in result if all([item in i.attributes.items() for item in check_attributes.items()])]
         return len(filter_result) > 0
 
-    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = {}, select_attributes: dict = {}, reverse=False) -> Graph:
+    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: List[dict] = [], select_attributes: dict = {}, reverse=False) -> Graph:
         '''
         hop >= 2， 表面需要至少两跳
         '''
@@ -267,30 +267,31 @@ class GeaBaseHandler(GBHandler):
         edges = self.convert2GEdges(result.get("e", []))
         return Graph(nodes=nodes, edges=edges, paths=result.get("p", []))
     
-    def get_hop_nodes(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GNode]:
+    def get_hop_nodes(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: List[dict] = []) -> List[GNode]:
         # 
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.nodes
 
-    def get_hop_edges(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[GEdge]:
+    def get_hop_edges(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: List[dict] = []) -> List[GEdge]:
         # 
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.edges
 
-    def get_hop_paths(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: dict = []) -> List[str]:
+    def get_hop_paths(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: List[dict] = []) -> List[str]:
         # 
         result = self.get_hop_infos(attributes, node_type, hop, block_attributes)
         return result.paths
 
-    def deduplicate_paths(self, result, block_attributes: dict = {}, select_attributes: dict = {}, hop:int=None, reverse=False):
+    def deduplicate_paths(self, result, block_attributes: List[dict] = {}, select_attributes: dict = {}, hop:int=None, reverse=False):
         # 获取数据
         n0, n1, e, p = result["n0"], result["n1"], result["e"], result["p"]
         block_node_ids = [
             i["id"]
             for i in n0+n1
+            for block_attribute in block_attributes
             # 这里block为空时也会生效，属于合理情况
             # if block_attributes=={} or all(item in i.items() for item in block_attributes.items())
-            if block_attributes and all(item in i.items() for item in block_attributes.items())
+            if block_attribute and all(item in i.items() for item in block_attribute.items())
         ] + [
             i["id"]
             for i in n0+n1

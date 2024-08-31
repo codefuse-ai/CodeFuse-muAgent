@@ -176,34 +176,58 @@ class EKGConstructService:
         else:
             self.sls = None
     
+    def _get_local_graph(self, nodes: List[GNode], edges: List[GEdge], rootid):
+        # search and delete unconnect nodes and edges
+        connections = {}
+        for edge in edges:
+            connections.setdefault(edge.start_id, []).append(edge.end_id)
+        
+        for node in nodes:
+            connections.setdefault(node.id, [])
+
+        if rootid not in connections and len(nodes)>0:
+            raise Exception(f"Error: rootid not in this graph")
+
+        # dfs for those nodes from rootid
+        visited = set()
+        rootid_can_arrive_nodeids = []
+        paths = []
+        def _dfs(node, current_path: List):
+            if node not in visited:
+                visited.add(node)
+                current_path.append(node)
+                rootid_can_arrive_nodeids.append(node)
+                # 假设终止条件是没有更多的邻居
+                if not connections.get(node, []):
+                    # 到达终止节点，保存当前路径的副本
+                    paths.append(list(current_path))
+                else:
+                    for neighbor in connections.get(node, []):
+                        _dfs(neighbor, current_path)
+
+                # 回溯：移除最后一个节点
+                current_path.pop()
+
+        # 初始化 DFS
+        _dfs(rootid, [])
+        logger.info(f"graph paths, {paths}")
+        logger.info(f"rootid can not arrive nodeids, {[n for n in nodes if n.id not in rootid_can_arrive_nodeids]}")
+
+        graph = Graph(
+            nodes=[n for n in nodes if n.id in rootid_can_arrive_nodeids], 
+            edges=[e for e in edges if e.start_id in rootid_can_arrive_nodeids and e.end_id in rootid_can_arrive_nodeids],
+            paths=paths
+        )
+        return rootid_can_arrive_nodeids, graph
+
     def update_graph(
             self, 
             origin_nodes: List[GNode], origin_edges: List[GEdge], 
             new_nodes: List[GNode], new_edges: List[GEdge], 
             teamid: str, rootid: str
         ):
-
-        # search unconnect nodes and edges
-        connections = {}
-        for edge in new_edges:
-            connections.setdefault(edge.start_id, []).append(edge.end_id)
-        
-        if len(new_nodes)==1:
-            connections.setdefault(new_nodes[0].id, [])
-
-        if rootid not in connections and len(new_nodes)>0:
-            raise Exception(f"Error: rootid not in this graph")
-
-        # dfs for those nodes from rootid
-        visited = set()
-        rootid_can_arrive_nodeids = []
-        def _dfs(node):
-            if node not in visited:
-                visited.add(node)
-                rootid_can_arrive_nodeids.append(node)
-                for neighbor in connections.get(node, []):
-                    _dfs(neighbor)
-        _dfs(rootid)
+        rootid_can_arrive_nodeids, _ = self._get_local_graph(new_nodes, new_edges, rootid=rootid)
+        _, _ = self._get_local_graph(origin_nodes, origin_edges, rootid=rootid)
 
         # rootid_can_arrive_node = [n for n in new_nodes if n.id in rootid_can_arrive_nodeids]
         # rootid_can_arrive_edge = [e for e in new_edges if (e.start_id in rootid_can_arrive_nodeids) and (e.end_id in rootid_can_arrive_nodeids)]
@@ -257,17 +281,71 @@ class EKGConstructService:
             if edgeid2edges_dict[edgeid][0]!=edgeid2edges_dict[edgeid][1]
         ]
 
-        # 
+        # execute action
         add_node_result = self.add_nodes(add_nodes, teamid)
         add_edge_result = self.add_edges(add_edges, teamid)
 
-        delete_edge_result = self.delete_nodes(delete_nodes, teamid)
-        delete_node_result = self.delete_edges(delete_edges, teamid)
+        delete_node_result = self.delete_nodes(delete_nodes, teamid)
+        delete_edge_result = self.delete_edges(delete_edges, teamid)
 
         update_node_result = self.update_nodes(update_nodes, teamid)
         update_edge_result = self.update_edges(update_edges, teamid)
 
-        return [add_node_result, add_edge_result, delete_edge_result, delete_node_result, update_node_result, update_edge_result]
+        # 返回明确更新的graph
+        add_fail_edge_ids = []
+        add_edge_dict = {}
+        for add_edge, gb_res in zip(add_edges, add_edge_result["gb_result"]):
+            add_edge_dict["__".join([add_edge.start_id, add_edge.end_id])] = add_edge
+            if gb_res["status"]["errorMessage"] not in ["GDB_SUCCEED", "GDB_ENGINE_PRIMARY_KEY_DUPLICATE"]:
+                add_fail_edge_ids.append("__".join([add_edge.start_id, add_edge.end_id]))
+
+        delete_fail_edge_ids = []
+        for delete_edge, gb_res in zip(delete_edges, delete_edge_result["gb_result"]):
+            if gb_res["status"]["errorMessage"] not in ["GDB_SUCCEED"]:
+                delete_fail_edge_ids.append("__".join([delete_edge.start_id, delete_edge.end_id]))
+
+        add_fail_node_ids = []
+        add_node_dict = {}
+        for add_node, gb_res in zip(add_nodes, add_node_result["gb_result"]):
+            add_node_dict[add_node.id] = add_node
+            if gb_res["status"]["errorMessage"] not in ["GDB_SUCCEED", "GDB_ENGINE_PRIMARY_KEY_DUPLICATE"]:
+                add_fail_node_ids.append(add_node.id)
+
+        delete_fail_node_ids = []
+        for delete_node, gb_res in zip(delete_nodes, delete_node_result["gb_result"]):
+            if gb_res["status"]["errorMessage"] not in ["GDB_SUCCEED"]:
+                delete_fail_node_ids.append(delete_node.id)
+
+        new_nodes_copy = []
+        for n in new_nodes:
+            if n.id not in add_fail_node_ids:
+                new_nodes_copy.append(add_node_dict.get(n.id,  n))
+        
+        for n in delete_nodes:
+            if n.id in delete_fail_node_ids:
+                new_nodes_copy.append(n)
+
+        new_edges_copy = []
+        for e in new_edges:
+            if "__".join([e.start_id, e.end_id]) not in add_fail_edge_ids:
+                new_edges_copy.append(add_edge_dict.get("__".join([e.start_id, e.end_id]), e))
+        for e in delete_edges:
+            if "__".join([e.start_id, e.end_id]) in delete_fail_edge_ids:
+                new_edges_copy.append(e)
+
+        _, old_graph = self._get_local_graph(
+            self._normalized_nodes_type(new_nodes_copy), 
+            self._normalized_edges_type(new_edges_copy), rootid=rootid
+        )
+        # old_graph = Graph(nodes=new_nodes_copy, edges=new_edges_copy, paths=[])
+        return old_graph, {
+            "add_node_result": add_node_result, 
+            "add_edge_result": add_edge_result, 
+            "delete_edge_result": delete_edge_result, 
+            "delete_node_result": delete_node_result, 
+            "update_node_result": update_node_result, 
+            "update_edge_result": update_edge_result
+        }
 
 
     def add_nodes(self, nodes: List[GNode], teamid: str):
@@ -291,7 +369,7 @@ class EKGConstructService:
             tb_result.append(self.tb.insert_data_hash(tbase_nodes, key='node_id', need_etime=False))
         except Exception as e:
             logger.error(e)
-        return gb_result + tb_result
+        return {"gb_result": gb_result, "tb_result": tb_result}
 
     def add_edges(self, edges: List[GEdge], teamid: str):
         edges = self._update_new_attr_for_edges(edges)
@@ -312,7 +390,7 @@ class EKGConstructService:
             tb_result.append(self.tb.insert_data_hash(tbase_edges, key="edge_id", need_etime=False))
         except Exception as e:
             logger.error(e)
-        return gb_result + tb_result
+        return {"gb_result": gb_result, "tb_result": tb_result}
 
     def delete_nodes(self, nodes: List[GNode], teamid: str=''):
         # delete tbase nodes
@@ -380,7 +458,7 @@ class EKGConstructService:
             gb_result.append(self.gb.delete_node(
                 {"id": node.id}, node.type, ID=node.attributes.get("ID") or double_hashing(node.id)
             ))
-        return gb_result + tb_result
+        return {"gb_result": gb_result, "tb_result": tb_result}
     
     def delete_edges(self, edges: List[GEdge], teamid: str):
         # delete tbase nodes
@@ -406,7 +484,7 @@ class EKGConstructService:
                 edge.attributes.get("DSTID") or double_hashing(edge.end_id), 
                 edge.type
             ))
-        return gb_result + tb_result
+        return {"gb_result": gb_result, "tb_result": tb_result}
     
     def update_nodes(self, nodes: List[GNode], teamid: str):
         # delete tbase nodes
@@ -419,8 +497,8 @@ class EKGConstructService:
 
         if len(tbase_missing_nodeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_nodeids}")
-            for node in nodes:
-                r = self.tb.search(f"@node_id: {node.id}", index_name=self.node_indexname)
+            for nodeid in tbase_missing_nodeids:
+                r = self.tb.search(f"@node_id: {nodeid}", index_name=self.node_indexname)
                 teamids_by_nodeid.update({data['node_id']: data["node_str"]  for data in r.docs})
 
         tb_result = []
@@ -448,7 +526,7 @@ class EKGConstructService:
                 ID=ID
             )
             gb_result.append(resp)
-        return gb_result or tb_result
+        return {"gb_result": gb_result, "tb_result": tb_result}
 
     def update_edges(self, edges: List[GEdge], teamid: str):
         r = self.tb.search(f"@edge_str: *{teamid}*", index_name=self.node_indexname, limit=len(edges))
@@ -470,13 +548,13 @@ class EKGConstructService:
         for edge in edges:
             # if node.id not in update_tbase_nodeids: continue
             SRCID = edge.attributes.pop("SRCID", None) or double_hashing(edge.start_id)
-            DSTID = edge.attributes.pop("DSTID", None) or double_hashing(edge.start_id)
+            DSTID = edge.attributes.pop("DSTID", None) or double_hashing(edge.end_id)
             resp = self.gb.update_edge(
                 SRCID, DSTID,
                 edge.attributes, edge_type=edge.type
             )
             gb_result.append(resp)
-        return gb_result
+        return {"gb_result": gb_result, "tb_result": []}
 
     def get_node_by_id(self, nodeid: str, node_type:str = None) -> GNode:
         node = self.gb.get_current_node({'id': nodeid}, node_type=node_type)
@@ -487,7 +565,7 @@ class EKGConstructService:
             nodeid: str, 
             node_type: str, 
             hop: int = 10, 
-            block_attributes: dict = {}
+            block_attributes: List[dict] = {}
         ) -> Graph:
         if hop<2:
             raise Exception(f"hop must be smaller than 2, now hop is {hop}")
@@ -549,20 +627,16 @@ class EKGConstructService:
         keywords = extract_tags(text)
         keyword = "|".join(keywords)
         for key in ["name_keyword", "desc_keyword"]:
-            r = self.tb.search(f"(@{key}:{{{keyword}}})", index_name=self.node_indexname, limit=30)
+            query = f"(@node_str: *{teamid}*)(@{key}:{{{keyword}}})"
+            r = self.tb.search(query, index_name=self.node_indexname, limit=30)
             for i in r.docs:
                 if i["ID"] not in nodeids:
                     nodeids.append(i["ID"])
 
-        nodes_by_name = self.gb.get_current_nodes({"name": text}, node_type=node_type)
-        nodes_by_desc = self.gb.get_current_nodes({"description": text}, node_type=node_type)
         nodes = self.gb.get_nodes_by_ids(nodeids)
-
         nodes = self._normalized_nodes_type(nodes)
-        nodes = nodes_by_name + nodes_by_desc + nodes
         # tmp iead to filter by teamid 
-        nodes = [node for node in nodes if teamid in str(node.attributes)]
-
+        nodes = [node for node in nodes if str(teamid) in str(node.attributes)]
         # select the node which can connect the rootid
         nodes = [node for node in nodes if len(self.search_rootpath_by_nodeid(node.id, node.type, f"ekg_team:{teamid}").paths)>0]
         return nodes

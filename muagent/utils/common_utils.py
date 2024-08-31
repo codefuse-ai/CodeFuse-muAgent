@@ -13,8 +13,8 @@ import json
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def getCurrentDatetime():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def getCurrentDatetime(dateformat=DATE_FORMAT):
+    return datetime.now().strftime(dateformat)
 
 def getCurrentTimestap():
     return int(datetime.now().timestamp())
@@ -30,10 +30,10 @@ def addMinutesToTime(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
 
 def timestampToDateformat(ts, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间戳转换标准指定时间格式'''
-    return datetime.fromtimestamp(ts//interval).strftime(dateformat)
+    return datetime.fromtimestamp(ts/interval).strftime(dateformat)
 
 
-def datefromatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
+def dateformatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间格式转换未标准时间戳'''
     return int(datetime.strptime(dt, dateformat).timestamp()*interval)
 

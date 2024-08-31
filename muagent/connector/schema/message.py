@@ -79,9 +79,9 @@ class Message(BaseModel):
         start_datetime = values.get("start_datetime")
         end_datetime = values.get("end_datetime")
         if start_datetime is None:
-            values["start_datetime"] = getCurrentDatetime()
+            values["start_datetime"] = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         if end_datetime is None:
-            values["end_datetime"] = getCurrentDatetime()
+            values["end_datetime"] = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         return values
 
     @root_validator(pre=True)
@@ -99,7 +99,7 @@ class Message(BaseModel):
     def update_attribute(self, key: str, value):
         if hasattr(self, key):
             setattr(self, key, value)
-            self.end_datetime = getCurrentDatetime()
+            self.end_datetime = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         else:
             raise AttributeError(f"{key} is not a valid property of {self.__class__.__name__}")
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from enum import Enum
 import copy
 import json
@@ -21,13 +21,13 @@ SHAPE2TYPE = {
 #####################################################################
 class NodeSchema(BaseModel):
     type: str
-    ID: int = None # depend on id-str
+    ID: Optional[int] = None # depend on id-str
     id: str
     # depend on user's difine
     name: str
     # depend on user's difine
     description: str
-    gdb_timestamp: int
+    gdb_timestamp: Optional[int] = None
 
     def attributes(self, ):
         attrs = copy.deepcopy(vars(self))
@@ -41,14 +41,14 @@ class NodeSchema(BaseModel):
 class EdgeSchema(BaseModel):
     type: str
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
-    SRCID: int = None
+    SRCID: Optional[int] = None
     original_src_id1__: str
     # entity_id, ekg_node:{graph_id}:{node_type}:{content_md5}
-    DSTID: int = None
+    DSTID: Optional[int] = None
     original_dst_id2__: str
     # 
-    timestamp: int = None
-    gdb_timestamp: int
+    timestamp: Optional[int] = None
+    gdb_timestamp: Optional[int] = None
 
     def attributes(self, ):
         attrs = copy.deepcopy(vars(self))
@@ -75,15 +75,15 @@ class NodeTypesEnum(Enum):
 
 # EKG Node and Edge Schemas
 class EKGNodeSchema(NodeSchema):
-    teamids: str
+    teamids: str = ''
     # version:str # yyyy-mm-dd HH:MM:SS
-    extra: str = ''
+    extra: str = '{}'
 
 
 class EKGEdgeSchema(EdgeSchema):
     # teamids: str
     # version:str # yyyy-mm-dd HH:MM:SS
-    extra: str = ''
+    extra: str = '{}'
 
 
 class EKGIntentNodeSchema(EKGNodeSchema):
@@ -92,26 +92,26 @@ class EKGIntentNodeSchema(EKGNodeSchema):
 
 class EKGScheduleNodeSchema(EKGNodeSchema):
     # do action or not
-    enable: bool
+    enable: bool = False
 
 
 class EKGTaskNodeSchema(EKGNodeSchema):
     # tool: str
     # needcheck: bool
     # when to access
-    accesscriteria: str
-    executetype: str
+    accesscriteria: str = '{}'
+    executetype: str = ''
     # 
     # owner: str
     
 
 class EKGAnalysisNodeSchema(EKGNodeSchema):
     # when to access
-    accesscriteria: str
+    accesscriteria: str = '{}'
     # do summary or not
-    summaryswtich: bool
+    summaryswtich: bool = False
     # summary template
-    dsltemplate: str
+    dsltemplate: str = ''
 
 
 class EKGPhenomenonNodeSchema(EKGNodeSchema):

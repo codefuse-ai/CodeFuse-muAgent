@@ -59,7 +59,7 @@ class IntentionRouter:
             rule_dict[node_id] = rule
         
         if len(rule_dict) > ori_len:
-            rule_dict.save_to_odps()
+            rule_dict.save()
         
         error_msg = ''
         if fail_nodes:
@@ -189,11 +189,11 @@ class IntentionRouter:
             return self._get_intention_by_nlp_from_root(gb_handler, agent, root_node_id, query)
 
         nodes_tb = self._tb_match(tb_handler, query, self._node_type)
-        filter_nodes_tb = self._filter_ancestors_hop(gb_handler, set(nodes_tb), root_node_id)
+        filter_nodes_tb = self._filter_ancestors(gb_handler, set(nodes_tb), root_node_id)
 
         filter_nodes_tb = {
             k: v for k, v in filter_nodes_tb.items()
-            if self.is_node_valid(gb_handler, k)
+            if self.is_node_valid(k, gb_handler)
         }
 
         if len(filter_nodes_tb) == 0:
@@ -313,7 +313,7 @@ class IntentionRouter:
         canditates = [n.id for n in canditates if n.type == self._node_type]
         if len(canditates) == 0:
             return True
-        return self.is_node_valid(gb_handler, canditates[0])
+        return self.is_node_valid(canditates[0], gb_handler)
 
     def _get_agent_ans_no_ekg(self, agent, query: str) -> str:
         query = itp.DIRECT_CHAT_PROMPT.format(query=query)

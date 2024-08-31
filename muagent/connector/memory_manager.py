@@ -655,7 +655,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         r = self.th.search(content)
         return self.tbasedoc2Memory(r)
 
-    def get_memory_pool_by_all(self, search_key_contents: dict):
+    def get_memory_pool_by_all(self, search_key_contents: dict, limit: int =10):
         '''
         search_key_contents:
             - key: str, key must in message keys
@@ -666,11 +666,17 @@ class TbaseMemoryManager(BaseMemoryManager):
             if not v: continue
             if k == "keyword":
                 querys.append(f"@{k}:{{{v}}}")
+            elif k == "role_tags":
+                tags_str = '|'.join([f"*{tag}*" for tag in v]) if isinstance(v, list) else f"{v}"
+                querys.append(f"@role_tags:{tags_str}")
+            elif k == "start_datetime":
+                query = f"(@start_datetime:[{v[0]} {v[1]}])"
+                querys.append(query)
             else:
                 querys.append(f"@{k}:{v}")
         
         query = f"({')('.join(querys)})" if len(querys) >=2 else "".join(querys)
-        r = self.th.search(query)
+        r = self.th.search(query, limit=limit)
         return self.tbasedoc2Memory(r)
         
     def embedding_retrieval(self, text: str, top_k=1, score_threshold=1.0, chat_index: str = "default", **kwargs) -> List[Message]:
@@ -707,7 +713,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         return self._text_retrieval_from_cache(memory.messages, text)
 
     def datetime_retrieval(self, chat_index: str, datetime: str, text: str = None, n: int = 5, key: str = "start_datetime", **kwargs) -> List[Message]:
-        intput_timestamp = datefromatToTimestamp(datetime, 1)
+        intput_timestamp = dateformatToTimestamp(datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
         query = f"(@chat_index:{chat_index})(@{key}:[{intput_timestamp-n*60} {intput_timestamp+n*60}])"
         # logger.debug(f"datetime_retrieval query: {query}")
         r = self.th.search(query)
@@ -787,8 +793,8 @@ class TbaseMemoryManager(BaseMemoryManager):
         #     if content is not None:
         #         tbase_message["customed_kargs"][key] = content
 
-        tbase_message["start_datetime"] = datefromatToTimestamp(message.start_datetime, 1)
-        tbase_message["end_datetime"] = datefromatToTimestamp(message.end_datetime, 1)
+        tbase_message["start_datetime"] = dateformatToTimestamp(message.start_datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
+        tbase_message["end_datetime"] = dateformatToTimestamp(message.end_datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
 
         if self.use_vector and self.embed_config:
             vector_dict = get_embedding(
@@ -830,8 +836,8 @@ class TbaseMemoryManager(BaseMemoryManager):
             memory.append(message)
 
         for message in memory.messages:
-            message.start_datetime = timestampToDateformat(int(message.start_datetime), 1)
-            message.end_datetime = timestampToDateformat(int(message.end_datetime), 1)
+            message.start_datetime = timestampToDateformat(int(message.start_datetime), 1000, "%Y-%m-%d %H:%M:%S.%f")
+            message.end_datetime = timestampToDateformat(int(message.end_datetime), 1000, "%Y-%m-%d %H:%M:%S.%f")
 
         memory.sort_by_key("end_datetime")
         # for message in memory.message:
