@@ -108,7 +108,7 @@ def generate_node(id, type):
         
     if type == "opsgptkg_analysis":
         extra_attr["accesscriteria"] = "hello"
-        extra_attr["summaryswtich"] = False
+        extra_attr["summaryswitch"] = False
         extra_attr['dsltemplate'] = "hello"             
         
     return GNode(**{

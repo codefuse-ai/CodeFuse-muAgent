@@ -1105,7 +1105,7 @@ class EKGConstructService:
         for node in nodes:
             node_type = node.type
             node_data_dict = {**{"id": node.id, "type": node_type}, **node.attributes}
-            node_data_dict = {k: 'False' if k in ["enable", "summaryswtich"] and v=="" else v  for k,v in node_data_dict.items()}
+            node_data_dict = {k: 'False' if k in ["enable", "summaryswitch"] and v=="" else v  for k,v in node_data_dict.items()}
             node_data: EKGNodeSchema = TYPE2SCHEMA[node_type](**node_data_dict)
             valid_node = GNode(id=node.id, type=node_type, attributes=node_data.attributes())
             valid_nodes.append(valid_node)

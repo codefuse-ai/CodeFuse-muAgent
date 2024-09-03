@@ -109,7 +109,7 @@ class EKGAnalysisNodeSchema(EKGNodeSchema):
     # when to access
     accesscriteria: str = '{}'
     # do summary or not
-    summaryswtich: bool = False
+    summaryswitch: bool = False
     # summary template
     dsltemplate: str = ''
 
@@ -153,7 +153,7 @@ class EKGGraphSlsSchema(BaseModel):
     extra: str = ''
     enable: bool = False
     dsltemplate: str = ''
-    summaryswtich: bool = False
+    summaryswitch: bool = False
 
     gdb_timestamp: int
     original_src_id1__: str = ""
