@@ -11,7 +11,6 @@ from muagent.schemas.apis.ekg_api_schema import *
 
 # 
 def init_app(llm, embeddings, ekg_construct_service: EKGConstructService):
-# def init_app(llm, embeddings):
 
     app = FastAPI()
 

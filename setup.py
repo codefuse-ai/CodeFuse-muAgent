@@ -38,7 +38,7 @@ setuptools.setup(
         # 
         "chromadb==0.4.17",
         "javalang==0.13.0",
-        "nebula3-python==3.1.0",
+        "nebula3-python==3.8.2",
         "SQLAlchemy==2.0.19",
         "redis==5.0.1",
         "pydantic<=1.10.14",

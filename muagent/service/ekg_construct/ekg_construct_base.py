@@ -15,8 +15,6 @@ from jieba.analyse import extract_tags
 
 import time
 
-
-
 from muagent.schemas.ekg import *
 from muagent.schemas.db import *
 from muagent.schemas.common import *
@@ -153,7 +151,7 @@ class EKGConstructService:
             self.gb: GBHandler = gb_class(self.gb_config)
 
             initialize_space = True # True or False
-            if initialize_space:
+            if initialize_space and self.gb_config.gb_type=="NebulaHandler":
                 # 初始化space
                 # self.gb.drop_space('client')
                 self.gb.create_space('client')
