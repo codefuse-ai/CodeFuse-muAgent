@@ -37,6 +37,7 @@ class EKGT2GRequest(BaseModel):
     intentNodeids: List[str] = []
     intentPath: List[str] = []
     teamid: str
+    rootid: str
     write2kg: bool = False
 
 class EKGGraphResponse(EKGResponse):
@@ -61,7 +62,7 @@ class GetNodeRequest(BaseModel):
     nodeType: str
 
 class GetNodeResponse(EKGResponse):
-    node: GNode
+    node: GNode = None
 
 
 

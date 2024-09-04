@@ -1,5 +1,4 @@
-From python:3.9.18-bookworm
-# FROM python:3.9-slim-bookworm
+FROM python:3.9-bookworm
 
 WORKDIR /home/user
 
@@ -16,7 +15,6 @@ COPY ./requirements.txt /home/user/docker_requirements.txt
 # RUN dpkg -i nebula-graph-3.6.0.ubuntu1804.amd64.deb
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip install fastapi uvicorn notebook
-# RUN pip install -r /home/user/docker_requirements.txt
+RUN pip install -r /home/user/docker_requirements.txt --retries 5 --timeout 120
 
 CMD ["bash"]

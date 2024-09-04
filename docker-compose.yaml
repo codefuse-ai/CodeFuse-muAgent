@@ -1,9 +1,8 @@
-version: '0.1'
-
+version: '3.4'
 services:
   metad0:
+    # image: docker.io/vesoft/nebula-metad:v3.8.0
     image: vesoft/nebula-metad:v3.8.0
-    container_name: metad0
     environment:
       USER: root
     command:
@@ -36,8 +35,8 @@ services:
       - SYS_PTRACE
 
   storaged0:
+    # image: docker.io/vesoft/nebula-storaged:v3.8.0
     image: vesoft/nebula-storaged:v3.8.0
-    container_name: storaged0
     environment:
       USER: root
       TZ:   "${TZ}"
@@ -73,8 +72,8 @@ services:
       - SYS_PTRACE
 
   graphd:
+    # image: docker.io/vesoft/nebula-graphd:v3.8.0
     image: vesoft/nebula-graphd:v3.8.0
-    container_name: graphd
     environment:
       USER: root
       TZ:   "${TZ}"
@@ -109,7 +108,7 @@ services:
 
   redis-stack:
     image: redis/redis-stack:7.4.0-v0
-    container_name: redis
+    container_name: redis-stack
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -118,7 +117,7 @@ services:
     networks:
       - ekg-net
     restart: always
-
+  
 
   ollama:
     image: ollama/ollama:0.3.6
@@ -129,8 +128,8 @@ services:
     ports:
       - 11434:11434
     volumes:
-      - //d/models/ollama:/root/.ollama # windows path
-      # - /User/models:/root/.ollama # linux/mac path
+      # - //d/models/ollama:/root/.ollama # windows path
+      - /Users/yunjiu/ant/models:/root/.ollama # linux/mac path
     networks:
       - ekg-net
     restart: on-failure
@@ -149,13 +148,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ekgservice
-    image: muagent:test
+    image: muagent:0.1.0
+    # image: muagent:0.2.0
     environment:
       USER: root
       TZ:   "${TZ}"
     ports:
-      - 5050:3737
-      # - 8080:8888
+      # - 5050:3737
+      - 3737:3737
     volumes:
       - ./examples:/home/user/muagent/examples
       - ./muagent:/home/user/muagent/muagent
@@ -163,8 +163,11 @@ services:
     restart: on-failure
     networks:
       - ekg-net
-    # command: ["python", "/home/user/muagent/examples/ekg_examples/start.py"]  # 指定要执行的脚本
-    command: ["python", "/home/user/muagent/tests/httpapis/fastapi_test.py"]  # 指定要执行的脚本
+    command: ["python", "/home/user/muagent/examples/ekg_examples/start.py"]  # 指定要执行的脚本
+    # command: ["python", "/home/user/muagent/tests/httpapis/fastapi_test.py"]  # 指定要执行的脚本
+
 
 networks:
-  ekg-net:
+  ekg-net: 
+    # driver: bridge
+    external: true

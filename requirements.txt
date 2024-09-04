@@ -14,7 +14,7 @@ faiss-cpu
 notebook
 chromadb==0.4.17
 javalang==0.13.0
-nebula3-python==3.1.0
+nebula3-python==3.8.2
 Pyarrow
 python-magic-bin; sys_platform == 'win32'
 SQLAlchemy==2.0.19

@@ -13,6 +13,9 @@ from redis.commands.search.field import (
 )
 from jieba.analyse import extract_tags
 
+import time
+
+
 
 from muagent.schemas.ekg import *
 from muagent.schemas.db import *
@@ -148,6 +151,19 @@ class EKGConstructService:
             gb_dict = {"NebulaHandler": NebulaHandler, "NetworkxHandler": NetworkxHandler, "GeaBaseHandler": GeaBaseHandler,}
             gb_class =  gb_dict.get(self.gb_config.gb_type, NebulaHandler)
             self.gb: GBHandler = gb_class(self.gb_config)
+
+            initialize_space = True # True or False
+            if initialize_space:
+                # 初始化space
+                # self.gb.drop_space('client')
+                self.gb.create_space('client')
+                
+                # 创建node tags和edge types
+                self.create_gb_tags_and_edgetypes()
+
+                print('Node Tags和Edge Types初始化中，等待20秒......')
+                time.sleep(20)
+
         else:
             self.gb = None
 
@@ -219,6 +235,53 @@ class EKGConstructService:
             paths=paths
         )
         return rootid_can_arrive_nodeids, graph
+    def create_gb_tags_and_edgetypes(self):
+        #print('create_gb_tags_and_edgetypes')
+
+        # 节点标签名
+        node_tag_list = ['opsgptkg_intent', 'opsgptkg_schedule','opsgptkg_task',
+                         'opsgptkg_analysis','opsgptkg_phenomenon','opsgptkg_tool',
+                         'opsgptkg_toolType']
+        
+        # 每个标签的属性
+        node_attributes_dic = [{'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','teamids': 'string','version': 'string','extra': 'string'},
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','teamids': 'string','version': 'string','extra': 'string','enable': 'bool'},
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','teamids': 'string','version': 'string','extra': 'string','accesscriteria': 'string','executetype': 'string','communication': 'string'},
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','teamids': 'string','version': 'string','extra': 'string','accesscriteria': 'string','summaryswitch': 'bool', 'dsltemplate': 'string'},# dsltemplate
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','teamids': 'string','version': 'string','extra': 'string'},
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int','extra': 'string','input': 'string','output': 'string'}, # opsgptkg_tool
+                               {'ID': 'int', 'id': 'string', 'description': 'string','name': 'string','gdb_timestamp': 'int'}] #opsgptkg_tool
+        
+        edge_type_list = ['opsgptkg_intent_extend_opsgptkg_intent',
+                          'opsgptkg_intent_route_opsgptkg_schedule',
+                          'opsgptkg_intent_route_opsgptkg_phenomenon',
+                          'opsgptkg_intent_route_opsgptkg_task',
+                          'opsgptkg_schedule_route_opsgptkg_task',
+                          'opsgptkg_schedule_opsgptkg_phenomenon',
+                          'opsgptkg_task_route_opsgptkg_task',
+                          'opsgptkg_task_route_opsgptkg_analysis',
+                          'opsgptkg_task_route_opsgptkg_phenomenon',
+                          'opsgptkg_phenomenon_route_opsgptkg_task',
+                          'opsgptkg_phenomenon_route_opsgptkg_analysis',
+                          'opsgptkg_analysis_route_opsgptkg_task',
+                          'opsgptkg_schedule_route_opsgptkg_analysis' # 测试集独有
+                          ]
+        
+        edge_attributes_dic = {'SRCID': 'int',
+                               'original_src_id1__': 'string',
+                               'DSTID': 'int',
+                               'original_dst_id2__': 'string',
+                               'TIMESTAMP': 'int',
+                               'gdb_timestamp': 'int',
+                               'version': 'string',
+                               'extra': 'string'}
+        
+        for i in range(len(node_tag_list)):
+            self.gb.create_tag(node_tag_list[i],node_attributes_dic[i])
+
+        for i in range(len(edge_type_list)):
+            self.gb.create_edge_type(edge_type_list[i],edge_attributes_dic)
+        
 
     def update_graph(
             self, 

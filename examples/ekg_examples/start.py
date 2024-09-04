@@ -211,6 +211,17 @@ with open(os.path.join(cur_dir, file_path), 'r') as file:
 #     extra_kwargs={}
 # )
 
+# 初始化 NebulaHandler 实例
+gb_config = GBConfig(
+    gb_type="NebulaHandler", 
+    extra_kwargs={
+        'host': config_data["nebula_config"]['host'],
+        'port': config_data["nebula_config"]['port'],
+        'username': config_data["nebula_config"]['username'] ,
+        'password': config_data["nebula_config"]['password'],
+        "space": config_data["nebula_config"]['space_name'],    
+    }
+)
 
 # 初始化 TbaseHandler 实例
 tb_config = TBConfig(
@@ -236,18 +247,19 @@ llm_config = LLMConfig(
 
 
 embeddings = CustomEmbeddings()
-embed_config = EmbedConfig(
-    embed_model="default",
-    langchain_embeddings=embeddings
+# embed_config = EmbedConfig(
+#     embed_model="default",
+#     langchain_embeddings=embeddings
+# )
+embed_config = None
+
+
+ekg_construct_service = EKGConstructService(
+    embed_config=embed_config,
+    llm_config=llm_config,
+    tb_config=tb_config,
+    gb_config=gb_config,
 )
 
-
-# ekg_construct_service = EKGConstructService(
-#     embed_config=embed_config,
-#     llm_config=llm_config,
-#     tb_config=tb_config,
-#     gb_config=gb_config,
-# )
-
 from muagent.httpapis.ekg_construct import create_api
-create_api(llm, embeddings)
+create_api(llm, embeddings, ekg_construct_service)
