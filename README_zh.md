@@ -7,7 +7,7 @@
 <p align="center">
     <a href="README_zh.md"><img src="https://img.shields.io/badge/文档-中文版-yellow.svg" alt="ZH doc"></a>
     <a href="README.md"><img src="https://img.shields.io/badge/document-English-yellow.svg" alt="EN doc"></a>
-    <img src="https://img.shields.io/github/license/codefuse-ai/CodeFuse-muAgent" alt="License">
+    <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-Apache%202.0-yellow" alt="License">
     <a href="https://github.com/codefuse-ai/CodeFuse-muAgent/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/CodeFuse-muAgent" />
     </a>
@@ -24,7 +24,7 @@
 - [🤝 介绍](#-介绍)
 - [🚀 快速使用](#-快速使用)
 - [🧭 关键技术](#-关键技术)
-- [🤗 贡献](#-贡献)
+- [🤗 贡献指南](#-贡献指南)
 - [🗂 其他](#-其他)
   - [📱 联系我们](#-联系我们)
 
@@ -77,7 +77,7 @@ pip install codefuse-muagent
 - 记忆管理：统一消息池设计，支持各类场景所需分门别类消息投递、订阅，隔离且互通，便于多Agent场景消息管理使用；同时面向超长上下文，支持消息检索、排序、蒸馏，提升整体问答质量
 - 操作空间：遵循Swagger协议，提供工具注册、权限管理、统一分类，方便LLM在工具调用中接入使用；提供安全可信代码执行环境，同时确保代码精准生成，满足可视绘图、数值计算、图表编辑等各类场景诉求
 
-## 贡献指南
+## 🤗 贡献指南
 非常感谢您对 Codefuse 项目感兴趣，我们非常欢迎您对 Codefuse 项目的各种建议、意见（包括批评）、评论和贡献。
 
 您对 Codefuse 的各种建议、意见、评论可以直接通过 GitHub 的 Issues 提出。
