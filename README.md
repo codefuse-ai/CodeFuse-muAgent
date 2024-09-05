@@ -17,8 +17,8 @@
 
 
 ## 🔔 News
-- [2024.04.01] codefuse-muAgent is now open source, featuring functionalities such as knowledge base, code library, tool usage, code interpreter, and more
-- [2024.09.05] we release muAgent v2.0 - EKG: An Innovative Agent Framework Driven By KG Engine.
+- [2024.04.01] muAgent is now open source, focusing on multi-agent orchestration and collaborating with technologies such as FunctionCall, RAG, and CodeInterpreter.
+- [2024.09.05] we release muAgent v2.0: An Innovative Agent Framework Driven By KG Engine.
 
 
 
@@ -32,11 +32,13 @@
 
 
 ## 🤝 Introduction
-
+<p align="justify">
 A brand new Agent Framework driven by LLM and EKG(Eventic Knowledge Graph,  Industry Knowledge Carrier)，collaboratively utilizing MultiAgent, FunctionCall, CodeInterpreter, etc. Through canvas-based drag-and-drop and simple text writing, the large language model can assists you in executing various complex SOP under human guidance. It is compatbile with existing frameworks on the market and can achieve four core differentiating technical functions: Complex Reasoning, Online Collaboration, Human Interaction, Knowledge On-demand.
 This framework has been validated in multiple complex DevOps scenarios within Ant Group. At the sametime, come and experience the Undercover game we quickly built!
-
-![](docs/resources/ekg-arch-en.webp)
+</p>
+<div align="center">
+  <img src="docs/resources/ekg-arch-en.webp" alt="muAgent Architecture" width="800">
+</div>
 
 ## 🚀 QuickStart
 For complete documentation, see: [CodeFuse-muAgent](https://codefuse.ai/docs/api-docs/MuAgent/overview/multi-agent)
