@@ -17,8 +17,8 @@
 
 
 ## 🔔 更新
-- [2024.04.01] CodeFuse-muAgent 开源，支持知识库、代码库、工具使用、代码解释器等功能
-- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新代理框架
+- [2024.04.01] muAgent正式开源，聚焦多agent编排，协同FunctionCall、RAG、CodeInterpreter等技术
+- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新Agent框架
 
 ## 📜 目录
 - [🤝 介绍](#-介绍)
