@@ -89,10 +89,10 @@ class Message(BaseModel):
         message_index = values.get("message_index")
         chat_index = values.get("chat_index")
         if message_index is None or message_index == "":
-            values["message_index"] = str(uuid.uuid4())
+            values["message_index"] = str(uuid.uuid4()).replace("-", "_")
 
         if chat_index is None or chat_index == "":
-            values["chat_index"] = str(uuid.uuid4())
+            values["chat_index"] = str(uuid.uuid4()).replace("-", "_")
         return values
     
 

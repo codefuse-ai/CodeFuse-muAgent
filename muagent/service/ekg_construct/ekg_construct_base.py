@@ -559,7 +559,7 @@ class EKGConstructService:
         if len(tbase_missing_nodeids) > 0:
             logger.error(f"there must something wrong! ID not match, such as {tbase_missing_nodeids}")
             for nodeid in tbase_missing_nodeids:
-                r = self.tb.search(f"@node_id: {nodeid}", index_name=self.node_indexname)
+                r = self.tb.search(f"@node_id: {nodeid.replace('-', '_')}", index_name=self.node_indexname)
                 teamids_by_nodeid.update({data['node_id']: data["node_str"]  for data in r.docs})
 
         tb_result = []
@@ -859,7 +859,7 @@ class EKGConstructService:
         sls_nodes, sls_edges = [], []
         for node_idx, node_info in node_edge_dict['nodes'].items():
             node_type = node_info['type'].lower()
-            node_id = str(uuid.uuid4())
+            node_id = str(uuid.uuid4()).replace("-", "_")
             node_info['node_id_new'] = node_id
 
             ekg_slsdata = EKGGraphSlsSchema(
