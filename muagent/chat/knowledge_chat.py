@@ -12,7 +12,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 #     llm_model_dict, LLM_MODEL, PROMPT_TEMPLATE, 
 #     VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD)
 from muagent.base_configs.env_config import KB_ROOT_PATH
-from muagent.connector.configs.prompts import ORIGIN_TEMPLATE_PROMPT
+from muagent.base_configs.prompts import ORIGIN_TEMPLATE_PROMPT
 from muagent.chat.utils import History, wrap_done
 from muagent.utils import BaseResponse
 from muagent.llm_models.llm_config import LLMConfig, EmbedConfig

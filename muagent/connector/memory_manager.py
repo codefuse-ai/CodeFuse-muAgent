@@ -10,12 +10,14 @@ from langchain_community.docstore.document import Document
 
 
 from .schema import Memory, Message
-from muagent.service.service_factory import KBServiceFactory
+from muagent.connector.configs.generate_prompt import *
+from muagent.schemas.db import DBConfig, GBConfig, VBConfig, TBConfig
+from muagent.db_handler import *
+from muagent.retrieval.service_factory import KBServiceFactory
 from muagent.llm_models import getChatModelFromConfig
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.retrieval.utils import load_embeddings_from_path
 from muagent.utils.common_utils import *
-from muagent.connector.configs.prompts import CONV_SUMMARY_PROMPT_SPEC
 from muagent.orm import table_init
 from muagent.base_configs.env_config import KB_ROOT_PATH
 # from configs.model_config import KB_ROOT_PATH, EMBEDDING_MODEL, EMBEDDING_DEVICE, SCORE_THRESHOLD
@@ -51,39 +53,39 @@ class BaseMemoryManager(ABC):
     - datetime_retrieval: Retrieves messages based on datetime.
     - recursive_summary: Performs recursive summarization of messages.
     """
-    
     def __init__(
             self,
-            user_name: str = "default",
-            unique_name: str = "default",
-            memory_type: str = "recall",
+            embed_config: EmbedConfig,
+            llm_config: LLMConfig,
+            db_config: DBConfig,
+            vb_config: VBConfig,
+            gb_config: GBConfig,
+            tb_config: TBConfig,
             do_init: bool = False,
         ):
         """
         Initializes the LocalMemoryManager with the given parameters.
 
         Args:
-        - user_name: A string representing the user name. Default is "default".
-        - unique_name: A string representing the unique name. Default is "default".
-        - memory_type: A string representing the memory type. Default is "recall".
+        - embed_config: EmbedConfig, the embedding model config
+        - llm_config: LLMConfig, the LLM model config
+        - db_config: DBConfig, the Database config
+        - vb_config: VBConfig, the vector base config
+        - gb_config: GBConfig, the graph base config
         - do_init: A boolean indicating whether to initialize. Default is False.
         """
-        self.user_name = user_name
-        self.unique_name = unique_name
-        self.memory_type = memory_type
         self.do_init = do_init
-        # self.current_memory = Memory(messages=[])
-        # self.recall_memory = Memory(messages=[])
-        # self.summary_memory = Memory(messages=[])
-        self.current_memory_dict: Dict[str, Memory] = {}
         self.recall_memory_dict: Dict[str, Memory] = {}
-        self.summary_memory_dict: Dict[str, Memory] = {}
         self.save_message_keys = [
             'chat_index', 'role_name', 'role_type', 'role_prompt', 'input_query',
             'datetime', 'role_content', 'step_content', 'parsed_output', 'spec_parsed_output', 'parsed_output_list', 
             'task', 'db_docs', 'code_docs', 'search_docs', 'phase_name', 'chain_name', 'customed_kargs']
         self.init_vb()
 
+
+    def init_db(self, ):
+        """Initializes Database VectorBase GraphDB TbaseDB"""
+    
     def re_init(self, do_init: bool=False):
         self.init_vb()
 
@@ -111,15 +113,6 @@ class BaseMemoryManager(ABC):
         """
         pass
 
-    def save(self, save_dir: str = ""):
-        """
-        Saves the memory to the specified directory.
-
-        Args:
-        - save_dir: A string representing the directory to save the memory. Default is KB_ROOT_PATH.
-        """
-        pass
-
     def load(self, load_dir: str = "") -> Memory:
         """
         Loads the memory from the specified directory and returns a Memory instance.
@@ -132,12 +125,21 @@ class BaseMemoryManager(ABC):
         """
         pass
 
-    def get_memory_pool(self, chat_index: str):
+    def get_memory_pool(self, chat_index: str) -> Memory:
         """
         return memory_pool
         """
         pass
+    
+    def search_messages(self, text: str=None, n=5, **kwargs) -> List[Message]:
+        """
+        return the search messages
 
+        Args:
+        - text: A string representing the text for retrieval. Default is None.
+        - n: An integer representing the number of messages. Default is 5.
+        """
+    
     def router_retrieval(self, text: str=None, datetime: str = None, n=5, top_k=5, retrieval_type: str = "embedding", **kwargs) -> List[Message]:
         """
         Routes the retrieval based on the retrieval type.
@@ -212,6 +214,12 @@ class BaseMemoryManager(ABC):
         """
         pass
 
+    def reranker(self, ):
+        """
+        rerank the retrieval message from memory
+        """
+        pass
+
 
 class LocalMemoryManager(BaseMemoryManager):
 
@@ -219,158 +227,156 @@ class LocalMemoryManager(BaseMemoryManager):
             self,
             embed_config: EmbedConfig,
             llm_config: LLMConfig,
-            user_name: str = "default",
-            unique_name: str = "default",
-            memory_type: str = "recall",
+            db_config: DBConfig = None,
+            vb_config: VBConfig = None,
+            gb_config: GBConfig = None,
+            tb_config: TBConfig = None,
             do_init: bool = False,
             kb_root_path: str = KB_ROOT_PATH,
         ):
-        self.user_name = user_name
-        self.unique_name = unique_name
-        self.memory_type = memory_type
-        self.chat_index: str = "default"
+        # self.user_name = user_name
+        # self.unique_name = unique_name
+        # self.memory_type = memory_type
+        self.db_config = db_config
+        self.vb_config = vb_config
+        self.gb_config = gb_config
+        self.tb_config = tb_config
         self.do_init = do_init
         self.kb_root_path = kb_root_path
         self.embed_config: EmbedConfig = embed_config
         self.llm_config: LLMConfig = llm_config
-        # self.current_memory = Memory(messages=[])
-        # self.recall_memory = Memory(messages=[])
-        # self.summary_memory = Memory(messages=[])
-        self.current_memory_dict: Dict[str, Memory] = {}
-        self.recall_memory_dict: Dict[str, Memory] = {}
-        self.summary_memory_dict: Dict[str, Memory] = {}
-        self.save_message_keys = [
-            'chat_index', 'role_name', 'role_type', 'role_prompt', 'input_query',
-            'datetime', 'role_content', 'step_content', 'parsed_output', 'spec_parsed_output', 'parsed_output_list', 
-            'task', 'db_docs', 'code_docs', 'search_docs', 'phase_name', 'chain_name', 'customed_kargs']
-        self.init_vb()
 
-    def re_init(self, do_init: bool=False):
-        self.init_vb(do_init)
+        # default
+        self.chat_index: str = "default"
+        self.user_name = "default"
+        self.uuid_name = "_".join([self.chat_index, self.user_name])
+        self.kb_name = f"{self.chat_index}/{self.user_name}"
+        self.uuid_file = os.path.join(self.kb_root_path, f"{self.chat_index}/{self.user_name}/conversation.jsonl")
+        self.recall_memory_dict: Dict[str, Memory] = {}
+        self.memory_uuids = set()
+        self.save_message_keys = [
+            'chat_index', 'message_index', 'user_name', 'role_name', 'role_type', 'input_query', 'role_content', 'step_content', 
+            'parsed_output', 'parsed_output_list', 'customed_kargs', "db_docs", "code_docs", "search_docs", 'start_datetime', 'end_datetime', 
+            "keyword", "vector",
+        ]
+        # init from config
+        self.model = getChatModelFromConfig(self.llm_config)
+        self.init_handler()
+        self.load(do_init)
+
+    def init_handler(self, ):
+        """Initializes Database VectorBase GraphDB TbaseDB"""
+        self.init_vb()
+        # self.init_db()
+        # self.init_tb()
+        # self.init_gb()
+
+    def reinit_handler(self, do_init: bool=False):
+        self.init_vb()
+        # self.init_db()
+        # self.init_tb()
+        # self.init_gb()
+
+    def clear_local(self, re_init: bool = False, handler_type: str = None):
+        if self.vb: # 存到了本地需要清理
+            self.vb.clear_vs_local()
+            self.load(re_init)
+
+    def init_tb(self, do_init: bool=None):
+        tb_dict = {"TbaseHandler": TbaseHandler}
+        tb_class =  tb_dict.get(self.tb_config.tb_type, TbaseHandler)
+        tbase_args = {
+            "host": self.tb_config.host,
+            "port": self.tb_config.port,
+            "username": self.tb_config.username,
+            "password": self.tb_config.password,
+        }
+        self.vb = tb_class(tbase_args, self.tb_config.index_name)
+
+    def init_gb(self, do_init: bool=None):
+        pass
+        gb_dict = {"NebulaHandler": NebulaHandler}
+        gb_class =  gb_dict.get(self.gb_config.gb_type, NebulaHandler)
+        self.gb = gb_class(self.db_config)
+
+    def init_db(self, do_init: bool=None):
+        pass
+        db_dict = {"LocalFaissHandler": LocalFaissHandler}
+        db_class =  db_dict.get(self.db_config.db_type)
+        self.db = db_class(self.db_config)
 
     def init_vb(self, do_init: bool=None):
-        # vb_name = f"{self.user_name}/{self.unique_name}/{self.memory_type}"
-        vb_name = f"{self.chat_index}/{self.unique_name}/{self.memory_type}"
-        # default to recreate a new vb
         table_init()
-        vb = KBServiceFactory.get_service_by_name(vb_name, self.embed_config, self.kb_root_path)
-        if vb:
-            status = vb.clear_vs()
-
-        check_do_init = do_init if do_init else self.do_init
-        if check_do_init:
-            self.load(self.kb_root_path, check_do_init)
-        else:
-            self.load(self.kb_root_path)
-            self.save_to_vs()
+        vb_dict = {"LocalFaissHandler": LocalFaissHandler}
+        vb_class =  vb_dict.get(self.vb_config.vb_type, LocalFaissHandler)
+        self.vb: LocalFaissHandler = vb_class(self.embed_config, vb_config=self.vb_config)
 
     def append(self, message: Message) -> None:
-        self.check_chat_index(message.chat_index)
 
-        # uuid_name = "_".join([self.user_name, self.unique_name, self.memory_type])
-        uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        datetimes = self.recall_memory_dict[uuid_name].get_datetimes()
-        contents = self.recall_memory_dict[uuid_name].get_contents()
+        # update the newest uuid_name
+        self.check_uuid_name(message)
+        datetimes = self.recall_memory_dict[self.uuid_name].get_datetimes()
+        contents = self.recall_memory_dict[self.uuid_name].get_contents()
         # if message not in chat history, no need to update
         if (message.end_datetime not in datetimes) or ((message.input_query not in contents) and (message.role_content not in contents)):
-            self.recall_memory_dict[uuid_name].append(message)
-            # 
-            if message.role_type == "summary":
-                self.summary_memory_dict[uuid_name].append(message)
-            else:
-                self.current_memory_dict[uuid_name].append(message)
+            self.append2vb(message)
 
-            self.save(self.kb_root_path)
-            self.save_new_to_vs([message])
+    def append2vb(self, message: Message) -> None:
+        self.recall_memory_dict[self.uuid_name].append(message)
+        # 
+        docs, json_messages = self.message_process([message])
+        # 
+        if True: # resave the local
+            save_to_json_file(json_messages, self.uuid_file)
 
-    # def extend(self, memory: Memory):
-    #     self.recall_memory.extend(memory)
-    #     self.current_memory.extend(self.recall_memory.filter_by_role_type(["summary"]))
-    #     self.summary_memory.extend(self.recall_memory.select_by_role_type(["summary"]))
-    #     self.save(self.kb_root_path)
-    #     self.save_new_to_vs(memory.messages)
+        if self.embed_config:
+            self.vb.add_docs(docs, kb_name=self.kb_name)
 
-    def save(self, save_dir: str = "./"):
-        # file_path = os.path.join(save_dir, f"{self.user_name}/{self.unique_name}/{self.memory_type}/converation.jsonl")
-        # uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        file_path = os.path.join(save_dir, f"{self.chat_index}/{self.unique_name}/{self.memory_type}/converation.jsonl")
-        uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        memory_messages = self.recall_memory_dict[uuid_name].dict()
-        memory_messages = {k: [
+    def extend(self, memory: Memory):
+        for message in memory.messages:
+            self.append(message)
+
+    def message_process(self, messages: List[Message]):
+        '''convert messages to vb/local data-format'''
+        # convert messages to vb data-format
+        messages = [
+                    {k: v for k, v in m.dict().items() if k in self.save_message_keys}
+                    for m in messages
+                ] 
+        docs = [{"page_content": m["step_content"] or m["role_content"] or m["input_query"], "metadata": m} for m in messages]
+        docs = [Document(**doc) for doc in docs]
+        # convert messages to local data-format
+        memory_messages = self.recall_memory_dict[self.uuid_name].dict()
+        json_messages = {
+            k: [
                 {kkk: vvv for kkk, vvv in vv.items() if kkk in self.save_message_keys}
-                for vv in v ] 
+                for vv in v 
+            ] 
             for k, v in memory_messages.items()
         }
-        # 
-        save_to_json_file(memory_messages, file_path)
 
-    def load(self, load_dir: str = None, re_init=None) -> Memory:
-        load_dir = load_dir or self.kb_root_path
-        # file_path = os.path.join(load_dir, f"{self.user_name}/{self.unique_name}/{self.memory_type}/converation.jsonl")
-        # uuid_name = "_".join([self.user_name, self.unique_name, self.memory_type])
-        file_path = os.path.join(load_dir, f"{self.chat_index}/{self.unique_name}/{self.memory_type}/converation.jsonl")
-        uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        if os.path.exists(file_path) and not re_init:
-            recall_memory = Memory(**read_json_file(file_path))
-            self.recall_memory_dict[uuid_name] = recall_memory
-            self.current_memory_dict[uuid_name] = Memory(messages=recall_memory.filter_by_role_type(["summary"]))
-            self.summary_memory_dict[uuid_name] = Memory(messages=recall_memory.select_by_role_type(["summary"]))
+        return docs, json_messages
+
+    def load(self, re_init=False) -> Memory:
+
+        if not re_init:
+            for root, dirs, files in os.walk(self.kb_root_path):
+                for file in files:
+                    if file != 'conversation.jsonl': continue
+                    file_path = os.path.join(root, file)
+                    # get uuid_name
+                    relative_path = os.path.relpath(root, self.kb_root_path)
+                    path_parts = relative_path.split(os.sep)
+                    uuid_name = "_".join(path_parts)
+                    # load to local cache
+                    recall_memory = Memory(**read_json_file(file_path))
+                    self.recall_memory_dict[uuid_name] = recall_memory
         else:
-            self.recall_memory_dict[uuid_name] = Memory(messages=[])
-            self.current_memory_dict[uuid_name] = Memory(messages=[])
-            self.summary_memory_dict[uuid_name] = Memory(messages=[])
-
-    def save_new_to_vs(self, messages: List[Message]):
-        if self.embed_config:
-            # vb_name = f"{self.user_name}/{self.unique_name}/{self.memory_type}"
-            vb_name = f"{self.chat_index}/{self.unique_name}/{self.memory_type}"
-            # default to faiss, todo: add new vstype
-            vb = KBServiceFactory.get_service(vb_name, "faiss", self.embed_config, self.kb_root_path)
-            embeddings = load_embeddings_from_path(self.embed_config.embed_model_path, self.embed_config.model_device, self.embed_config.langchain_embeddings)
-            messages = [
-                    {k: v for k, v in m.dict().items() if k in self.save_message_keys}
-                    for m in messages] 
-            docs = [{"page_content": m["step_content"] or m["role_content"] or m["input_query"], "metadata": m} for m in messages]
-            docs = [Document(**doc) for doc in docs]
-            vb.do_add_doc(docs, embeddings)
-
-    def save_to_vs(self):
-        '''only after load'''
-        if self.embed_config:
-            # vb_name = f"{self.user_name}/{self.unique_name}/{self.memory_type}"
-            # uuid_name = "_".join([self.user_name, self.unique_name, self.memory_type])
-            vb_name = f"{self.chat_index}/{self.unique_name}/{self.memory_type}"
-            uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-            # default to recreate a new vb
-            vb = KBServiceFactory.get_service_by_name(vb_name, self.embed_config, self.kb_root_path)
-            if vb:
-                status = vb.clear_vs()
-            # create_kb(vb_name, "faiss", embed_model)
-
-            # default to faiss, todo: add new vstype
-            vb = KBServiceFactory.get_service(vb_name, "faiss", self.embed_config, self.kb_root_path)
-            embeddings = load_embeddings_from_path(self.embed_config.embed_model_path, self.embed_config.model_device, self.embed_config.langchain_embeddings)
-            messages = self.recall_memory_dict[uuid_name].dict()
-            messages = [
-                    {kkk: vvv for kkk, vvv in vv.items() if kkk in self.save_message_keys}
-                    for k, v in messages.items() for vv in v] 
-            docs = [{"page_content": m["step_content"] or m["role_content"] or m["input_query"], "metadata": m} for m in messages]
-            docs = [Document(**doc) for doc in docs]
-            vb.do_add_doc(docs, embeddings)
-
-    # def load_from_vs(self, embed_model=EMBEDDING_MODEL) -> Memory:
-    #     vb_name = f"{self.user_name}/{self.unique_name}/{self.memory_type}"
-
-    #     create_kb(vb_name, "faiss", embed_model)
-    #     # default to faiss, todo: add new vstype
-    #     vb = KBServiceFactory.get_service(vb_name, "faiss", embed_model)
-    #     docs =  vb.get_all_documents()
-    #     print(docs)
+            self.recall_memory_dict = {}
 
     def get_memory_pool(self, chat_index: str = "") -> Memory:
-        self.check_chat_index(chat_index)
-        uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        return self.recall_memory_dict[uuid_name]
+        uuid_name = self.get_uuid_from_chatindex(chat_index)
+        return self.recall_memory_dict.get(uuid_name, Memory(messages=[]))
 
     def router_retrieval(self, 
         chat_index: str = "default", text: str=None, datetime: str = None, 
@@ -396,23 +402,25 @@ class LocalMemoryManager(BaseMemoryManager):
     def embedding_retrieval(self, text: str, top_k=1, score_threshold=1.0, chat_index: str = "default", **kwargs) -> List[Message]:
 
         if text is None: return []
-        vb_name = f"{chat_index}/{self.unique_name}/{self.memory_type}"
-        # logger.debug(f"vb_name={vb_name}")
-        vb = KBServiceFactory.get_service(vb_name, "faiss", self.embed_config, self.kb_root_path)
-        docs = vb.search_docs(text, top_k=top_k, score_threshold=score_threshold)
+
+        kb_name = self.get_vbname_from_chatindex(chat_index)
+        docs = self.vb.search(text, top_k=top_k, score_threshold=score_threshold, kb_name=kb_name)
         return [Message(**doc.metadata) for doc, score in docs]
     
     def text_retrieval(self, text: str, chat_index: str = "default", **kwargs)  -> List[Message]:
         if text is None: return []
-        uuid_name = "_".join([chat_index, self.unique_name, self.memory_type])
-        # logger.debug(f"uuid_name={uuid_name}")
-        return self._text_retrieval_from_cache(self.recall_memory_dict[uuid_name].messages, text, score_threshold=0.3, topK=5, **kwargs)
+        
+        uuid_name = self.get_uuid_from_chatindex(chat_index)
+        messages = self.recall_memory_dict.get(uuid_name, Memory(messages=[])).messages
+        return self._text_retrieval_from_cache(messages, text, score_threshold=0.3, topK=5, **kwargs)
 
     def datetime_retrieval(self, chat_index: str, datetime: str, text: str = None, n: int = 5, key: str = "start_datetime", **kwargs) -> List[Message]:
         if datetime is None: return []
-        uuid_name = "_".join([chat_index, self.unique_name, self.memory_type])
-        # logger.debug(f"uuid_name={uuid_name}")
-        return self._datetime_retrieval_from_cache(self.recall_memory_dict[uuid_name].messages, datetime, text, n, **kwargs)
+
+        uuid_name = self.get_uuid_from_chatindex(chat_index)
+        logger.debug(f"uuid_name={uuid_name}")
+        messages = self.recall_memory_dict.get(uuid_name, Memory(messages=[])).messages
+        return self._datetime_retrieval_from_cache(messages, datetime, text, n, **kwargs)
     
     def _text_retrieval_from_cache(self, messages: List[Message], text: str = None, score_threshold=0.3, topK=5, tag_topK=5, **kwargs) -> List[Message]:
         keywords = extract_tags(text, topK=tag_topK)
@@ -444,22 +452,20 @@ class LocalMemoryManager(BaseMemoryManager):
             return messages
         
         newest_messages = messages[-split_n:]
-        summary_messages = messages[:len(messages)-split_n]
+        summary_messages = messages[:max(0, len(messages)-split_n)]
         
         while (len(newest_messages) != 0) and (newest_messages[0].role_type != "user"):
             message = newest_messages.pop(0)
             summary_messages.append(message)
         
         # summary
-        # model = getChatModel(temperature=0.2)
-        model = getChatModelFromConfig(self.llm_config)
         summary_content = '\n\n'.join([
             m.role_type + "\n" + "\n".join(([f"*{k}* {v}" for parsed_output in m.parsed_output_list for k, v in parsed_output.items() if k not in ['Action Status']]))
             for m in summary_messages if m.role_type not in  ["summary"]
         ])
         
-        summary_prompt = CONV_SUMMARY_PROMPT_SPEC.format(conversation=summary_content)
-        content = model.predict(summary_prompt)
+        summary_prompt = createSummaryPrompt(conversation=summary_content)
+        content = self.model.predict(summary_prompt)
         summary_message = Message(
             chat_index=chat_index,
             role_name="summaryer",
@@ -472,23 +478,32 @@ class LocalMemoryManager(BaseMemoryManager):
         summary_message.parsed_output_list.append({"summary": content})
         newest_messages.insert(0, summary_message)
         return newest_messages
-    
-    def check_chat_index(self, chat_index: str):
-        # logger.debug(f"self.user_name is {self.user_name}, self.chat_dex is {self.chat_index}")
-        if chat_index != self.chat_index:
-            self.chat_index = chat_index
-            self.init_vb()
 
-        uuid_name = "_".join([self.chat_index, self.unique_name, self.memory_type])
-        if uuid_name not in self.recall_memory_dict:
-            self.recall_memory_dict[uuid_name] = Memory(messages=[])
-            self.current_memory_dict[uuid_name] = Memory(messages=[])
-            self.summary_memory_dict[uuid_name] = Memory(messages=[])
+    def check_uuid_name(self, message: Message = None):
+        if message.chat_index != self.chat_index:
+            self.chat_index = message.chat_index
+            self.user_name = message.user_name
+            # self.init_vb()
 
-        # logger.debug(f"self.user_name is {self.user_name}")
+        self.uuid_name = "_".join([self.chat_index, self.user_name])
+        self.kb_name = f"{self.chat_index}/{self.user_name}"
+        self.uuid_file = os.path.join(self.kb_root_path, f"{self.chat_index}/{self.user_name}/conversation.jsonl")
+
+        self.memory_uuids.add(self.uuid_name)
+        if self.uuid_name not in self.recall_memory_dict:
+            self.recall_memory_dict[self.uuid_name] = Memory(messages=[])
+
+    def get_uuid_from_chatindex(self, chat_index: str) -> str:
+        for i in self.recall_memory_dict:
+            if chat_index in i:
+                return i
+        return ""
+
+    def get_vbname_from_chatindex(self, chat_index: str) -> str:
+        return self.get_uuid_from_chatindex(chat_index).replace("_", "/")
 
 
-from muagent.utils.tbase_util import TbaseHandler
+from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler
 from muagent.llm_models.get_embedding import get_embedding
 from redis.commands.search.field import (
     TextField,
@@ -506,6 +521,7 @@ MESSAGE_SCHEMA = [
     TextField("role_type", ),
     TextField('input_query'),
     TextField("role_content", ),
+    TextField("role_tags"),
     TextField("parsed_output"),
     TextField("customed_kargs",),
     TextField("db_docs",),
@@ -546,7 +562,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         self.save_message_keys = [
             'chat_index', 'message_index', 'user_name', 'role_name', 'role_type', 'input_query', 'role_content', 'step_content', 
             'parsed_output', 'parsed_output_list', 'customed_kargs', "db_docs", "code_docs", "search_docs", 'start_datetime', 'end_datetime', 
-            "keyword", "vector",
+            "keyword", "vector", "role_tags"
         ]
         self.use_vector = use_vector
         self.init_tb()
@@ -609,6 +625,21 @@ class TbaseMemoryManager(BaseMemoryManager):
                 pass
             self.append(message)
 
+    def get_memory_by_chatindex_tags(self, chat_index: str, tags: List[str], limit: int = 10) -> Memory:
+        '''
+        :param chat_index: str,
+        :param tags: List[str], search message by any tag (match or)
+        '''
+        tags_str = '|'.join([f"*{tag}*" for tag in tags])
+        querys = [
+            f"@chat_index:{chat_index}",
+            f"@role_tags:{tags_str}",
+        ]
+        query = f"({')('.join(querys)})" if len(querys) >=2 else "".join(querys)
+        logger.debug(f"{query}")
+        r = self.th.search(query, limit=limit)
+        return self.tbasedoc2Memory(r)
+
     def get_memory_pool(self, chat_index: str = "") -> Memory:
         return self.get_memory_pool_by_all({"chat_index": chat_index})
 
@@ -624,7 +655,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         r = self.th.search(content)
         return self.tbasedoc2Memory(r)
 
-    def get_memory_pool_by_all(self, search_key_contents: dict):
+    def get_memory_pool_by_all(self, search_key_contents: dict, limit: int =10):
         '''
         search_key_contents:
             - key: str, key must in message keys
@@ -635,34 +666,18 @@ class TbaseMemoryManager(BaseMemoryManager):
             if not v: continue
             if k == "keyword":
                 querys.append(f"@{k}:{{{v}}}")
+            elif k == "role_tags":
+                tags_str = '|'.join([f"*{tag}*" for tag in v]) if isinstance(v, list) else f"{v}"
+                querys.append(f"@role_tags:{tags_str}")
+            elif k == "start_datetime":
+                query = f"(@start_datetime:[{v[0]} {v[1]}])"
+                querys.append(query)
             else:
                 querys.append(f"@{k}:{v}")
         
         query = f"({')('.join(querys)})" if len(querys) >=2 else "".join(querys)
-        r = self.th.search(query)
+        r = self.th.search(query, limit=limit)
         return self.tbasedoc2Memory(r)
-
-    def router_retrieval(self, 
-        chat_index: str = "default", text: str=None, datetime: str = None, 
-        n=5, top_k=5, retrieval_type: str = "embedding", **kwargs
-    ) -> List[Message]:
-
-        retrieval_func_dict = {
-            "embedding": self.embedding_retrieval, "text": self.text_retrieval, "datetime": self.datetime_retrieval
-            }
-        
-        # 确保提供了合法的检索类型
-        if retrieval_type not in retrieval_func_dict:
-            raise ValueError(f"Invalid retrieval_type: '{retrieval_type}'. Available types: {list(retrieval_func_dict.keys())}")
-
-        retrieval_func = retrieval_func_dict[retrieval_type]
-        # 
-        params = locals()
-        params.pop("self")
-        params.pop("retrieval_type")
-        params.update(params.pop('kwargs', {}))
-        # 
-        return retrieval_func(**params)
         
     def embedding_retrieval(self, text: str, top_k=1, score_threshold=1.0, chat_index: str = "default", **kwargs) -> List[Message]:
         if text is None: return []
@@ -698,7 +713,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         return self._text_retrieval_from_cache(memory.messages, text)
 
     def datetime_retrieval(self, chat_index: str, datetime: str, text: str = None, n: int = 5, key: str = "start_datetime", **kwargs) -> List[Message]:
-        intput_timestamp = datefromatToTimestamp(datetime, 1)
+        intput_timestamp = dateformatToTimestamp(datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
         query = f"(@chat_index:{chat_index})(@{key}:[{intput_timestamp-n*60} {intput_timestamp+n*60}])"
         # logger.debug(f"datetime_retrieval query: {query}")
         r = self.th.search(query)
@@ -745,7 +760,8 @@ class TbaseMemoryManager(BaseMemoryManager):
             for m in summary_messages if m.role_type not in  ["summary"]
         ])
         
-        summary_prompt = CONV_SUMMARY_PROMPT_SPEC.format(conversation=summary_content)
+        # summary_prompt = CONV_SUMMARY_PROMPT_SPEC.format(conversation=summary_content)
+        summary_prompt = createSummaryPrompt(conversation=summary_content)
         content = model.predict(summary_prompt)
         summary_message = Message(
             chat_index=chat_index,
@@ -777,8 +793,8 @@ class TbaseMemoryManager(BaseMemoryManager):
         #     if content is not None:
         #         tbase_message["customed_kargs"][key] = content
 
-        tbase_message["start_datetime"] = datefromatToTimestamp(message.start_datetime, 1)
-        tbase_message["end_datetime"] = datefromatToTimestamp(message.end_datetime, 1)
+        tbase_message["start_datetime"] = dateformatToTimestamp(message.start_datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
+        tbase_message["end_datetime"] = dateformatToTimestamp(message.end_datetime, 1000, "%Y-%m-%d %H:%M:%S.%f")
 
         if self.use_vector and self.embed_config:
             vector_dict = get_embedding(
@@ -820,8 +836,8 @@ class TbaseMemoryManager(BaseMemoryManager):
             memory.append(message)
 
         for message in memory.messages:
-            message.start_datetime = timestampToDateformat(int(message.start_datetime), 1)
-            message.end_datetime = timestampToDateformat(int(message.end_datetime), 1)
+            message.start_datetime = timestampToDateformat(int(message.start_datetime), 1000, "%Y-%m-%d %H:%M:%S.%f")
+            message.end_datetime = timestampToDateformat(int(message.end_datetime), 1000, "%Y-%m-%d %H:%M:%S.%f")
 
         memory.sort_by_key("end_datetime")
         # for message in memory.message:

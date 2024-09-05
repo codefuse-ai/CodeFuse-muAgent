@@ -15,6 +15,7 @@ class Message(BaseModel):
     input_query: str = ""
     start_datetime: str = None
     end_datetime: str = None
+    role_tags: str = ""
 
     # llm output
     role_content: str = ""
@@ -78,9 +79,9 @@ class Message(BaseModel):
         start_datetime = values.get("start_datetime")
         end_datetime = values.get("end_datetime")
         if start_datetime is None:
-            values["start_datetime"] = getCurrentDatetime()
+            values["start_datetime"] = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         if end_datetime is None:
-            values["end_datetime"] = getCurrentDatetime()
+            values["end_datetime"] = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         return values
 
     @root_validator(pre=True)
@@ -88,17 +89,17 @@ class Message(BaseModel):
         message_index = values.get("message_index")
         chat_index = values.get("chat_index")
         if message_index is None or message_index == "":
-            values["message_index"] = str(uuid.uuid4())
+            values["message_index"] = str(uuid.uuid4()).replace("-", "_")
 
         if chat_index is None or chat_index == "":
-            values["chat_index"] = str(uuid.uuid4())
+            values["chat_index"] = str(uuid.uuid4()).replace("-", "_")
         return values
     
 
     def update_attribute(self, key: str, value):
         if hasattr(self, key):
             setattr(self, key, value)
-            self.end_datetime = getCurrentDatetime()
+            self.end_datetime = getCurrentDatetime("%Y-%m-%d %H:%M:%S.%f")
         else:
             raise AttributeError(f"{key} is not a valid property of {self.__class__.__name__}")
 

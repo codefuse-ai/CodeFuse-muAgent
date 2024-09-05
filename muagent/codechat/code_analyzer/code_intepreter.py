@@ -11,7 +11,7 @@ from langchain.schema import (
 )
 
 # from configs.model_config import CODE_INTERPERT_TEMPLATE
-from muagent.connector.configs.prompts import CODE_INTERPERT_TEMPLATE
+from muagent.base_configs.prompts import CODE_INTERPERT_TEMPLATE
 from muagent.llm_models.openai_model import getChatModelFromConfig
 from muagent.llm_models.llm_config import LLMConfig
 

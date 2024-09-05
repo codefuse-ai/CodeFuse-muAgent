@@ -20,17 +20,26 @@ class Memory(BaseModel):
     def extend(self, memory: 'Memory'):
         self.messages.extend(memory.messages)
 
+    def append_with_limit(self, message: Message, limit: int = 10):
+        self.messages.append(message)
+        self.messages = self.messages[-limit:]
+
+    def extend_with_limit(self, memory: 'Memory', limit: int = 10):
+        self.messages.extend(memory.messages)
+        self.messages = self.messages[-limit:]
+
     def update(self, role_name: str, role_type: str, role_content: str):
         self.messages.append(Message(role_name, role_type, role_content, role_content))
 
     def sort_by_key(self, key: str):
         self.messages = sorted(self.messages, key=lambda x: getattr(x, key, f"No this {key}"))
 
-    def clear(self, ):
-        self.messages = []
-
-    def delete(self, ):
-        pass
+    def clear(self, k: int = None):
+        '''save the messages by k limit'''
+        if k is None:
+            self.messages = []
+        else:
+            self.messages = self.messages[-k:]
 
     def get_messages(self, k=0) -> List[Message]:
         """Return the most recent k memories, return all when k=0"""

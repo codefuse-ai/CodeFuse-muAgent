@@ -18,7 +18,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 # from configs.model_config import (
 #     llm_model_dict, LLM_MODEL, PROMPT_TEMPLATE,
 #     VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD, CODE_PROMPT_TEMPLATE)
-from muagent.connector.configs.prompts import CODE_PROMPT_TEMPLATE
+from muagent.base_configs.prompts import CODE_PROMPT_TEMPLATE
 from muagent.chat.utils import History, wrap_done
 from muagent.utils import BaseResponse
 from .base_chat import Chat

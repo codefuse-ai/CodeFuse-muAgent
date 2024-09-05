@@ -1,5 +1,5 @@
 from enum import Enum
-from .prompts import *
+from muagent.base_configs.prompts import *
 # from .prompts import (
 #     REACT_PROMPT_INPUT, CHECK_PROMPT_INPUT, EXECUTOR_PROMPT_INPUT, CONTEXT_PROMPT_INPUT, QUERY_CONTEXT_PROMPT_INPUT,PLAN_PROMPT_INPUT,
 #     RECOGNIZE_INTENTION_PROMPT,

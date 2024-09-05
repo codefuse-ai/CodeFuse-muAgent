@@ -13,9 +13,11 @@ import json
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def getCurrentDatetime():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def getCurrentDatetime(dateformat=DATE_FORMAT):
+    return datetime.now().strftime(dateformat)
 
+def getCurrentTimestap():
+    return int(datetime.now().timestamp())
 
 def addMinutesToTime(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
     dt = datetime.strptime(input_time, dateformat)
@@ -28,15 +30,15 @@ def addMinutesToTime(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
 
 def timestampToDateformat(ts, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间戳转换标准指定时间格式'''
-    return datetime.fromtimestamp(ts//interval).strftime(dateformat)
+    return datetime.fromtimestamp(ts/interval).strftime(dateformat)
 
 
-def datefromatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
+def dateformatToTimestamp(dt, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间格式转换未标准时间戳'''
     return int(datetime.strptime(dt, dateformat).timestamp()*interval)
 
 
-def func_timer():
+def func_timer(function):
     '''
     用装饰器实现函数计时
     :param function: 需要计时的函数
@@ -44,13 +46,13 @@ def func_timer():
     '''
     @wraps(function)
     def function_timer(*args, **kwargs):
+        # logger.info('[Function: {name} start...]'.format(name=function.__name__))
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
         logger.info('[Function: {name} finished, spent time: {time:.3f}s]'.format(
             name=function.__name__,
-            time=t1 - t0
-        ))
+            time=t1 - t0))
         return result
     return function_timer
 
@@ -112,3 +114,14 @@ def get_uploadfile(file: Union[str, Path, bytes], filename=None) -> UploadFile:
     return UploadFile(file=temp_file, filename=filename)
 
 
+def string_to_long_sha256(s: str) -> int:
+    # 使用 SHA-256 哈希函数
+    hash_object = hashlib.sha256(s.encode())
+    # 转换为16进制然后转换为整数
+    return int(hash_object.hexdigest(), 16)
+
+
+def double_hashing(s: str, modulus: int = 10e12) -> int:
+    hash1 = string_to_long_sha256(s)
+    hash2 = string_to_long_sha256(s[::-1])  # 用字符串的反序进行第二次hash
+    return int((hash1 + hash2) % modulus)

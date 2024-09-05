@@ -1,4 +1,4 @@
-From python:3.9.18-bookworm
+FROM python:3.9-bookworm
 
 WORKDIR /home/user
 
@@ -11,10 +11,10 @@ COPY ./requirements.txt /home/user/docker_requirements.txt
 # RUN service inetutils-inetd start
 # service inetutils-inetd status
 
-RUN wget https://oss-cdn.nebula-graph.com.cn/package/3.6.0/nebula-graph-3.6.0.ubuntu1804.amd64.deb
-RUN dpkg -i nebula-graph-3.6.0.ubuntu1804.amd64.deb
+# RUN wget https://oss-cdn.nebula-graph.com.cn/package/3.6.0/nebula-graph-3.6.0.ubuntu1804.amd64.deb
+# RUN dpkg -i nebula-graph-3.6.0.ubuntu1804.amd64.deb
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip install -r /home/user/docker_requirements.txt
+RUN pip install -r /home/user/docker_requirements.txt --retries 5 --timeout 120
 
 CMD ["bash"]

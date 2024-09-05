@@ -10,11 +10,11 @@ from fastapi import Body, File, Form, Body, Query, UploadFile
 
 from langchain_community.docstore.document import Document
 
-from .service_factory import KBServiceFactory
+from muagent.retrieval.service_factory import KBServiceFactory
 from muagent.utils.server_utils import BaseResponse, ListResponse
 from muagent.utils.path_utils import *
-from muagent.orm.commands import *
-from muagent.orm.utils import DocumentFile
+from muagent.service.ui_file_service import *
+from muagent.schemas.kb.file_schema import DocumentFile
 from muagent.base_configs.env_config import KB_ROOT_PATH
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.utils.server_utils import run_async

@@ -8,9 +8,15 @@
 from loguru import logger
 import chromadb
 
+from muagent.schemas.db import VBConfig
+
 
 class ChromaHandler:
-    def __init__(self, path: str, collection_name: str = ''):
+    def __init__(
+            self, path: str, 
+            collection_name: str = '', 
+            vb_config: VBConfig = None
+    ):
         '''
         init client
         @param path: path of data

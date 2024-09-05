@@ -2,12 +2,12 @@
     <a>中文</a>&nbsp ｜ &nbsp<a href="README.md">English&nbsp </a>
 </p>
 
-# <p align="center">CodeFuse-muAgent: A Multi-Agent FrameWork For Faster Build Agents</p>
+# <p align="center">CodeFuse-muAgent: An Innovative Agent Framework Driven By KG Engine</p>
 
 <p align="center">
     <a href="README_zh.md"><img src="https://img.shields.io/badge/文档-中文版-yellow.svg" alt="ZH doc"></a>
     <a href="README.md"><img src="https://img.shields.io/badge/document-English-yellow.svg" alt="EN doc"></a>
-    <img src="https://img.shields.io/github/license/codefuse-ai/CodeFuse-muAgent" alt="License">
+    <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-Apache%202.0-yellow" alt="License">
     <a href="https://github.com/codefuse-ai/CodeFuse-muAgent/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/codefuse-ai/CodeFuse-muAgent" />
     </a>
@@ -18,104 +18,66 @@
 
 ## 🔔 更新
 - [2024.04.01] CodeFuse-muAgent 开源，支持知识库、代码库、工具使用、代码解释器等功能
+- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新代理框架
 
 ## 📜 目录
 - [🤝 介绍](#-介绍)
 - [🚀 快速使用](#-快速使用)
 - [🧭 关键技术](#-关键技术)
+- [🤗 贡献指南](#-贡献指南)
 - [🗂 其他](#-其他)
   - [📱 联系我们](#-联系我们)
 
 
 ## 🤝 介绍
-CodeFuse-muAgent 是蚂蚁CodeFuse团队开发的Mulit Agent框架，其核心宗旨在于简化agents的标准操作程序（SOP）编排流程。muagent整合了一系列丰富的工具库、代码库、知识库以及沙盒环境，可支撑用户在任何领域场景都能依托muagent迅速搭建起复杂的多Agent交互应用。通过这一框架，用户能够高效地执行和处理多层次、多维度的复杂任务。
+全新体验的 Agent 框架，将KG从知识获取来源直接升级为Agent编排引擎！基于 LLM+ EKG（Eventic Knowledge Graph 行业知识承载）驱动，协同 MultiAgent、FunctionCall、CodeInterpreter等技术，通过画布式拖拽、轻文字编写，让大模型在人的经验指导下帮助你实现各类复杂 SOP 流程。兼容现有市面各类 Agent 框架，同时可实现复杂推理、在线协同、人工交互、知识即用四大核心差异技术功能。这套框架目前在蚂蚁集团内多个复杂DevOps场景落地验证，同时来体验下我们快速搭建的谁是卧底游戏吧。
 
-![](docs/resources/agent_runtime.png)
+
+![](docs/resources/ekg-arch-zh.webp)
 
 
 ## 🚀 快速使用
-完整文档见：[CodeFuse-muAgent](https://codefuse-ai.github.io/zh-CN/docs/api-docs/MuAgent/overview/multi-agent)
-更多[demo](https://codefuse-ai.github.io/zh-CN/docs/api-docs/MuAgent/connector/customed_examples)
+完整文档见：[CodeFuse-muAgent](https://codefuse.ai/zh-CN/docs/api-docs/MuAgent/overview/multi-agent)
+更多[demo](https://codefuse.ai/zh-CN/docs/api-docs/MuAgent/connector/customed_examples)
 
+### EKG服务
+
+```bash
+# 使用我们的EKG服务只需要三步！（beta版本，需要将本地代码打包到容器中）
+
+# 第一步. 加载代码
+git clone https://github.com/codefuse-ai/CodeFuse-muAgent.git
+
+# 第二步.
+cd CodeFuse-muAgent
+
+# 第三步. 启动所有容器服务，EKG基础镜像构建需要花费点时间
+docker-compose up -d
+```
+
+当前镜像版本仅包含了EKG基础服务。我们将会在9月底提供前端交互和后端交互的镜像服务。
+
+敬请期待!
+
+### SKD版本
 1. 安装
 ```
 pip install codefuse-muagent
 ```
 
-2. code answer
+2. 代码问答和相关配置，可以看 [docs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_examples) 和代码示例 [examples](https://github.com/codefuse-ai/CodeFuse-muAgent/tree/main/examples)
 
-准备相关llm 和embedding model 配置
-```
-import os
-
-# set your config
-api_key = ""
-api_base_url= ""
-model_name = ""
-embed_model = ""
-embed_model_path = ""
-
-from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
-from muagent.connector.phase import BasePhase
-from muagent.connector.schema import Message, Memory
-from muagent.codechat.codebase_handler.codebase_handler import CodeBaseHandler
-
-llm_config = LLMConfig(
-    model_name=model_name, api_key=api_key,  api_base_url=api_base_url, temperature=0.3
-)
-
-embed_config = EmbedConfig(
-    embed_engine="model", embed_model=embed_model, embed_model_path=embed_model_path
-)
-```
-
-<br>
-
-初始化代码库
-```
-# initialize codebase
-from muagent.base_configs.env_config import CB_ROOT_PATH
-
-codebase_name = 'client_local'
-code_path = "D://chromeDownloads/devopschat-bot/client_v2/client"
-
-cbh = CodeBaseHandler(
-    codebase_name, code_path, crawl_type='dir', use_nh=use_nh,local_graph_path=CB_ROOT_PATH,
-    llm_config=llm_config, embed_config=embed_config
-)
-cbh.import_code(do_interpret=do_interpret)
-```
-
-<br>
-
-开始代码库问答
-```
-# 
-phase_name = "codeChatPhase"
-phase = BasePhase(
-    phase_name, embed_config=embed_config, llm_config=llm_config,
-)
-
-query_content = "remove 可以做什么？"
-query = Message(
-    role_name="user", role_type="human", input_query=query_content,
-    code_engine_name=codebase_name, score_threshold=1.0, top_k=3, cb_search_type="tag",
-    local_graph_path=CB_ROOT_PATH, use_nh=False
-    )
-output_message3, output_memory3 = phase.step(query)
-print(output_memory3.to_str_messages(return_all=True, content_key="parsed_output_list"))
-```
 
 ## 🧭 关键技术
 
-- Agent Base：构建了四种基本的Agent类型BaseAgent、ReactAgent、ExecutorAgent、SelectorAgent，支撑各种场景的基础活动
-- Communication：通过Message和Parse Message 实体完成Agent间的信息传递，并与Memory Manager交互再Memory Pool完成记忆管理
-- Prompt Manager：通过Role Handler、Doc/Tool Handler、Session Handler、Customized Handler，来自动化组装Customized 的Agent Prompt
-- Memory Manager： 用于支撑 chat history 的存储管理、信息压缩、记忆检索等管理，最后通过Memory Pool在数据库、本地、向量数据库中完成存储
-- Component：用于构建Agent的辅助生态组件，包括Retrieval、Tool、Action、Sandbox等
-- Customized Model：支持私有化的LLM和Embedding的接入
+- **图谱构建**：通过虚拟团队构建、场景意图划分，让你体验在线文档VS本地文档的差别；同时，文本语义输入的节点使用方式，让你感受有注释代码VS无注释代码的差别，充分体现在线协同的优势；面向海量存量文档（通用文本、流程画板等），支持文本智能解析、一键导入
+- **图谱资产**：通过场景意图、事件流程、统一工具、组织人物四部分的统一图谱设计，满足各类SOP场景所需知识承载；工具在图谱的纳入进一步提升工具选择、参数填充的准确性，人物/智能体在图谱的纳入，让人可加入流程的推进，可灵活应用于多人文本游戏
+- **图谱推理**：相比其他Agent框架纯模型推理、纯人工编排的推理模式，让大模型在人的经验/设计指导下做事，灵活、可控，同时面向未知局面，可自由探索，同时将成功探索经验总结、图谱沉淀，面向相似问题，少走弯路；整体流程唤起支持平台对接（规则配置）、语言触发，满足各类诉求
+- **调试运行**：图谱编辑完成后，可视调试，快速发现流程错误、修改优化，同时面向调试成功路径，关联配置自动沉淀，减少模型交互、模型开销，加速推理流程；此外，在线运行中，我们提供全链路可视化监控
+- **记忆管理**：统一消息池设计，支持各类场景所需分门别类消息投递、订阅，隔离且互通，便于多Agent场景消息管理使用；同时面向超长上下文，支持消息检索、排序、蒸馏，提升整体问答质量
+- **操作空间**：遵循Swagger协议，提供工具注册、权限管理、统一分类，方便LLM在工具调用中接入使用；提供安全可信代码执行环境，同时确保代码精准生成，满足可视绘图、数值计算、图表编辑等各类场景诉求
 
-## 贡献指南
+## 🤗 贡献指南
 非常感谢您对 Codefuse 项目感兴趣，我们非常欢迎您对 Codefuse 项目的各种建议、意见（包括批评）、评论和贡献。
 
 您对 Codefuse 的各种建议、意见、评论可以直接通过 GitHub 的 Issues 提出。

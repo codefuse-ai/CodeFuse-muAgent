@@ -11,7 +11,7 @@ from muagent.connector.schema import (
 )
 from muagent.connector.memory_manager import BaseMemoryManager
 from muagent.llm_models import LLMConfig, EmbedConfig
-from muagent.utils.tbase_util import TbaseHandler
+from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler
 
 from .base_agent import BaseAgent
 from muagent.base_configs.env_config import JUPYTER_WORK_PATH, KB_ROOT_PATH

@@ -14,7 +14,7 @@ def load_embeddings(model: str, device: str, embedding_model_dict: dict):
     return embeddings
 
 
-# @lru_cache(1)
+@lru_cache(1)
 def load_embeddings_from_path(model_path: str, device: str, langchain_embeddings: Embeddings = None):
     if langchain_embeddings:
         return langchain_embeddings

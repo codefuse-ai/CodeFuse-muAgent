@@ -3,10 +3,10 @@ from typing import Literal, Callable, Any
 
 # from configs.model_config import EMBEDDING_MODEL, DEFAULT_VS_TYPE, KB_ROOT_PATH
 
-from muagent.orm.utils import DocumentFile
-from muagent.orm.commands import add_doc_to_db
+from muagent.schemas.kb.file_schema import DocumentFile
+from muagent.service.ui_file_service import add_doc_to_db
 from muagent.utils.path_utils import *
-from .service_factory import KBServiceFactory
+from muagent.retrieval.service_factory import KBServiceFactory
 
 
 '''

@@ -10,7 +10,7 @@ from langchain_community.docstore.document import Document
 # from configs.model_config import (
 #     PROMPT_TEMPLATE, SEARCH_ENGINE_TOP_K, BING_SUBSCRIPTION_KEY, BING_SEARCH_URL,
 #     VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD)
-from muagent.connector.configs.prompts import ORIGIN_TEMPLATE_PROMPT
+from muagent.base_configs.prompts import ORIGIN_TEMPLATE_PROMPT
 from muagent.chat.utils import History, wrap_done
 from muagent.utils import BaseResponse
 from muagent.llm_models.llm_config import LLMConfig, EmbedConfig

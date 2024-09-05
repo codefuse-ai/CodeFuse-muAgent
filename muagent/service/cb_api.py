@@ -10,14 +10,10 @@ import urllib, os, json, traceback
 from typing import List, Dict
 import shutil
 
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi import File, Form, Body, Query, UploadFile
-from langchain_community.docstore.document import Document
-
-from .service_factory import KBServiceFactory
+from fastapi import Body
 from muagent.utils.server_utils import BaseResponse, ListResponse
 from muagent.utils.path_utils import *
-from muagent.orm.commands import *
+from muagent.service.ui_file_service import *
 from muagent.db_handler.graph_db_handler.nebula_handler import NebulaHandler
 from muagent.db_handler.vector_db_handler.chroma_handler import ChromaHandler
 from muagent.base_configs.env_config import (
@@ -26,12 +22,6 @@ from muagent.base_configs.env_config import (
     CHROMA_PERSISTENT_PATH
 )
 
-
-# from configs.model_config import (
-#     CB_ROOT_PATH
-# )
-
-# from muagent.codebase_handler.codebase_handler import CodeBaseHandler
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.codechat.codebase_handler.codebase_handler import CodeBaseHandler
 
