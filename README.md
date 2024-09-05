@@ -2,7 +2,7 @@
     <a href="README_zh.md">中文</a>&nbsp ｜ &nbsp<a>English&nbsp </a>
 </p>
 
-# <p align="center">CodeFuse-muAgent: An Innovative Agent Framework Driven By KG Engine</p>
+# <p align="center">muAgent: An Innovative Agent Framework Driven by KG Engine</p>
 
 <p align="center">
     <a href="README.md"><img src="https://img.shields.io/badge/文档-中文版-yellow.svg" alt="ZH doc"></a>
