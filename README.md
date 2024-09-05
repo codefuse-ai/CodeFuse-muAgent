@@ -18,7 +18,7 @@
 
 ## 🔔 News
 - [2024.04.01] codefuse-muAgent is now open source, featuring functionalities such as knowledge base, code library, tool usage, code interpreter, and more
-- [2024.09.05] we release muAgent v2.0 about EKG (An Innovative Agent Framework Driven By KG Engine).
+- [2024.09.05] we release muAgent v2.0 - EKG: An Innovative Agent Framework Driven By KG Engine.
 
 
 
@@ -76,12 +76,12 @@ you can see [docs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_
 
 
 ## 🧭 Features
-- EKG Builder：Through the design of virtual teams, scene intentions, and semantic nodes, you can experience the differences between online and local documentation, or annotated versus unannotated code handover. For a vast amount of existing documents (text, diagrams, etc.), we support intelligent parsing, which is available for one-click import.
-- EKG Assets：Through comprehensive KG Schema design—including Intention Nodes, Workflow Nodes, Tool Nodes, and Character Nodes—we can meet various SOP Automation requirements. The inclusion of Tool Nodes in the KG enhances the accuracy of tool selection and parameter filling. Additionally, the incorporation of Characters (whether human or agents) in the KG allows for human-involved process advancement, making it flexible for use in multiplayer text-based games.
-- EKG Reasoning：Compared to purely model-based or entirely fix-flow Reasoning, our framework allows LLM to operate under human guidance-flexibility, control, and enabling exploration in unknown scenarios. Additionally, successful exploration experiences can be summarized and documented into KG, minimizing detours for similar issues.
-- Diagnose：After KG editing, visual interface allows for quick debugging, and successful Execution path configurations will be automatically documented, which reduces model interactions, accelerates inference, and minimizes LLM Token costs. Additionally, during online execution, we provide comprehensive end-to-end visual monitoring.
-- Memory：Unified message pooling design supports categorized message delivery and subscription based on the needs of different scenarios, like multi-agent. Additionally, through message retrievel, rerank and distillation, it facilitates long-context handling, improving the overall question-answer quality.
-- ActionSpace：Adhering to Swagger protocol, we provide tool registration, tool categorization, and permission management, facilitating LLM Function Calling. We offer a secure and trustworthy code execution environment, and ensuring precise code generation to meet the demands of various scenarios, including visual plot, numerical calculations, and table editing.
+- **EKG Builder**：Through the design of virtual teams, scene intentions, and semantic nodes, you can experience the differences between online and local documentation, or annotated versus unannotated code handover. For a vast amount of existing documents (text, diagrams, etc.), we support intelligent parsing, which is available for one-click import.
+- **EKG Assets**：Through comprehensive KG Schema design—including Intention Nodes, Workflow Nodes, Tool Nodes, and Character Nodes—we can meet various SOP Automation requirements. The inclusion of Tool Nodes in the KG enhances the accuracy of tool selection and parameter filling. Additionally, the incorporation of Characters (whether human or agents) in the KG allows for human-involved process advancement, making it flexible for use in multiplayer text-based games.
+- **EKG Reasoning**：Compared to purely model-based or entirely fix-flow Reasoning, our framework allows LLM to operate under human guidance-flexibility, control, and enabling exploration in unknown scenarios. Additionally, successful exploration experiences can be summarized and documented into KG, minimizing detours for similar issues.
+- **Diagnose**：After KG editing, visual interface allows for quick debugging, and successful Execution path configurations will be automatically documented, which reduces model interactions, accelerates inference, and minimizes LLM Token costs. Additionally, during online execution, we provide comprehensive end-to-end visual monitoring.
+- **Memory**：Unified message pooling design supports categorized message delivery and subscription based on the needs of different scenarios, like multi-agent. Additionally, through message retrievel, rerank and distillation, it facilitates long-context handling, improving the overall question-answer quality.
+- **ActionSpace**：Adhering to Swagger protocol, we provide tool registration, tool categorization, and permission management, facilitating LLM Function Calling. We offer a secure and trustworthy code execution environment, and ensuring precise code generation to meet the demands of various scenarios, including visual plot, numerical calculations, and table editing.
 
 ## 🤗 Contribution
 We are deeply grateful for your interest in the Codefuse project and warmly welcome any suggestions, opinions (including criticism), comments, and contributions. 
