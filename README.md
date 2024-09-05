@@ -94,5 +94,5 @@ We welcome any contribution and will add you to the list of contributors. See [C
 ## 🗂 Miscellaneous
 ### 📱 Contact Us
 <div align=center>
-  <img src="docs/resources/wechat.png" alt="图片", width="360">
+  <img src="docs/resources/wechat.png" alt="图片", width="180">
 </div>
