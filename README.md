@@ -37,7 +37,7 @@ A brand new Agent Framework driven by LLM and EKG(Eventic Knowledge Graph,  Indu
 This framework has been validated in multiple complex DevOps scenarios within Ant Group. At the sametime, come and experience the Undercover game we quickly built!
 </p>
 <div align="center">
-  <img src="docs/resources/ekg-arch-en.webp" alt="muAgent Architecture" width="800">
+  <img src="docs/resources/ekg-arch-en.webp" alt="muAgent Architecture" width="770">
 </div>
 
 ## 🚀 QuickStart
