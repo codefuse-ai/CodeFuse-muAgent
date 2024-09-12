@@ -5,7 +5,7 @@ import setuptools
 
 setuptools.setup(
     name="codefuse-muagent",
-    version="0.0.5",
+    version="0.1.0",
     author="shanshi",
     author_email="wyp311395@antgroup.com",
     description="A multi-agent framework that facilitates the rapid construction of collaborative teams of agents.",
@@ -35,6 +35,8 @@ setuptools.setup(
         "notebook",
         "docker",
         "sseclient",
+        "Levenshtein",
+        "urllib3==1.26.6",
         # 
         "chromadb==0.4.17",
         "javalang==0.13.0",

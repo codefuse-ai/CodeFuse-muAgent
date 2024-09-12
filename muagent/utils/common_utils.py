@@ -1,13 +1,17 @@
-import textwrap, time, copy, random, hashlib, json, os
+import time, hashlib, json, os
 from datetime import datetime, timedelta
 from functools import wraps
 from loguru import logger
 from typing import *
 from pathlib import Path
 from io import BytesIO
-from fastapi import Body, File, Form, Body, Query, UploadFile
+from fastapi import UploadFile
 from tempfile import SpooledTemporaryFile
 import json
+import signal
+import contextlib
+import sys
+import socket
 
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -125,3 +129,114 @@ def double_hashing(s: str, modulus: int = 10e12) -> int:
     hash1 = string_to_long_sha256(s)
     hash2 = string_to_long_sha256(s[::-1])  # 用字符串的反序进行第二次hash
     return int((hash1 + hash2) % modulus)
+
+
+@contextlib.contextmanager
+def timer(seconds: Optional[Union[int, float]] = None) -> Generator:
+    """
+    A context manager that limits the execution time of a code block to a
+    given number of seconds.
+    The implementation of this contextmanager are borrowed from
+    https://github.com/openai/human-eval/blob/master/human_eval/execution.py
+
+    Note:
+        This function only works in Unix and MainThread,
+        since `signal.setitimer` is only available in Unix.
+
+    """
+    if (
+        seconds is None
+        or sys.platform == "win32"
+        or threading.currentThread().name  # pylint: disable=W4902
+        != "MainThread"
+    ):
+        yield
+        return
+
+    def signal_handler(*args: Any, **kwargs: Any) -> None:
+        raise TimeoutError("timed out")
+
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    signal.signal(signal.SIGALRM, signal_handler)
+
+    try:
+        # Enter the context and execute the code block.
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+
+
+class ImportErrorReporter:
+    """Used as a placeholder for missing packages.
+    When called, an ImportError will be raised, prompting the user to install
+    the specified extras requirement.
+    The implementation of this ImportErrorReporter are borrowed from
+    https://github.com/modelscope/agentscope/src/agentscope/utils/common.py
+    """
+
+    def __init__(self, error: ImportError, extras_require: str = None) -> None:
+        """Init the ImportErrorReporter.
+
+        Args:
+            error (`ImportError`): the original ImportError.
+            extras_require (`str`): the extras requirement.
+        """
+        self.error = error
+        self.extras_require = extras_require
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self._raise_import_error()
+
+    def __getattr__(self, name: str) -> Any:
+        return self._raise_import_error()
+
+    def __getitem__(self, __key: Any) -> Any:
+        return self._raise_import_error()
+
+    def _raise_import_error(self) -> Any:
+        """Raise the ImportError"""
+        err_msg = f"ImportError occorred: [{self.error.msg}]."
+        if self.extras_require is not None:
+            err_msg += (
+                f" Please install [{self.extras_require}] version"
+                " of agentscope."
+            )
+        raise ImportError(err_msg)
+    
+
+def _find_available_port() -> int:
+    """
+    Get an unoccupied socket port number.
+    The implementation of this _find_available_port are borrowed from
+    https://github.com/modelscope/agentscope/src/agentscope/utils/common.py
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
+
+
+def _check_port(port: Optional[int] = None) -> int:
+    """Check if the port is available.
+    The implementation of this _check_port are borrowed from
+    https://github.com/modelscope/agentscope/src/agentscope/utils/common.py
+
+    Args:
+        port (`int`):
+            the port number being checked.
+
+    Returns:
+        `int`: the port number that passed the check. If the port is found
+        to be occupied, an available port number will be automatically
+        returned.
+    """
+    if port is None:
+        new_port = _find_available_port()
+        return new_port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            if s.connect_ex(("localhost", port)) == 0:
+                raise RuntimeError("Port is occupied.")
+        except Exception:
+            new_port = _find_available_port()
+            return new_port
+    return port

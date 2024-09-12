@@ -608,7 +608,7 @@ class EKGConstructService:
         gb_result = []
         for edge in edges:
             # if node.id not in update_tbase_nodeids: continue
-            SRCID = edge.attributes.pop("SRCID", None) or double_hashing(edge.start_id)
+            SRCID = edge.attributes.pop("SRCID", None) or double_hashing(edge.start_id) # todo bug，数据不一致问题
             DSTID = edge.attributes.pop("DSTID", None) or double_hashing(edge.end_id)
             resp = self.gb.update_edge(
                 SRCID, DSTID,
@@ -699,7 +699,7 @@ class EKGConstructService:
         # tmp iead to filter by teamid 
         nodes = [node for node in nodes if str(teamid) in str(node.attributes)]
         # select the node which can connect the rootid
-        nodes = [node for node in nodes if len(self.search_rootpath_by_nodeid(node.id, node.type, f"ekg_team:{teamid}").paths)>0]
+        nodes = [node for node in nodes if len(self.search_rootpath_by_nodeid(node.id, node.type, f"ekg_team_{teamid}").paths)>0]
         return nodes
 
     def search_rootpath_by_nodeid(self, nodeid: str, node_type: str, rootid: str) -> Graph:
