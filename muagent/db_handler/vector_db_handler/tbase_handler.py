@@ -63,7 +63,7 @@ class TbaseHandler:
             self, 
             data_list: Union[list[dict], dict], 
             key: str = "message_index", 
-            expire_time: int = 86400, 
+            expire_time: int = None, 
             need_etime: bool = True
         ):
         '''

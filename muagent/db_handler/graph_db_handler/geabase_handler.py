@@ -301,17 +301,20 @@ class GeaBaseHandler(GBHandler):
         # deduplicate the paths
         path_strs = ["&&".join(_p) for _p in p]
         new_p = []
+        add_path_strs = set()
         for path_str, _p in zip(path_strs, p):
+            if path_str in add_path_strs: continue
             if not any(path_str in other for other in path_strs if path_str != other):
                 new_p.append(_p)
+                add_path_strs.add(path_str)
             
         # 根据保留路径进行合并
         nodeid2type = {i["id"]: i["type"] for i in n0+n1}
         unique_node_ids = [j for i in new_p for j in i]
         if reverse:
-            last_node_ids = list(set([i[0] for i in new_p if len(i)>=hop]))
+            last_node_ids = list(set([i[0] for i in new_p if len(i)>=hop and i[0] not in i[1:]]))
         else:
-            last_node_ids = list(set([i[-1] for i in new_p if len(i)>=hop]))
+            last_node_ids = list(set([i[-1] for i in new_p if len(i)>=hop and i[-1] not in i[:-1]]))
 
         last_node_types = [nodeid2type[i] for i in last_node_ids]
         new_n0 = deduplicate_dict([i for i in n0 if i["id"] in unique_node_ids])
@@ -393,11 +396,16 @@ class GeaBaseHandler(GBHandler):
     def decode_path(self, col_data, k) -> List:
         steps = col_data.get("pathVal", {}).get("steps", [])
         connections = {}
-        for step in steps:
+        head = None
+        path = []
+        for idx, step in enumerate(steps):
             props = step["props"]
             start = props["original_src_id1__"].get("strVal", "") or props["original_src_id1__"].get("intVal", -1)
             end = props["original_dst_id2__"].get("strVal", "") or props["original_dst_id2__"].get("intVal", -1)
             connections[start] = end
+
+            head = start if idx==0 else head
+            path = [start] if idx==0 else path
 
         # 找到头部（1）
         for k in connections:
@@ -409,7 +417,8 @@ class GeaBaseHandler(GBHandler):
         while head in connections:
             head = connections[head]
             path.append(head)
-    
+            if head == path[0]:
+                break
         return path
     
     def decode_vertex(self, col_data, k) -> Dict:

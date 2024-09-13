@@ -630,8 +630,8 @@ class EKGConstructService:
         ) -> Graph:
         if hop<2:
             raise Exception(f"hop must be smaller than 2, now hop is {hop}")
-        if hop >= 14:
-            raise Exception(f"hop can't be larger than 14, now hop is {hop}")
+        if hop >= 20:
+            raise Exception(f"hop can't be larger than 20, now hop is {hop}")
         # filter the node which dont match teamid
         result = self.gb.get_hop_infos(
             {'id': nodeid}, node_type=node_type, 

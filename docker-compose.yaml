@@ -1,4 +1,4 @@
-version: '3.4'
+version: 'Beta'
 services:
   metad0:
     # image: docker.io/vesoft/nebula-metad:v3.8.0
@@ -129,7 +129,7 @@ services:
       - 11434:11434
     volumes:
       # - //d/models/ollama:/root/.ollama # windows path
-      - /Users/wangyunpeng/Downloads/models:/root/.ollama # linux/mac path
+      # - /Users/wangyunpeng/Downloads/models:/root/.ollama # linux/mac path
     networks:
       - ekg-net
     restart: on-failure
@@ -170,4 +170,4 @@ services:
 networks:
   ekg-net: 
     # driver: bridge
-    # external: true
+    external: true
