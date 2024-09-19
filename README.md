@@ -86,11 +86,11 @@ you can see [docs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_
 - **ActionSpace**：Adhering to Swagger protocol, we provide tool registration, tool categorization, and permission management, facilitating LLM Function Calling. We offer a secure and trustworthy code execution environment, and ensuring precise code generation to meet the demands of various scenarios, including visual plot, numerical calculations, and table editing.
 
 ## 🤗 Contribution
-We are deeply grateful for your interest in the Codefuse project and warmly welcome any suggestions, opinions (including criticism), comments, and contributions. 
+Thank you for your interest in the muAgent project! We genuinely appreciate your feedback and invite you to share your suggestions, insights (including constructive criticism), and contributions.
 
-Feel free to raise your suggestions, opinions, and comments directly through GitHub Issues. There are numerous ways to participate in and contribute to the Codefuse project: code implementation, writing tests, process tool improvements, documentation enhancements, etc. 
+To facilitate this process, we encourage you to submit your feedback directly through GitHub Issues. There are numerous ways to engage with and contribute to the muAgent project, including code implementation, test development, documentation enhancements, and more.
 
-We welcome any contribution and will add you to the list of contributors. See [Contribution Guide...](https://codefuse-ai.github.io/contribution/contribution)
+We welcome all forms of contributions and look forward to recognizing your efforts by adding you to our list of contributors. For more details, please refer to our [Contribution Guide](https://codefuse-ai.github.io/contribution/contribution).
 
 
 ## 🗂 Miscellaneous
