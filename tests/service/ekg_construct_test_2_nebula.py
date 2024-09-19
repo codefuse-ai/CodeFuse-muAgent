@@ -262,7 +262,7 @@ ekg_construct_service.add_edges(origin_edges, teamid)
 # done
 teamid = "shanshi_test_2"
 rootid="shanshi_opsgptkg_intent_0"
-ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid, rootid)
+# ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid, rootid)
 # ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid)
 
 

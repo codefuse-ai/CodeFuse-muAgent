@@ -117,7 +117,7 @@ services:
     networks:
       - ekg-net
     restart: always
-  
+    
 
   ollama:
     image: ollama/ollama:0.3.6
@@ -129,7 +129,7 @@ services:
       - 11434:11434
     volumes:
       # - //d/models/ollama:/root/.ollama # windows path
-      - /Users/yunjiu/ant/models:/root/.ollama # linux/mac path
+      - /Users/weizhang/Desktop/VsProjects/muagent_models:/root/.ollama # linux/mac path
     networks:
       - ekg-net
     restart: on-failure

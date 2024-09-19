@@ -152,16 +152,19 @@ class EKGConstructService:
 
             initialize_space = True # True or False
             if initialize_space and self.gb_config.gb_type=="NebulaHandler":
+                # self.gb.add_hosts('storaged0', 9779)
+                # print('增加NebulaGraph Storage主机中，等待20秒')
+                # time.sleep(20)
                 # 初始化space
                 # self.gb.drop_space('client')
-                self.gb.create_space('client')
+                # self.gb.create_space('client')
                 
                 # 创建node tags和edge types
-                self.create_gb_tags_and_edgetypes()
+                # self.create_gb_tags_and_edgetypes()
 
-                print('Node Tags和Edge Types初始化中，等待20秒......')
-                time.sleep(20)
-
+                # print('Node Tags和Edge Types初始化中，等待20秒......')
+                # time.sleep(20)
+                pass
         else:
             self.gb = None
 
@@ -1095,6 +1098,8 @@ class EKGConstructService:
             else:
                 fields = list(getClassFields(schema))
                 nodetype2fields_dict[node_type] = fields
+            
+            fields = [field for field in fields if field not in ["__slots__"]]
 
             missing_fields = [
                 field
@@ -1137,6 +1142,7 @@ class EKGConstructService:
                 fields = list(getClassFields(schema))
                 edgetype2fields_dict[edge_type] = fields
 
+            fields = [field for field in fields if field not in ["__slots__"]]
             missing_fields = [
                 field
                 for field in fields 
