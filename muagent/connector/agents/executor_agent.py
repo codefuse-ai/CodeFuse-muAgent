@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Generator
 import copy
 import uuid
 from loguru import logger

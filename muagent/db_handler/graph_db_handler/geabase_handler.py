@@ -25,11 +25,24 @@ class GeaBaseHandler(GBHandler):
         self.project = gb_config.extra_kwargs.get("project")
         self.city = gb_config.extra_kwargs.get("city")
         self.lib_path = gb_config.extra_kwargs.get("lib_path")
+        self.graph_name = gb_config.extra_kwargs.get("graph_name")
 
-        GeaBaseEnv.init(self.lib_path)
-        self.geabase_client = GeaBaseClient(
-            self.metaserver_address, self.project,self.city
-        )
+        try:
+            GeaBaseEnv.init(self.lib_path)
+        except Exception as e:
+            logger.error(f"{e}")
+
+        if self.graph_name:
+            self.geabase_client = GeaBaseClient(
+                self.metaserver_address, self.project,self.city,
+                graph_name=self.graph_name
+            )
+            self.hop_max = 6
+        else:
+            self.geabase_client = GeaBaseClient(
+                self.metaserver_address, self.project,self.city,
+            )
+            self.hop_max = 8
 
         # option 指定
         self.option = GeaBaseEnv.QueryRequestOption.newBuilder().gqlType(GeaBaseEnv.QueryProtocol.GQLType.GQL_ISO).build()
@@ -227,7 +240,7 @@ class GeaBaseHandler(GBHandler):
         '''
         hop >= 2， 表面需要至少两跳
         '''
-        hop_max = 8
+        hop_max = self.hop_max
         # 
         where_str = ' and '.join([f"n0.{k}='{v}'" for k, v in attributes.items()])
         if reverse:

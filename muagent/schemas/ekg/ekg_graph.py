@@ -165,9 +165,9 @@ class EKGNodeTbaseSchema(BaseModel):
     # node_str = 'graph_id={graph_id}'/teamids, use for searching by graph_id/teamids
     node_str: str
     name_keyword: str
-    desc_keyword: str
+    description_keyword: str
     name_vector: List
-    desc_vector: List
+    description_vector: List
 
 
 class EKGEdgeTbaseSchema(BaseModel):
@@ -202,6 +202,24 @@ TYPE2SCHEMA = {
     NodeTypesEnum.TOOL_INSTANCE.value: EKGPToolSchema,
     NodeTypesEnum.EDGE.value: EKGEdgeSchema
 }
+
+
+###############################
+##### tbase & gbase status #####
+###############################
+
+class TbaseExecStatus(BaseModel):
+    errorMessage: Optional[str] = None
+    statusCode: Optional[int] = None
+    # 
+    total: Optional[int] = None
+    docs: Optional[List[dict]] = None
+
+class GbaseExecStatus(BaseModel):
+    errorMessage: Optional[str] = None
+    statusCode: Optional[int] = None
+
+
 
 
 #####################

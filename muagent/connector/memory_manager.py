@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from typing import List, Dict
-import os, sys, copy, json, uuid
+import os, sys, copy, json, uuid, random
 from jieba.analyse import extract_tags
 from collections import Counter
 from loguru import logger
@@ -238,7 +238,7 @@ class LocalMemoryManager(BaseMemoryManager):
         # self.unique_name = unique_name
         # self.memory_type = memory_type
         self.db_config = db_config
-        self.vb_config = vb_config
+        self.vb_config = vb_config or VBConfig(vb_type="LocalFaissHandler")
         self.gb_config = gb_config
         self.tb_config = tb_config
         self.do_init = do_init

@@ -71,6 +71,12 @@ class NebulaHandler:
                 resp = resp.dict_for_vis()
         return resp
 
+    def add_hosts(self, hostname, port):
+            with self.connection_pool.session_context(self.username, self.password) as session:
+                cypher = f'ADD HOSTS "{hostname}":{port}'
+                resp = session.execute(cypher)
+            return resp
+
     def close_connection(self):
         self.connection_pool.close()
 

@@ -127,9 +127,9 @@ services:
       TZ:   "${TZ}"
     ports:
       - 11434:11434
-    volumes:
+    # volumes:
       # - //d/models/ollama:/root/.ollama # windows path
-      # - /Users/wangyunpeng/Downloads/models:/root/.ollama # linux/mac path
+      # - /Users/xxxx/Desktop/ollama:/root/.ollama # linux/mac path
     networks:
       - ekg-net
     restart: on-failure
