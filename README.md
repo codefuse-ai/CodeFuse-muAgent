@@ -59,7 +59,7 @@ cd CodeFuse-muAgent
 docker-compose up -d
 ```
 
-The current image version includes only the basic EKG service. We expect to provide a front-end interface and back-end interaction services in September. 
+The current image version includes only the basic EKG service. We plan to launch the front-end interface and back-end interaction services in Octorber. 
 
 To Be Continued!
 
