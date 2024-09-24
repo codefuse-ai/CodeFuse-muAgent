@@ -30,10 +30,12 @@
 
 
 ## 🤝 介绍
+<p align="justify">
 全新体验的 Agent 框架，将KG从知识获取来源直接升级为Agent编排引擎！基于 LLM+ EKG（Eventic Knowledge Graph 行业知识承载）驱动，协同 MultiAgent、FunctionCall、CodeInterpreter等技术，通过画布式拖拽、轻文字编写，让大模型在人的经验指导下帮助你实现各类复杂 SOP 流程。兼容现有市面各类 Agent 框架，同时可实现复杂推理、在线协同、人工交互、知识即用四大核心差异技术功能。这套框架目前在蚂蚁集团内多个复杂DevOps场景落地验证，同时来体验下我们快速搭建的谁是卧底游戏吧。
-
-
-![](docs/resources/ekg-arch-zh.webp)
+</p>
+<div align="center">
+  <img src="docs/resources/ekg-arch-zh.webp" alt="muAgent Architecture" width="770">
+</div>
 
 
 ## 🚀 快速使用
@@ -88,6 +90,6 @@ pip install codefuse-muagent
 ## 🗂 其他
 ### 📱 联系我们
 <div align=center>
-  <img src="docs/resources/wechat.png" alt="图片", width="360">
+  <img src="docs/resources/wechat.png" alt="图片", width="180">
 </div>
 
