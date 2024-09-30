@@ -18,7 +18,7 @@
 
 ## 🔔 更新
 - [2024.04.01] muAgent正式开源，聚焦多agent编排，协同FunctionCall、RAG、CodeInterpreter等技术
-- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新Agent框架
+- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新Agent产品框架
 
 ## 📜 目录
 - [🤝 介绍](#-介绍)
@@ -30,10 +30,12 @@
 
 
 ## 🤝 介绍
-全新体验的 Agent 框架，将KG从知识获取来源直接升级为Agent编排引擎！基于 LLM+ EKG（Eventic Knowledge Graph 行业知识承载）驱动，协同 MultiAgent、FunctionCall、CodeInterpreter等技术，通过画布式拖拽、轻文字编写，让大模型在人的经验指导下帮助你实现各类复杂 SOP 流程。兼容现有市面各类 Agent 框架，同时可实现复杂推理、在线协同、人工交互、知识即用四大核心差异技术功能。这套框架目前在蚂蚁集团内多个复杂DevOps场景落地验证，同时来体验下我们快速搭建的谁是卧底游戏吧。
-
-
-![](docs/resources/ekg-arch-zh.webp)
+<p align="justify">
+全新体验的Agent框架，将KG从知识获取来源直接升级为Agent编排引擎！基于LLM+ EKG（Eventic Knowledge Graph 行业知识承载）驱动，协同MultiAgent、FunctionCall、CodeInterpreter等技术，通过画布式拖拽、轻文字编写，让大模型在人的经验指导下帮助你实现各类复杂 SOP 流程。兼容现有市面各类Agent框架，同时可实现复杂推理、在线协同、人工交互、知识即用四大核心差异技术功能。这套框架目前在蚂蚁集团内多个复杂DevOps场景落地验证，同时来体验下我们快速搭建的谁是卧底游戏吧。
+</p>
+<div align="center">
+  <img src="docs/resources/ekg-arch-zh.webp" alt="muAgent Architecture" width="770">
+</div>
 
 
 ## 🚀 快速使用
@@ -55,7 +57,7 @@ cd CodeFuse-muAgent
 docker-compose up -d
 ```
 
-当前镜像版本仅包含了EKG基础服务。我们将会在9月底提供前端交互和后端交互的镜像服务。
+当前镜像版本仅包含了EKG基础服务。我们将会在10月份提供前端交互和后端交互的镜像服务。
 
 敬请期待!
 
@@ -78,16 +80,15 @@ pip install codefuse-muagent
 - **操作空间**：遵循Swagger协议，提供工具注册、权限管理、统一分类，方便LLM在工具调用中接入使用；提供安全可信代码执行环境，同时确保代码精准生成，满足可视绘图、数值计算、图表编辑等各类场景诉求
 
 ## 🤗 贡献指南
-非常感谢您对 Codefuse 项目感兴趣，我们非常欢迎您对 Codefuse 项目的各种建议、意见（包括批评）、评论和贡献。
+感谢您对muAgent项目的关注！我们欢迎您的任何建议、意见（包括批评）和贡献。
 
-您对 Codefuse 的各种建议、意见、评论可以直接通过 GitHub 的 Issues 提出。
+为了更好促进项目的发展，我们鼓励您通过GitHub的Issues提交您对项目的各种建议、意见和评论。
 
-参与 Codefuse 项目并为其作出贡献的方法有很多：代码实现、测试编写、流程工具改进、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表。详见[Contribution Guide...](https://codefuse-ai.github.io/zh-CN/contribution/issue)
-
+参与Codefuse项目并为其作出贡献的方法有很多：代码实现、测试编写、流程工具改进、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表。详见[Contribution Guide...](https://codefuse-ai.github.io/zh-CN/contribution/issue)
 
 ## 🗂 其他
 ### 📱 联系我们
 <div align=center>
-  <img src="docs/resources/wechat.png" alt="图片", width="360">
+  <img src="docs/resources/wechat.png" alt="图片", width="180">
 </div>
 
