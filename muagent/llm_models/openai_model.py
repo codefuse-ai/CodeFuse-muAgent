@@ -14,7 +14,6 @@ import ollama
 from ollama import Client
 from guidance import models, gen , select
 from guidance import user, system, assistant, instruction
-from guidance import one_or_more, zero_or_more
 import guidance
 
 
@@ -68,9 +67,35 @@ class OllamaModel(CustomLLMModel):
                 ollama.pull(self.llm_name)
         self.client = Client(host='http://localhost:11434')
 
-
-
     def __call__(self, prompt: str,
+                  stop: Optional[List[str]] = None):
+        if type(prompt)==list:
+            prompt=prompt[0].content
+
+        # guidance目前没有专门集成ollama，或者使用0.1.10版本参考guidance/issues/687，或者使用尚未合并的pr:microdev1/guidance
+        local_model=models.LiteLLMCompletion(api_base="http://localhost:11434", model='ollama/'+self.llm_name)
+
+        with system():
+            lm = local_model + "You are a code expert."
+
+        with user():
+            lm += prompt
+
+        start_index = max(prompt.find("#### Response Output Format"), prompt.find("#### RESPONSE OUTPUT FORMAT"))
+        if start_index == -1:
+            with assistant():
+                lm += gen("answer")
+            return lm["answer"]
+
+        lm += constrained_ner(prompt[start_index:])
+        response = ''
+        # for k, v in lm._variables.items:
+        for k, v in lm._variables.items():
+            response = '**' + k + ':**' + v + '\n'
+
+        return response
+
+    def unit_test(self, prompt: str,
                   stop: Optional[List[str]] = None):
         try:
             if type(prompt)!=str:
@@ -84,8 +109,6 @@ class OllamaModel(CustomLLMModel):
         # response = ollama.chat(model=self.llm_name, messages=[{'role': 'user', 'content': prompt}])
         # print(response)
         return response['message']['content']
-
-
 
 class OpenAILLMModel(CustomLLMModel):
 
@@ -137,31 +160,26 @@ class OpenAILLMModel(CustomLLMModel):
             prompt=prompt[0].content
         openai_model=models.OpenAI(self.llm.model_name)
 
-        # lm += openai_model + prompt
         with system():
             lm = openai_model + "You are a code expert."
 
         with user():
             lm += prompt
 
-        # with assistant():
-        #     # lm += gen(name="answer", stop=".")
-        #     lm += gen(name="answer", temperature=0.8)
-    
         start_index = max(prompt.find("#### Response Output Format"), prompt.find("#### RESPONSE OUTPUT FORMAT"))
-        if start_index != -1:
-            lm += constrained_ner(prompt[start_index:])
+        if start_index == -1:
+            with assistant():
+                lm += gen("answer")
+            return lm["answer"]
 
-        response = lm['answer']
-        ans_init = self.llm.predict(prompt, stop=stop)
+        lm += constrained_ner(prompt[start_index:])
+        response = ''
+        # for k, v in lm._variables.items:
+        for k, v in lm._variables.items():
+            response = '**' + k + ':**' + v + '\n'
 
         return response
 
-    def call_bk(self, prompt: str,
-                  stop: Optional[List[str]] = None):
-        if type(prompt)==list:
-            prompt=prompt[0].content
-        return self.llm.predict(prompt, stop=stop)
     
 
 class LYWWLLMModel(OpenAILLMModel):
