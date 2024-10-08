@@ -84,7 +84,7 @@ pip install codefuse-muagent
 
 为了更好促进项目的发展，我们鼓励您通过GitHub的Issues提交您对项目的各种建议、意见和评论。
 
-参与Codefuse项目并为其作出贡献的方法有很多：代码实现、测试编写、流程工具改进、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表。详见[Contribution Guide...](https://codefuse-ai.github.io/zh-CN/contribution/issue)
+参与Codefuse项目并为其作出贡献的方法有很多：代码实现、测试编写、文档完善等等。任何贡献我们都会非常欢迎，并将您加入贡献者列表，详见[Contribution Guide](https://codefuse-ai.github.io/contribution/contribution)。
 
 ## 🗂 其他
 ### 📱 联系我们
