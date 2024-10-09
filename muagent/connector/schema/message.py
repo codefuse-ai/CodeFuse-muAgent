@@ -46,7 +46,7 @@ class Message(BaseModel):
 
     # phase input
     agents: List = []
-    tools: List[BaseTool] = []
+    tools: List = []
     phase_name: str = None
     chain_name: str = None
     do_search: bool = False
