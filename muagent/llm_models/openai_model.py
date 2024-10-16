@@ -10,6 +10,13 @@ from langchain.llms.base import LLM
 from .llm_config import LLMConfig
 # from configs.model_config import (llm_model_dict, LLM_MODEL)
 
+import ollama
+from ollama import Client
+from guidance import models, gen , select
+from guidance import user, system, assistant, instruction
+import guidance
+
+
 
 class CustomLLMModel:
     
@@ -32,7 +39,76 @@ class CustomLLMModel:
                   stop: Optional[List[str]] = None):
         return [self(prompt, stop) for prompt in prompts]
 
+import re
+@guidance(stateless=True)
+def constrained_ner(lm, input_message):
+    # Split into words
+    pattern = r"\*\*(.*?)\*\*"
+    matches = re.findall(pattern, input_message)
+    bold_strings = [match.strip() for match in matches]
+    ret = ''
+    for x in bold_strings:
+        x = '**' + x +'**'
+        ret += x + gen(name=x[2:-3], temperature= 0.8)
+    return lm + ret
 
+
+class OllamaModel(CustomLLMModel):
+
+    def __init__(self, llm_config: LLMConfig = None, callBack: AsyncIteratorCallbackHandler = None,):
+        
+        self.llm_name = llm_config.model_name
+
+        try:
+            ollama.chat(model=self.llm_name)
+        except ollama.ResponseError as e:
+            print('Error:', e.error)
+            if e.status_code == 404:
+                ollama.pull(self.llm_name)
+        self.client = Client(host='http://localhost:11434')
+
+    def __call__(self, prompt: str,
+                  stop: Optional[List[str]] = None):
+        if type(prompt)==list:
+            prompt=prompt[0].content
+
+        # guidance目前没有专门集成ollama，或者使用0.1.10版本参考guidance/issues/687，或者使用尚未合并的pr:microdev1/guidance
+        local_model=models.LiteLLMCompletion(api_base="http://localhost:11434", model='ollama/'+self.llm_name)
+
+        with system():
+            lm = local_model + "You are a code expert."
+
+        with user():
+            lm += prompt
+
+        start_index = max(prompt.find("#### Response Output Format"), prompt.find("#### RESPONSE OUTPUT FORMAT"))
+        if start_index == -1:
+            with assistant():
+                lm += gen("answer")
+            return lm["answer"]
+
+        lm += constrained_ner(prompt[start_index:])
+        response = ''
+        # for k, v in lm._variables.items:
+        for k, v in lm._variables.items():
+            response = '**' + k + ':**' + v + '\n'
+
+        return response
+
+    def unit_test(self, prompt: str,
+                  stop: Optional[List[str]] = None):
+        try:
+            if type(prompt)!=str:
+                prompt=prompt[0].content
+            response = ollama.chat(model=self.llm_name, messages=[{'role': 'user', 'content': prompt}])
+        except Exception as e:
+            print("input type:",type(prompt))
+            print("prompt:",prompt)
+            print("error:",e)        
+            return "Error occurred"  
+        # response = ollama.chat(model=self.llm_name, messages=[{'role': 'user', 'content': prompt}])
+        # print(response)
+        return response['message']['content']
 
 class OpenAILLMModel(CustomLLMModel):
 
@@ -80,7 +156,30 @@ class OpenAILLMModel(CustomLLMModel):
 
     def __call__(self, prompt: str,
                   stop: Optional[List[str]] = None):
-        return self.llm.predict(prompt, stop=stop)
+        if type(prompt)==list:
+            prompt=prompt[0].content
+        openai_model=models.OpenAI(self.llm.model_name)
+
+        with system():
+            lm = openai_model + "You are a code expert."
+
+        with user():
+            lm += prompt
+
+        start_index = max(prompt.find("#### Response Output Format"), prompt.find("#### RESPONSE OUTPUT FORMAT"))
+        if start_index == -1:
+            with assistant():
+                lm += gen("answer")
+            return lm["answer"]
+
+        lm += constrained_ner(prompt[start_index:])
+        response = ''
+        # for k, v in lm._variables.items:
+        for k, v in lm._variables.items():
+            response = '**' + k + ':**' + v + '\n'
+
+        return response
+
     
 
 class LYWWLLMModel(OpenAILLMModel):
@@ -117,7 +216,7 @@ def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbac
     if llm_config and llm_config.llm and isinstance(llm_config.llm, LLM):
         return CustomLLMModel(llm=llm_config.llm)
     elif llm_config:
-        model_class_dict = {"openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel}
+        model_class_dict = {"openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel, "ollama": OllamaModel}
         model_class = model_class_dict[llm_config.model_engine]
         model = model_class(llm_config, callBack)
         # logger.debug(f"{model.llm}")

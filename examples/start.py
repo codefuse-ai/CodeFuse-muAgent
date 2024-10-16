@@ -14,9 +14,22 @@ src_dir = os.path.join(
 DEFAULT_BIND_HOST = "127.0.0.1"
 os.environ["DEFAULT_BIND_HOST"] = DEFAULT_BIND_HOST
 CONTRAINER_NAME = "muagent"
-IMAGE_NAME = "muagent:latest"
+IMAGE_NAME = "muagent:0.0.1"
 SANDBOX_CONTRAINER_NAME = "devopsgpt_sandbox"
-SANDBOX_IMAGE_NAME = "devopsgpt:py39"
+OLLAMA_CONTRAINER_NAME = "local_ollama"
+
+
+OLLAMA_IMAGE_NAME = "ollama/ollama"
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST") or DEFAULT_BIND_HOST
+OLLAMA_SERVER = {
+    "host": f"http://{OLLAMA_HOST}",
+    "port": 11434,
+    "docker_port": 11434,
+    "url": f"http://{OLLAMA_HOST}:11434",
+    "do_remote": True,
+}
+
+SANDBOX_IMAGE_NAME = "kuafuai/devopsgpt"
 SANDBOX_HOST = os.environ.get("SANDBOX_HOST") or DEFAULT_BIND_HOST # "172.25.0.3"
 SANDBOX_SERVER = {
     "host": f"http://{SANDBOX_HOST}",
@@ -102,7 +115,7 @@ def check_docker(client, container_name, do_stop=False):
 def start_docker(client, script_shs, ports, image_name, container_name, mounts=None, network=None):
     container = client.containers.run(
         image=image_name,
-        command="bash",
+        command="bash" if image_name!="ollama/ollama" else '',
         mounts=mounts,
         name=container_name,
         mem_limit="8g",
@@ -112,8 +125,11 @@ def start_docker(client, script_shs, ports, image_name, container_name, mounts=N
         stdin_open=True,
         detach=True,
         tty=USE_TTY,
-        network=network,   
+        network=network, 
     )
+    
+    # 如果更换镜像，需要把这里注释(下载有时候很慢，看网速)
+    response = container.exec_run(["pip", "install", "notebook"])
 
     logger.info(f"docker id: {container.id[:10]}")
 
@@ -133,6 +149,44 @@ def start_docker(client, script_shs, ports, image_name, container_name, mounts=N
 ############# 开始启动服务 ###############
 #########################################
 network_name ='my_network'
+
+def start_ollama_service(network_name ='my_network'):
+    if OLLAMA_SERVER["do_remote"]:
+        client = docker.from_env()
+        networks = client.networks.list()
+        if any([network_name==i.attrs["Name"] for i in networks]):
+            network = client.networks.get(network_name)
+        else:
+            network = client.networks.create('my_network', driver='bridge')
+
+        # 启动容器
+        logger.info("start local ollama service")
+        script_shs = []
+        ports = {f"{OLLAMA_SERVER['docker_port']}/tcp": f"{OLLAMA_SERVER['port']}/tcp"}
+        if check_docker(client, OLLAMA_CONTRAINER_NAME, do_stop=True, ):
+            container = start_docker(client, script_shs, ports, OLLAMA_IMAGE_NAME, OLLAMA_CONTRAINER_NAME, network=network_name)
+        # 判断notebook是否启动
+        time.sleep(5)
+        retry_nums = 3
+        while retry_nums>0:
+            logger.info(f"http://localhost:{OLLAMA_SERVER['port']}")
+            response = requests.get(f"http://localhost:{OLLAMA_SERVER['port']}", timeout=270)
+            if response.status_code == 200:
+                logger.info("container & notebook init success")
+                break
+            else:
+                retry_nums -= 1
+                logger.info(client.containers.list())
+                logger.info("wait container running ...")
+            time.sleep(5)
+
+    else:
+        try:
+            client = docker.from_env()
+        except:
+            client = None
+        check_docker(client, OLLAMA_CONTRAINER_NAME, do_stop=True, )
+        logger.info("start local ollama service")    
 
 def start_sandbox_service(network_name ='my_network'):
     mount = Mount(
@@ -228,6 +282,7 @@ def start_api_service(sandbox_host=DEFAULT_BIND_HOST):
 
 
 def start_main():
+    start_ollama_service()
     start_sandbox_service()
     sandbox_host = DEFAULT_BIND_HOST
     if SANDBOX_SERVER["do_remote"]:
