@@ -162,7 +162,7 @@ class BaseAgent:
                 )
             else:
                 memory_manager = LocalMemoryManager(
-                    # unique_name=self.role.role_name, 
+                    unique_name=self.role.role_name, 
                     do_init=True, 
                     kb_root_path = self.kb_root_path, 
                     embed_config=self.embed_config, 

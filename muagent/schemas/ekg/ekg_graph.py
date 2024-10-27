@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Optional, Union
 from enum import Enum
 import copy
 import json
@@ -202,24 +202,6 @@ TYPE2SCHEMA = {
     NodeTypesEnum.TOOL_INSTANCE.value: EKGPToolSchema,
     NodeTypesEnum.EDGE.value: EKGEdgeSchema
 }
-
-
-###############################
-##### tbase & gbase status #####
-###############################
-
-class TbaseExecStatus(BaseModel):
-    errorMessage: Optional[str] = None
-    statusCode: Optional[int] = None
-    # 
-    total: Optional[int] = None
-    docs: Optional[List[dict]] = None
-
-class GbaseExecStatus(BaseModel):
-    errorMessage: Optional[str] = None
-    statusCode: Optional[int] = None
-
-
 
 
 #####################

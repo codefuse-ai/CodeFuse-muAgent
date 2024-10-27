@@ -1,15 +1,31 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from enum import Enum
 
 from muagent.schemas.common import GNode, GEdge
 
 
 
-
 class EKGResponse(BaseModel):
     successCode: int
     errorMessage: str
+
+class EKGALResponse(BaseModel):
+    algorithmResult: str
+    predictedScore: float = 0.0
+
+class EKGAIResponse(BaseModel):
+    resultMap: EKGALResponse
+    debugMessage: str = ""
+    errorMessage: str
+    serverIp: str = ""
+    success: bool
+
+class EKGQueryRequest(BaseModel):
+    query: dict
+
+class EKGFeaturesRequest(BaseModel):
+    features: EKGQueryRequest
 
 
 # embeddings
@@ -53,13 +69,22 @@ class UpdateGraphRequest(BaseModel):
     nodes: List[GNode]
     edges: List[GEdge]
     teamid: str
+    rootNodeId: str
+
+class UpdateGraphResponse(BaseModel):
+    successCode: int
+    errorMessage: str
+    nodes: List
+    edges: List
+
 
 
 
 # get node by nodeid and nodetype
 class GetNodeRequest(BaseModel):
     nodeid: str
-    nodeType: str
+    nodeType: Optional[str] = None
+    serviceType: Literal["gbase", "tbase"] = "gbase"
 
 class GetNodeResponse(EKGResponse):
     node: GNode = None
@@ -71,15 +96,15 @@ class GetGraphRequest(BaseModel):
     nodeid: str
     nodeType: str
     hop: int = 10
-    layer: str
+    layer: str = "first" # first\second
 
 
 
 # get node by nodeid and nodetype
 class SearchNodesRequest(BaseModel):
     text: str
-    nodeType: str
-    teamid: str
+    nodeType: str = ""
+    teamid: Optional[str] = None
     topK: int = 5
 
 class GetNodesResponse(EKGResponse):
@@ -96,18 +121,39 @@ class SearchAncestorRequest(BaseModel):
 
 
 class LLMParamsResponse(BaseModel):
-    url: str
+    url: Optional[str] = None
     model_name: str
-    model_type: str
-    api_key: str
+    model_type: Literal["openai", "ollama", "lingyiwanwu", "kimi", "moonshot", "qwen"] = "ollama"
+    api_key: str = ""
     stop: Optional[str] = None
-    temperature: float
-    top_k: int
-    top_p: float
+    temperature: float = 0.3
+    top_k: int = 50
+    top_p: float = 0.95
+
+class LLMParamsRequest(LLMParamsResponse):
+    pass
+
 
 class EmbeddingsParamsResponse(BaseModel):
     # ollama embeddings
-    url: str
-    embedding_type: str
+    url: Optional[str] = None
+    embedding_type: Literal["openai", "ollama"] = "ollama"
+    model_name: str = "qwen2.5:0.5b"
+    api_key: str = ""
+
+
+class EmbeddingsParamsRequest(EmbeddingsParamsResponse):
+    pass
+
+
+class LLMOllamaPullRequest(BaseModel):
     model_name: str
-    api_key: str
+    
+class EKGMigrationSeasoningResponse(BaseModel):
+    resultCode: int
+    errorMessage:str
+    resultMap:dict
+    
+
+
+

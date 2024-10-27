@@ -65,34 +65,37 @@ The Action Status field ensures that the tools or code mentioned in the Action c
 
 
 def get_intention_prompt(
-    background: str, intentions: Union[list, tuple], examples: Optional[dict]=None
+    background: str, intentions: Union[list, tuple], examples: Optional[dict]=None,
+    allow_multiple_choice=False
 ) -> str:
     nums_zh = ('一', '两', '三', '四', '五', '六', '七', '八', '九', '十')
+    marks = '.。,，;；:：?？\t\n'
 
     intention_num = len(intentions)
     num_zh = nums_zh[intention_num - 1] if intention_num <= 10 else intention_num
-    prompt = f'##背景##\n{background}\n\n##任务##\n辨别用户的询问意图，包括以下{num_zh}类：\n'
+    prompt = f'##背景##\n{background}\n\n##任务##\n找出最相关的意图，包括以下{num_zh}种：\n'
 
     for i, val in enumerate(intentions):
         if isinstance(val, (list, tuple)):
             k, v = val
-            cur_intention = f'{i + 1}. {k}：{v}\n'
+            cur_intention = '{}. {}：{}；\n'.format(i + 1, k, v.strip(marks))
         else:
-            cur_intention = f'{i + 1}. {val}\n'
+            cur_intention = '{}. {}；\n'.format(i + 1, val.strip(marks))
         prompt += cur_intention
     
-    prompt += '\n##注意事项##\n'
-    num_range_str = '、'.join(map(str, range(1, intention_num + 1)))
-    prompt += f'回答：数字{num_range_str}中的一个来表示用户的询问意图，对应上述{num_zh}种分类。避免提供额外解释或其他信息。\n\n'
+    temp = '，若存在多个意图都是最相关的，请用","分开' if allow_multiple_choice else ''
+    prompt += f'\n##输出格式##\n最相关意图对应的数字（第一个意图对应数字1）{temp}。\n\n'
 
     if examples:
         prompt += '##示例##\n'
         intention_idx_map = {k[0]: idx + 1 for idx, k in enumerate(intentions)}
         for query, ans in examples.items():
-            ans = intention_idx_map[ans]
-            prompt += f'询问：{query}\n回答：{ans}\n\n'
+            if not isinstance(ans, (list, tuple)):
+                ans = [ans]
+            ans = ','.join([str(intention_idx_map[x]) for x in ans])
+            prompt += f'问题：{query}\n回答：{ans}\n\n'
     
-    prompt += '##用户询问##\n询问：{query}\n回答：'
+    prompt += '##用户询问##\n问题：{query}\n回答：'
     return prompt
 
 
@@ -101,8 +104,13 @@ INTENTIONS_CONSULT_WHICH = [
     ('下一步任务查询', '用户询问某个问题或方案的特定步骤，通常会提及“下一步”、“具体操作”等'),
     ('闲聊', '用户询问的内容与当前的技术问题或解决方案无关，更多是出于兴趣或社交性质的交流。')
 ]
+INTENTIONS_CONSULT_WHICH_CODE = {
+    '整体计划查询': 'allPlan',
+    '下一步任务查询': 'nextStep',
+    '闲聊': 'justChat'
+}
 CONSULT_WHICH_PROMPT = get_intention_prompt(
-    '作为运维领域的客服，您的职责是根据用户询问的内容，精准判断其背后的意图，以便提供最恰当的服务和支持。',
+    '作为智能助手，您的职责是根据用户询问的内容，精准判断其背后的意图，以便提供最恰当的服务和支持。',
     INTENTIONS_CONSULT_WHICH,
     {
         '如何组织一次活动？': '整体计划查询',
@@ -113,26 +121,28 @@ CONSULT_WHICH_PROMPT = get_intention_prompt(
 )
 
 INTENTIONS_WHETHER_EXEC = [
-    ('执行', '当用户声明自己在使用某平台、服务、产品或功能时遇到具体问题，且明确表示不知道如何解决时，其意图应被分类为“执行”。'),
-    ('询问', '当用户明确询问某些解决方案的背景、流程、方式方法等信息，或只是出于好奇想要了解更多信息，或只是简单闲聊时，其意图应被分类为“询问”。')
+    ('执行', '用户在使用某平台、服务、产品或功能时遇到了问题，或者明确声明要执行某一流程或游戏。'),
+    ('询问', '用户的主要目的是获取信息，或只是简单闲聊。')
 ]
 WHETHER_EXECUTE_PROMPT = get_intention_prompt(
-    '作为运维领域的客服，您需要根据用户询问判断其主要意图，以确定接下来的运维流程。',
+    '作为智能助手，您需要根据用户询问判断其主要意图，以便提供最恰当的服务和支持。',
     INTENTIONS_WHETHER_EXEC,
     {
         '为什么我的优惠券使用失败？': '执行',
-        '为什么我的优惠券使用失败？请告诉我方案': '询问'
+        '公司团建怎么申请？': '询问',
+        '开始玩游戏。': '执行'
     }
 )
 
 DIRECT_CHAT_PROMPT = """##背景##
-作为运维领域的客服，您的职责是根据自身专业知识回答用户询问，以便提供最恰当的服务和支持。
+作为智能助手，您的职责是根据自身专业知识回答用户询问，以便提供最恰当的服务和支持。
 
 ##任务##
 基于您所掌握的领域知识，对用户的提问进行回答。
 
 ##注意事项##
-请尽量从客观的角度来回答问题，内容符合事实、有理有据。
+1. 请尽量从客观的角度来回答问题，内容符合事实、有理有据。
+2. 内容尽量简洁。
 
 ##用户询问##
 询问：{query}

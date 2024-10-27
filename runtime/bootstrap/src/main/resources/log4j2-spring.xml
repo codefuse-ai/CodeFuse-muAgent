@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT-APPENDER" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %-5p %c{2} - %m%n%throwable" charset="UTF-8"/>
+        </Console>
+
+        <Console name="STDERR-APPENDER" target="SYSTEM_ERR">
+            <PatternLayout pattern="%d %-5p %c{2} - %m%n%throwable" charset="UTF-8"/>
+        </Console>
+
+        <RollingFile name="ERROR-APPENDER" fileName="${spring:logging.path}/${spring:spring.application.name}/common-error.log"
+                     filePattern="${spring:logging.path}/${spring:spring.application.name}/common-error.log.%d{yyyy-MM-dd}"
+                     append="true">
+            <PatternLayout
+                    pattern="%d [%X{traceId} %X{rpcId} - %X{loginUserEmail}/%X{loginUserID}/%X{remoteAddr}/%X{clientId} - %X{requestURIWithQueryString}] %-5p %c{2} - %m%n%throwable"
+                    charset="UTF-8"/>
+            <TimeBasedTriggeringPolicy/>
+            <DefaultRolloverStrategy/>
+            <ThresholdFilter level="ERROR"/>
+        </RollingFile>
+
+        <RollingFile name="APP-DEFAULT-APPENDER" fileName="${spring:logging.path}/${spring:spring.application.name}/app-default.log"
+                     filePattern="${spring:logging.path}/${spring:spring.application.name}/app-default.log.%d{yyyy-MM-dd}"
+                     append="true">
+            <PatternLayout
+                    pattern="%d  %-5p %c{2} - %m%n%throwable"
+                    charset="UTF-8"/>
+            <TimeBasedTriggeringPolicy/>
+            <DefaultRolloverStrategy/>
+        </RollingFile>
+
+        <RollingFile name="SPRING-APPENDER" fileName="${spring:logging.path}/spring/spring.log"
+                     filePattern="${spring:logging.path}/spring/spring.log.%d{yyyy-MM-dd}"
+                     append="true">
+            <PatternLayout
+                    pattern="%d [%X{traceId} %X{rpcId} - %X{loginUserEmail}/%X{loginUserID}/%X{remoteAddr}/%X{clientId} - %X{requestURIWithQueryString}] %-5p %c{2} - %m%n%throwable"
+                    charset="UTF-8"/>
+            <TimeBasedTriggeringPolicy/>
+            <DefaultRolloverStrategy/>
+        </RollingFile>
+
+        <RollingFile name="NO-USAGE-APPENDER" fileName="${spring:logging.path}/no-usage/no-usage.log"
+                     filePattern="${spring:logging.path}/no-usage/no-usage.log.%d{yyyy-MM-dd}"
+                     append="true">
+            <PatternLayout
+                    pattern="%d [%X{traceId} %X{rpcId} - %X{loginUserEmail}/%X{loginUserID}/%X{remoteAddr}/%X{clientId} - %X{requestURIWithQueryString}] %-5p %c{2} - %m%n%throwable"
+                    charset="UTF-8"/>
+            <TimeBasedTriggeringPolicy/>
+            <DefaultRolloverStrategy/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <AsyncLogger name="STDOUT" additivity="false" level="info">
+            <AppenderRef ref="STDOUT-APPENDER"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="STDERR" additivity="false" level="${spring:logging.level.com.alipay.muagent}">
+            <AppenderRef ref="STDERR-APPENDER"/>
+        </AsyncLogger>
+
+
+        <AsyncLogger name="com.alipay.muagent" additivity="false" level="${spring:logging.level.com.alipay.muagent}">
+            <AppenderRef ref="APP-DEFAULT-APPENDER"/>
+            <AppenderRef ref="ERROR-APPENDER"/>
+            <AppenderRef ref="STDOUT-APPENDER"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="org.springframework" additivity="false" level="info">
+            <AppenderRef ref="ERROR-APPENDER"/>
+            <AppenderRef ref="SPRING-APPENDER"/>
+            <AppenderRef ref="STDOUT-APPENDER"/>
+        </AsyncLogger>
+
+        <AsyncRoot level="${spring:logging.level.com.alipay.muagent}">
+            <AppenderRef ref="APP-DEFAULT-APPENDER"/>
+            <AppenderRef ref="ERROR-APPENDER"/>
+        </AsyncRoot>
+    </Loggers>
+</Configuration>

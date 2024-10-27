@@ -55,10 +55,10 @@ class GeaBaseHandler(GBHandler):
         result = json.loads(str(result.getJsonGQLResponse()))
         return result
 
-    def add_node(self, node: GNode) -> dict:
+    def add_node(self, node: GNode) -> GbaseExecStatus:
         return self.add_nodes([node])
 
-    def add_nodes(self, nodes: List[GNode]) -> dict:
+    def add_nodes(self, nodes: List[GNode]) -> GbaseExecStatus:
         node_str_list = []
         for node in nodes:
             node_type = node.type
@@ -70,12 +70,12 @@ class GeaBaseHandler(GBHandler):
             node_str_list.append(f"(:{node_type} {{{node_str}}})")
 
         gql = f"INSERT {','.join(node_str_list)}"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
 
-    def add_edge(self, edge: GEdge) -> dict:
+    def add_edge(self, edge: GEdge) -> GbaseExecStatus:
         return self.add_edges([edge])
 
-    def add_edges(self, edges: List[GEdge]) -> dict:
+    def add_edges(self, edges: List[GEdge]) -> GbaseExecStatus:
         '''不支持批量edge插入'''
         edge_str_list = []
         for edge in edges:
@@ -90,9 +90,9 @@ class GeaBaseHandler(GBHandler):
             edge_str_list.append(f"()-[:{edge_type} {{{edge_str}}}]->()")
 
         gql = f"INSERT {','.join(edge_str_list)}"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
 
-    def update_node(self, attributes: dict, set_attributes: dict, node_type: str = None, ID: int = None) -> dict:
+    def update_node(self, attributes: dict, set_attributes: dict, node_type: str = None, ID: int = None) -> GbaseExecStatus:
         # demo: "MATCH (n:opsgptkg_employee {@ID: xxxx}) SET n.originname = 'xxx', n.description = 'xxx'"
         set_str = ", ".join([
             f"n.{k}='{v}'" if isinstance(v, (str, bool)) else f"n.{k}={v}"
@@ -104,9 +104,9 @@ class GeaBaseHandler(GBHandler):
             ID = self.get_current_nodeID(attributes, node_type)
             # ID = double_hashing(ID)
         gql = f"MATCH (n:{node_type}) WHERE n.@ID={ID} SET {set_str}"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
 
-    def update_edge(self, src_id, dst_id, set_attributes: dict, edge_type: str = None) -> dict:
+    def update_edge(self, src_id, dst_id, set_attributes: dict, edge_type: str = None) -> GbaseExecStatus:
         # geabase 不支持直接根据边关系进行检索
         src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
         src_type, dst_type = self.get_nodetypes_by_edgetype(edge_type)
@@ -118,38 +118,38 @@ class GeaBaseHandler(GBHandler):
         # demo： MATCH ()-[r:PlayFor{@src_id:1, @dst_id:100, @timestamp:0}]->() SET r.contract = 0;
         # gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}, timestamp:{timestamp}}}]->() SET {set_str}"
         gql = f"MATCH (n0:{src_type} {{@id: {src_id}}})-[e]->(n1:{dst_type} {{@id:{dst_id}}}) SET {set_str}"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
     
-    def delete_node(self, attributes: dict, node_type: str = None, ID: int = None) -> dict:
+    def delete_node(self, attributes: dict, node_type: str = None, ID: int = None) -> GbaseExecStatus:
         if (ID is None) or (not isinstance(ID, int)):
             ID = self.get_current_nodeID(attributes, node_type)
             # ID = double_hashing(ID)
         gql = f"MATCH (n:{node_type}) WHERE n.@ID={ID} DELETE n"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
 
-    def delete_nodes(self, attributes: dict, node_type: str = None, IDs: List[int] = []) -> dict:
+    def delete_nodes(self, attributes: dict, node_type: str = None, IDs: List[int] = []) -> GbaseExecStatus:
         if (IDs is None) or len(IDs)==0:
             IDs = self.get_nodeIDs(attributes, node_type)
             # ID = double_hashing(ID)
         gql = f"MATCH (n:{node_type}) WHERE n.@ID in {IDs} DELETE n"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
 
-    def delete_edge(self, src_id, dst_id, edge_type: str = None) -> dict:
+    def delete_edge(self, src_id, dst_id, edge_type: str = None) -> GbaseExecStatus:
         # geabase 不支持直接根据边关系进行检索
         src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
         src_type, dst_type = self.get_nodetypes_by_edgetype(edge_type)
         # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
         # demo： MATCH ()-[r:PlayFor{@src_id:1, @dst_id:100, @timestamp:0}]->() SET r.contract = 0;
         gql = f"MATCH (n0:{src_type} {{@id: {src_id}}})-[e]->(n1:{dst_type} {{@id:{dst_id}}}) DELETE e"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
     
-    def delete_edges(self, id_pairs: List, edge_type: str = None):
+    def delete_edges(self, id_pairs: List, edge_type: str = None) -> GbaseExecStatus:
         # geabase 不支持直接根据边关系进行检索
         src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
         # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
         gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}}}]->() DELETE e"
         gql = f"MATCH (n:opsgptkg_intent )-[r]->(t1) DELETE r"
-        return self.execute(gql)
+        return self._get_crud_status(self.execute(gql))
     
     def get_nodeIDs(self, attributes: dict, node_type: str) -> List[int]:
         result = self.get_current_nodes(attributes, node_type)
@@ -429,9 +429,9 @@ class GeaBaseHandler(GBHandler):
         # 根据连通关系构建路径
         while head in connections:
             head = connections[head]
+            if head in path: break
             path.append(head)
-            if head == path[0]:
-                break
+            if head == path[0]: break
         return path
     
     def decode_vertex(self, col_data, k) -> Dict:
@@ -467,6 +467,23 @@ class GeaBaseHandler(GBHandler):
     def decode_attribute(self, col_data, k) -> Dict:
         return {k: col_data.get("strVal", "") or col_data.get("intVal", "0")}
     
+    def _get_crud_status(self, result: Dict) -> GbaseExecStatus:
+        '''Mapping error messages to error codes.'''
+        text2code = {
+            "lack error message": -1,
+            "GDB_SUCCEED": 0,
+            "GDB_ENGINE_PRIMARY_KEY_DUPLICATE": 1,
+            "GDB_ENGINE_PROP_INVALID": 2,
+            "GDB_SCHEMA_LACK_GRAPH_PROP": 3,
+            "GDB_COMMON_PARSE_ERROR": 4,
+            "GDB_SCHEMA_GRAPH_PROP_NOT_EXIST": 5,
+        }
+        error_message = result.get("status", {}).get("errorMessage", "lack error message")
+        return GbaseExecStatus(
+            errorMessage=error_message, 
+            errorCode=text2code[error_message], 
+        )
+
     def get_nodetypes_by_edgetype(self, edge_type: str):
         src_type, dst_type = edge_type.split("_opsgptkg")[0], "opsgptkg_" + edge_type.split("_opsgptkg_")[1]
         for edge_bridge in ["_route_", "_extend_"]:
