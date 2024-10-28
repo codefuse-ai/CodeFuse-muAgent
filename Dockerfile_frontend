@@ -1,0 +1,18 @@
+From node:20.18.0-bookworm 
+
+WORKDIR /home/user
+
+# 
+COPY frontend /home/user/frontend
+RUN ls /home/user && ls /home/user/frontend
+
+# 
+RUN npm config set registry https://registry.npmmirror.com
+RUN npm install -g pnpm
+RUN pnpm config set registry https://registry.npmmirror.com
+# 
+RUN cd /home/user/frontend && npm i
+# 新增删除
+RUN cd /home/user/frontend && rm -rf !\(node_modules\)
+
+CMD ["bash"]

@@ -1,6 +1,7 @@
 import time
 import sys, os
 from loguru import logger
+import copy
 
 import pdb
 
@@ -63,16 +64,16 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 tb_config = TBConfig(
     tb_type="TbaseHandler",
     index_name="muagent_test",
-    host=os.environ['host'],
-    port=os.environ['port'],
-    username=os.environ['username'],
-    password=os.environ['password'],
+    host=os.environ['tb_host'],
+    port=os.environ['tb_port'],
+    username=os.environ['tb_username'],
+    password=os.environ['tb_password'],
     extra_kwargs={
-        'host': os.environ['host'],
-        'port': os.environ['port'],
-        'username': os.environ['username'] ,
-        'password': os.environ['password'],
-        'definition_value': os.environ['definition_value']
+        'host': os.environ['tb_host'],
+        'port': os.environ['tb_port'],
+        'username': os.environ['tb_username'] ,
+        'password': os.environ['tb_password'],
+        'definition_value': os.environ['tb_definition_value']
     }
 )
 
@@ -84,8 +85,7 @@ gb_config = GBConfig(
         'port': os.environ['nb_port'],
         'username': os.environ['nb_username'] ,
         'password': os.environ['nb_password'],
-        "space": os.environ['nb_space'],
-        'definition_value': os.environ['nb_definition_value']
+        "space": os.environ['nb_space']
         
     }
 )
@@ -115,7 +115,28 @@ ekg_construct_service = EKGConstructService(
     llm_config=llm_config,
     tb_config=tb_config,
     gb_config=gb_config,
+    initialize_space=False
 )
+
+
+
+# test return dic
+# node1 = [GNode(
+#                 id = "ekg_team_3400004",
+#                 type = "opsgptkg_intent",
+#                 attributes = {
+#                     "name": "开始",
+#                     "description": "团队起始节点",
+#                     "ID": 5945714343936,
+#                     "teamids": "3400004",
+#                     "gdb_timestamp": 1725537224
+#                 }
+#             )
+# ]
+
+# result = ekg_construct_service.add_nodes(node1,"yunjiu_test")
+# print(result)
+
 
 
 
@@ -157,89 +178,89 @@ def generate_edge(node1, node2):
     })
 
 
-nodetypes = [
-    'opsgptkg_intent', 'opsgptkg_schedule', 'opsgptkg_task',
-    'opsgptkg_phenomenon', 'opsgptkg_analysis'
-]
+# nodetypes = [
+#     'opsgptkg_intent', 'opsgptkg_schedule', 'opsgptkg_task',
+#     'opsgptkg_phenomenon', 'opsgptkg_analysis'
+# ]
 
-nodes_dict = {}
-for nodetype in nodetypes:
-    for i in range(8):
-        # print(f"shanshi_{nodetype}_{i}")
-        nodes_dict[f"shanshi_{nodetype}_{i}"] = generate_node(f"shanshi_{nodetype}_{i}", nodetype)
+# nodes_dict = {}
+# for nodetype in nodetypes:
+#     for i in range(8):
+#         # print(f"shanshi_{nodetype}_{i}")
+#         nodes_dict[f"shanshi_{nodetype}_{i}"] = generate_node(f"shanshi_{nodetype}_{i}", nodetype)
 
-edge_ids = [
-    ["shanshi_opsgptkg_intent_0", "shanshi_opsgptkg_intent_1"],
-    ["shanshi_opsgptkg_intent_1", "shanshi_opsgptkg_intent_2"],
-    ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_0"],
-    ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_1"],
-    ["shanshi_opsgptkg_schedule_1", "shanshi_opsgptkg_analysis_3"],
-    ["shanshi_opsgptkg_schedule_0", "shanshi_opsgptkg_task_0"],
-    ["shanshi_opsgptkg_task_0", "shanshi_opsgptkg_task_1"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_analysis_0"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_0"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_1"],
-    ["shanshi_opsgptkg_phenomenon_0", "shanshi_opsgptkg_task_2"],
-    ["shanshi_opsgptkg_phenomenon_1", "shanshi_opsgptkg_task_3"],
-    ["shanshi_opsgptkg_task_2", "shanshi_opsgptkg_analysis_1"],
-    ["shanshi_opsgptkg_task_3", "shanshi_opsgptkg_analysis_2"],
-]
+# edge_ids = [
+#     ["shanshi_opsgptkg_intent_0", "shanshi_opsgptkg_intent_1"],
+#     ["shanshi_opsgptkg_intent_1", "shanshi_opsgptkg_intent_2"],
+#     ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_0"],
+#     ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_1"],
+#     ["shanshi_opsgptkg_schedule_1", "shanshi_opsgptkg_analysis_3"],
+#     ["shanshi_opsgptkg_schedule_0", "shanshi_opsgptkg_task_0"],
+#     ["shanshi_opsgptkg_task_0", "shanshi_opsgptkg_task_1"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_analysis_0"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_0"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_1"],
+#     ["shanshi_opsgptkg_phenomenon_0", "shanshi_opsgptkg_task_2"],
+#     ["shanshi_opsgptkg_phenomenon_1", "shanshi_opsgptkg_task_3"],
+#     ["shanshi_opsgptkg_task_2", "shanshi_opsgptkg_analysis_1"],
+#     ["shanshi_opsgptkg_task_3", "shanshi_opsgptkg_analysis_2"],
+# ]
 
-nodeid_set = set()
-origin_edges = []
-origin_nodes = []
-for src_id, dst_id in edge_ids:
-    origin_edges.append(generate_edge(nodes_dict[src_id], nodes_dict[dst_id]))
-    if src_id not in nodeid_set:
-        nodeid_set.add(src_id)
-        origin_nodes.append(nodes_dict[src_id])
-    if dst_id not in nodeid_set:
-        nodeid_set.add(dst_id)
-        origin_nodes.append(nodes_dict[dst_id])
-
-
+# nodeid_set = set()
+# origin_edges = []
+# origin_nodes = []
+# for src_id, dst_id in edge_ids:
+#     origin_edges.append(generate_edge(nodes_dict[src_id], nodes_dict[dst_id]))
+#     if src_id not in nodeid_set:
+#         nodeid_set.add(src_id)
+#         origin_nodes.append(nodes_dict[src_id])
+#     if dst_id not in nodeid_set:
+#         nodeid_set.add(dst_id)
+#         origin_nodes.append(nodes_dict[dst_id])
 
 
-new_edge_ids = [
-    ["shanshi_opsgptkg_intent_0", "shanshi_opsgptkg_intent_1"],
-    ["shanshi_opsgptkg_intent_1", "shanshi_opsgptkg_intent_2"],
-    ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_0"],
-    # 新增
-    ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_2"],
-    ["shanshi_opsgptkg_schedule_2", "shanshi_opsgptkg_analysis_4"],
-    # 
-    ["shanshi_opsgptkg_schedule_0", "shanshi_opsgptkg_task_0"],
-    ["shanshi_opsgptkg_task_0", "shanshi_opsgptkg_task_1"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_analysis_0"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_0"],
-    ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_1"],
-    ["shanshi_opsgptkg_phenomenon_0", "shanshi_opsgptkg_task_2"],
-    ["shanshi_opsgptkg_phenomenon_1", "shanshi_opsgptkg_task_3"],
-    ["shanshi_opsgptkg_task_2", "shanshi_opsgptkg_analysis_1"],
-    ["shanshi_opsgptkg_task_3", "shanshi_opsgptkg_analysis_2"],
-]
 
-nodeid_set = set()
-edges = []
-nodes = []
-for src_id, dst_id in new_edge_ids:
-    edges.append(generate_edge(nodes_dict[src_id], nodes_dict[dst_id]))
-    if src_id not in nodeid_set:
-        nodeid_set.add(src_id)
-        nodes.append(nodes_dict[src_id])
-    if dst_id not in nodeid_set:
-        nodeid_set.add(dst_id)
-        nodes.append(nodes_dict[dst_id])
 
-for node in nodes:
-    if node.type == "opsgptkg_task":
-        node.attributes["name"] += "_update"
-        node.attributes["tmp"] += "_update"
-        node.attributes["description"] += "_update"
+# new_edge_ids = [
+#     ["shanshi_opsgptkg_intent_0", "shanshi_opsgptkg_intent_1"],
+#     ["shanshi_opsgptkg_intent_1", "shanshi_opsgptkg_intent_2"],
+#     ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_0"],
+#     # 新增
+#     ["shanshi_opsgptkg_intent_2", "shanshi_opsgptkg_schedule_2"],
+#     ["shanshi_opsgptkg_schedule_2", "shanshi_opsgptkg_analysis_4"],
+#     # 
+#     ["shanshi_opsgptkg_schedule_0", "shanshi_opsgptkg_task_0"],
+#     ["shanshi_opsgptkg_task_0", "shanshi_opsgptkg_task_1"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_analysis_0"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_0"],
+#     ["shanshi_opsgptkg_task_1", "shanshi_opsgptkg_phenomenon_1"],
+#     ["shanshi_opsgptkg_phenomenon_0", "shanshi_opsgptkg_task_2"],
+#     ["shanshi_opsgptkg_phenomenon_1", "shanshi_opsgptkg_task_3"],
+#     ["shanshi_opsgptkg_task_2", "shanshi_opsgptkg_analysis_1"],
+#     ["shanshi_opsgptkg_task_3", "shanshi_opsgptkg_analysis_2"],
+# ]
 
-for edge in edges:
-    if edge.type == "opsgptkg_task_route_opsgptkg_task":
-        edge.attributes["lat"] += "_update"
+# nodeid_set = set()
+# edges = []
+# nodes = []
+# for src_id, dst_id in new_edge_ids:
+#     edges.append(generate_edge(nodes_dict[src_id], nodes_dict[dst_id]))
+#     if src_id not in nodeid_set:
+#         nodeid_set.add(src_id)
+#         nodes.append(nodes_dict[src_id])
+#     if dst_id not in nodeid_set:
+#         nodeid_set.add(dst_id)
+#         nodes.append(nodes_dict[dst_id])
+
+# for node in nodes:
+#     if node.type == "opsgptkg_task":
+#         node.attributes["name"] += "_update"
+#         node.attributes["tmp"] += "_update"
+#         node.attributes["description"] += "_update"
+
+# for edge in edges:
+#     if edge.type == "opsgptkg_task_route_opsgptkg_task":
+#         edge.attributes["lat"] += "_update"
         
 
 # 
@@ -252,8 +273,8 @@ teamid = "shanshi_test"
 
 # logger.info(origin_edges[0])
 
-ekg_construct_service.add_nodes(origin_nodes, teamid)
-ekg_construct_service.add_edges(origin_edges, teamid)
+# ekg_construct_service.add_nodes(origin_nodes, teamid)
+# ekg_construct_service.add_edges(origin_edges, teamid)
 
 #print(len(origin_edges))
 
@@ -262,7 +283,7 @@ ekg_construct_service.add_edges(origin_edges, teamid)
 # done
 teamid = "shanshi_test_2"
 rootid="shanshi_opsgptkg_intent_0"
-ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid, rootid)
+# ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid, rootid)
 # ekg_construct_service.update_graph(origin_nodes, origin_edges, nodes, edges, teamid)
 
 
@@ -306,3 +327,340 @@ teamid = "shanshi_test"
 #                 service_name="text2graph"
 #             )
 # print(result)
+
+
+
+
+# intent_subgraph_new_edges = intent_subgraph['newGraph']['edges']
+
+# logger.info('尝试查插入边')
+# for one_edge  in intent_subgraph_new_edges:
+#     one_edge['type'] = 'opsgptkg_intent_extend_opsgptkg_intent'     #先假设都是这种类型的边
+#     one_edge['start_id'] = one_edge['startId']
+#     one_edge['end_id'] = one_edge['endId']
+#     one_edge = GEdge(**one_edge)    
+#     ekg_construct_service.gb.add_edge(one_edge)
+
+
+#### 测试添加节点 #####
+teamid = "yunjiu_test"
+
+node1 = GNode(**{
+    "id": f"ekg_team_{teamid}", 
+    "type": "opsgptkg_intent",
+    "attributes": {
+        "name": "开始",
+        "description": "团队起始节点",
+        "ID": 1945714343936,
+        "teamids": "3400004",
+        "gdb_timestamp": 1725537224,
+        "extra":"{\"status\": \"active\"}"
+    }
+    })
+
+
+node2 = copy.deepcopy(node1)
+node2.id = "yunjiu_2"
+node2.attributes['name'] = "一阶相邻"
+node2.attributes['ID'] = 2945714343937
+
+node3 = copy.deepcopy(node1)
+node3.id = "yunjiu_3"
+node3.attributes['name'] = "结束"
+node3.attributes['ID'] = 3945714343937
+
+
+edge1 = GEdge(**{
+    "start_id": f"ekg_team_{teamid}", 
+    "end_id": "yunjiu_2", 
+    "type": "opsgptkg_intent_route_opsgptkg_schedule",
+    "attributes": {
+        "DSTID": 2545543925760,
+        "SRCID": 1213242748928,
+        "gdb_timestamp": 1725960671
+    }
+    })
+
+edge2 = copy.deepcopy(edge1)
+edge2.start_id = "yunjiu_2"
+edge2.end_id = "yunjiu_3"
+edge2.attributes['SRCID'] = 2545543925760
+edge2.attributes['DSTID'] = 3545543925760
+
+teamid = "yunjiu_test"
+
+# res = ekg_construct_service.add_nodes([node1,node2,node3], teamid)
+# logger.info(res)
+
+# ekg_construct_service.add_edges([edge1,edge2], teamid)
+
+### 删除边 delete_edges ###
+# res = ekg_construct_service.delete_edges([edge2], teamid)
+# logger.info(res)
+
+### 删除节点 delete_nodes ###
+# res = ekg_construct_service.delete_nodes([node1,node2,node3], teamid)
+# logger.info(res)
+
+### 更新节点 update_nodes ###
+# new_node2 = copy.deepcopy(node2)
+# new_node2.attributes['name'] = "一阶相邻(更新)"
+# res = ekg_construct_service.update_nodes([new_node2], teamid)
+# logger.info(res)
+
+### 更新边 update_edges ###
+# new_edge1 = copy.deepcopy(edge1)
+# new_edge1.attributes['extra'] = "dfdsfsre"
+# res = ekg_construct_service.update_edges([new_edge1], teamid)
+# logger.info(res)
+
+## 根据nodeid 查询图信息
+# logger.info('根据nodeid 查询图信息')
+# res = ekg_construct_service.get_graph_by_nodeid("ekg_team_test",'opsgptkg_intent',hop=12, block_attributes={"type": "opsgptkg_task"})
+# logger.info(res)
+
+# print(ekg_construct_service.get_node_by_id(f"ekg_team_{teamid}")) #可以查询到
+
+# res = ekg_construct_service.search_rootpath_by_nodeid('yunjiu_3','opsgptkg_intent','ekg_team_yunjiu_test')
+# logger.info(res.nodes)
+
+# res = ekg_construct_service.search_nodes_by_text(text = '一阶',teamid = 'yunjiu_test')
+# logger.info(res)
+
+
+
+
+######## test update_graph add
+# new_node2 = copy.deepcopy(node2)
+# new_node2.attributes['name'] = "一阶相邻修改"
+
+node1 = GNode(**{
+    "id": f"ekg_team_{teamid}", 
+    "type": "opsgptkg_intent",
+    "attributes": {
+        "name": "开始",
+        "description": "团队起始节点",
+        "ID": 1945714343936,
+        "teamids": "3400004",
+        "gdb_timestamp": 1725537224,
+        "extra":"{\"status\": \"active\"}"
+    }
+    })
+
+# res = ekg_construct_service.update_graph(origin_nodes=[],
+#                                          origin_edges=[],
+#                                          new_nodes=[node1,node2],
+#                                          new_edges=[edge1],
+#                                          teamid=teamid,
+#                                          rootid=f"ekg_team_{teamid}"
+#                                          )
+# logger.info(res)
+
+# res = ekg_construct_service.get_graph_by_nodeid(node1.id,node1.type)
+# logger.info(res)
+# logger.info(len(res.nodes))
+# logger.info(len(res.edges))
+
+# logger.info("========= 删除边node1 edge1 ===========")
+# res = ekg_construct_service.update_graph(origin_nodes=[node1,node2],
+#                                          origin_edges=[edge1],
+#                                          new_nodes=[node1],
+#                                          new_edges=[],
+#                                          teamid=teamid,
+#                                          rootid=f"ekg_team_{teamid}"
+#                                          )
+# logger.info(res)
+
+# logger.info("========= 删除边edge2 ===========")
+# res = ekg_construct_service.update_graph(origin_nodes=[node1,node2,node3],
+#                                          origin_edges=[edge1,edge2],
+#                                          new_nodes=[node1,node2,node3],
+#                                          new_edges=[edge1],
+#                                          teamid=teamid,
+#                                          rootid=f"ekg_team_{teamid}"
+#                                          )
+# logger.info(res)
+
+
+# res = ekg_construct_service.get_graph_by_nodeid(node1.id,node1.type)
+# logger.info(res)
+
+
+# logger.info("========= 删除节点node3 ===========")
+# res = ekg_construct_service.update_graph(origin_nodes=[node1,node2],
+#                                          origin_edges=[edge1],
+#                                          new_nodes=[node1],
+#                                          new_edges=[],
+#                                          teamid=teamid,
+#                                          rootid=f"ekg_team_{teamid}"
+#                                          )
+# logger.info(res)
+
+# res = ekg_construct_service.get_graph_by_nodeid(node1.id,node1.type)
+# logger.info(res)
+# logger.info(len(res.nodes))
+# logger.info(len(res.edges))
+
+############################ 测试graph #####################################
+
+node1 = GNode(**{
+    "id": "ekg_team_yunjiu_test",
+                    "type": "opsgptkg_intent",
+                    "attributes": {
+                        "name": "开始",
+                        "description": "团队起始节点",
+                        "ID": 4.617441492992E12,
+                        "isTeamRoot": True,
+                        "teamids": "yunjiu_test",
+                        "gdb_timestamp": 1729587508
+                    }
+    })
+
+node2 = GNode(**{
+    "id": "DyI9sEWjEQ1Cr0AdXi2GhDic8lqxHGR8",
+                    "type": "opsgptkg_intent",
+                    "attributes": {
+                        "name": "场景意图",
+                        "description": "场景意图",
+                        "ID": 6.617441492992E12,
+                        "isTeamRoot": False,
+                        "teamids": "yunjiu_test",
+                        "gdb_timestamp": 2729587508
+                    }
+    })
+
+
+edge1 = GEdge(**{
+    "start_id": "ekg_team_yunjiu_test",
+                    "end_id": "DyI9sEWjEQ1Cr0AdXi2GhDic8lqxHGR8",
+                    "type": "opsgptkg_intent_route_opsgptkg_intent",
+                    "attributes": {
+                        "sourceHandle": "0",
+                        "targetHandle": "2"
+                    }
+    })
+
+### 删除节点 delete_nodes ###
+# res = ekg_construct_service.delete_nodes([node1,node2], "yunjiu_test")
+# logger.info(res)
+
+## 添加节点
+res = ekg_construct_service.update_graph(origin_nodes=[],
+                                         origin_edges=[],
+                                         new_nodes=[node1,node2],
+                                         new_edges=[edge1],
+                                         teamid="yunjiu_test",
+                                         rootid="ekg_team_yunjiu_test"
+                                         )
+logger.info('#### update_graph返回信息 #####')
+logger.info(res)
+
+# ### 删除node2和边edge1 ###
+# res = ekg_construct_service.update_graph(origin_nodes=[node1,node2],
+#                                          origin_edges=[edge1],
+#                                          new_nodes=[node1],
+#                                          new_edges=[],
+#                                          teamid="yunjiu_test",
+#                                          rootid="ekg_team_yunjiu_test"
+#                                          )
+# logger.info('#### update_graph返回信息 #####')
+# logger.info(res)
+
+logger.info('#### get_graph_by_nodeid #####')
+res = ekg_construct_service.get_graph_by_nodeid(node1.id,node1.type)
+logger.info(res)
+logger.info(len(res.nodes))
+logger.info(len(res.edges))
+
+### 删除节点 delete_nodes ###
+# res = ekg_construct_service.delete_nodes([node1,node2], "yunjiu_test")
+# logger.info(res)
+
+
+####################################################################################
+
+node_test_1 = GNode(**{
+     "id": "ekg_team_hhh",
+                    "type": "opsgptkg_intent",
+                    "attributes": {
+                        "ID": 9522373689344,
+                        "name": "开始",
+                        "description": "团队起始节点",
+                        "gdb_timestamp": 1729676623,
+                        "teamids": "hhh",
+                        "isTeamRoot": True
+                    }
+    })
+
+node_test_2 = GNode(**{
+     "id": "X3wm9oNqxvlSAg5WD667ouI",
+                    "type": "opsgptkg_intent",
+                    "attributes": {
+                        "name": "场景意图",
+                        "description": ""
+                    }
+    })
+
+
+# edge_test_1 = GEdge(**{
+#      "start_id": "ekg_team_hhh",
+#                     "end_id": "X3wm9oNqxvlSAg5WD667ouI",
+#                     "attributes": {
+#                         "sourceHandle": "2",
+#                         "targetHandle": "1"
+#                     }
+#     })
+
+# edge3 = GEdge(**{
+#     "start_id": "ekg_team_default",
+#                     "end_id": "MS4U9s5koTw5RaKYRG5QnD8LQCiYYeP9",
+#                     "type": "opsgptkg_intent_route_opsgptkg_schedule",
+#                     "attributes": {
+#                         "timestamp": 1,
+#                         "gdb_timestamp": 1729652633,
+#                         "sourceHandle": "0",
+#                         "targetHandle": "2"
+#                     }
+#     })
+
+# edge4 = GEdge(**{
+#     "start_id": "MS4U9s5koTw5RaKYRG5QnD8LQCiYYeP9",
+#                     "end_id": "vCPMMrxprW9D6zcHofYAs2JP2YGyBXRk",
+#                     "type": "opsgptkg_intent_route_opsgptkg_schedule",
+#                     "attributes": {
+#                         "timestamp": 1,
+#                         "gdb_timestamp": 1729653290,
+#                         "sourceHandle": "0",
+#                         "targetHandle": "2"
+#                     }
+#     })
+
+
+###########################################################
+# res = ekg_construct_service.update_graph(origin_nodes=[],
+#                                          origin_edges=[],
+#                                          new_nodes=[node_test_1],
+#                                          new_edges=[],
+#                                          teamid="hhh",
+#                                          rootid="ekg_team_hhh"
+#                                          )
+# logger.info('#### update_graph返回信息 #####')
+# logger.info(res)
+
+### 删除node2和边edge1 ###
+# res = ekg_construct_service.update_graph(origin_nodes=[node1,node2],
+#                                          origin_edges=[edge1],
+#                                          new_nodes=[node1],
+#                                          new_edges=[],
+#                                          teamid="yunjiu_test",
+#                                          rootid="ekg_team_yunjiu_test"
+#                                          )
+# logger.info('#### update_graph返回信息 #####')
+# logger.info(res)
+
+# logger.info('#### get_graph_by_nodeid #####')
+# res = ekg_construct_service.get_graph_by_nodeid(node1.id,node1.type)
+# logger.info(res)
+# logger.info(len(res.nodes))
+# logger.info(len(res.edges))
+

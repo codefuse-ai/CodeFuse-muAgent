@@ -24,18 +24,3 @@ class MatchRule:
     @classmethod
     def edit_distance_integer(cls, node: GNode, **kwargs):
         return cls.edit_distance(node, pattern='\d+', **kwargs)
-
-
-class RuleDict(dict):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def save(self):
-        """save the rules"""
-        raise NotImplementedError
-
-    def load(self, **kwargs):
-        """load the rules"""
-        raise NotImplementedError
-
-rule_dict = RuleDict()

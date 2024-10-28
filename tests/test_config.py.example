@@ -1,16 +1,90 @@
 import os, openai, base64
 from loguru import logger
 
-#
+# 兜底大模型配置
 OPENAI_API_BASE = "https://api.openai.com/v1"
 os.environ["API_BASE_URL"] = OPENAI_API_BASE
 os.environ["OPENAI_API_KEY"] = "sk-xxx"
 openai.api_key = "sk-xxx"
 os.environ["model_name"] = "gpt-3.5-turbo"
-os.environ["model_engine] = "openai"
-# 
+os.environ["model_engine"] = "openai"
+
+# 涉及react模式时需要配置主持人的模型，起到起承转合的作用
+# 推荐gpt-4
+os.environ["gpt4-API_BASE_URL"] = OPENAI_API_BASE
+os.environ["gpt4-OPENAI_API_KEY"] = ""
+os.environ["gpt4-model_name"] = "gpt-4"
+os.environ["gpt4-model_engine"] = "openai"
+os.environ["gpt4-llm_temperature"] = "0.0"
+
+
+
+####   NebulaHandler   ####
+os.environ['nb_host'] = 'graphd'
+os.environ['nb_port'] = '9669'
+os.environ['nb_username'] = 'root'
+os.environ['nb_password'] = 'nebula'
+os.environ['nb_space'] = "client"
+
+#### tbasehandler ####
+
+## opensource-default###
+os.environ['tb_host'] = 'redis-stack'
+os.environ['tb_port'] = '6379'
+os.environ['tb_username'] = ''
+os.environ['tb_password'] = ''
+os.environ['tb_definition_value'] = "opsgptkg"
+
+# tbase-memory
+os.environ["tb_type"] = "TbaseHandler"
+os.environ["tb_index_name"] = "ekg_migration_new"
+os.environ['tb_definition_value'] = 'message_test_new'
+os.environ['tb_expire_time'] = '604800' #86400*7
+
+
+
+########################################
+########## 以下参数暂不涉及无需配置 ########
+########################################
 os.environ["embed_model"] = "{{embed_model_name}}"
 os.environ["embed_model_path"] = "{{embed_model_path}}"
 
 # 
 os.environ["DUCKDUCKGO_PROXY"] = os.environ.get("DUCKDUCKGO_PROXY") or "socks5h://127.0.0.1:13659"
+
+os.environ['operation_mode'] = 'open_source' # 'open_source' or 'antcode'
+os.environ['config_path'] = ""
+
+
+### call llm ###
+os.environ['aes_encrypt_iv'] = ""
+
+#gpt-4#
+os.environ['gpt4_serviceName'] = ""
+os.environ['gpt4_visitDomain'] = ""
+os.environ['gpt4_visitBiz']    = ""
+os.environ['gpt4_visitBizLine'] = ""
+os.environ['gpt4_cacheInterval']     = ""
+os.environ['gpt4_model']        = ""
+os.environ['gpt4_api_key']      = ""
+
+os.environ['gpt4_url']= ''
+os.environ['gpt4_key']= ""
+
+#modelops#
+os.environ['modelops_url']= ""
+os.environ['modelops_qwen_7b_chat_gpt_token'] =''
+os.environ['modelops_qwen_7b_chat_gpt_Cookie']= ''
+
+###意图识别###
+os.environ['intention_url'] = ''
+
+
+###old function###
+OLD_PARAMS_STRING_EXAMPLE =  {}
+
+os.environ['oldfunction_url'] = ''
+
+
+### qa ###
+os.environ['sre_agent_flow_url'] = ''

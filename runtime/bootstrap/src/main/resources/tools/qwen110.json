@@ -1,0 +1,128 @@
+{
+  "id": 28200013,
+  "gmtCreate": "2024-07-22T07:59:47.000+00:00",
+  "gmtModified": "2024-07-22T07:59:47.000+00:00",
+  "toolKey": "qwen110",
+  "toolDefinition": {
+    "name": "MODELOPS:MAIN_SITE:Qwen72B.dispatch",
+    "description": "通过Http访问ModelOps进行Dispatcher，模型基座为QWEN 72B",
+    "parameters":
+    {
+      "type": "string",
+      "description": "Dispatcher的提示词包括用户意图"
+    },
+    "result":
+    {
+      "type": "string",
+      "description": "大模型的回答的Data"
+    }
+  },
+  "toolId": null,
+  "description": "通过Http访问ModelOps进行Dispatcher，模型基座为QWEN 72B",
+  "toolName": "大模型问答基准Tool-qw72b（勿改勿删）",
+  "pauseStatus": "NULL",
+  "transparentInfo": null,
+  "intention": null,
+  "input": null,
+  "output": null,
+  "exeNormal": true,
+  "message": null,
+  "requestGroovy": "import com.alipay.muagent.model.connector.http.HttpParameters\nimport com.google.gson.Gson\nimport com.google.gson.GsonBuilder\n\nclass OpsGptRequest {\n    /**\n     * Maya在线服务sceneName\n     */\n    String sceneName\n\n    /**\n     * Maya在线服务chainName\n     */\n    String chainName\n\n    /**\n     * 请求推理服务环境信息pre/prod\n     * 建议：riskautopilot-pre.alipay.com 调用：pre环境推理服务。riskautopilot.alipay.com 调用：prod 环境推理服务\n     */\n    String modelEnv\n\n    /**\n     * 固定填写：\"gpt\"\n     */\n    String itemId\n\n    Feature feature;\n}\n\nclass Feature {\n    String data;\n}\n\nclass Data {\n\n    /**\n     * batch推理扩展\n     */\n    List<PromptItem> prompts;\n\n    /**\n     * 是否流式输出\n     * 默认false\n     */\n    boolean stream;\n\n    /**\n     * 推理接口版本\n     * 默认为v2\n     */\n    String api_version;\n\n    /**\n     * 最大推理生成长度\n     */\n    int out_seq_length;\n}\n\nclass PromptItem {\n    /**\n     * 较小的topK值会使生成的文本更准确，较大的topK值则会增加生成文本的多样性 默认：40\n     */\n    int top_k;\n\n    /**\n     * 模型考虑具有 top_p 概率质量的标记的结果。所以 0.1 意味着只考虑构成前 10% 概率质量的标记。默认：0.9\n     */\n    float top_p;\n\n    /**\n     * 当do_sample=true时，生成器方法将使用随机采样的方式生成文本。这意味着在每个时间步，模型将从词汇表中随机选择一个词作为模型的输出。\n     * 当do_sample=false时，生成器方法将使用一种称为贪婪采样的方式生成文本。这意味着在每个时间步，模型将选择概率最大的单词作为输出。\n     * 默认：true\n     */\n    boolean do_sample\n\n    /**\n     * 介于 0 和 2 之间。较高的值（如 0.8）将使输出更加随机，而较低的值（如 0.2）将使输出更加集中和确定。\n     * 默认：0.2\n     */\n    float temperature\n\n    /**\n     * 频率惩罚度\n     * 默认：1.1\n     */\n    float repetition_penalty\n\n    /**\n     * 最长的输入长度\n     */\n    int max_length\n\n    /**\n     * 多轮对话的数据结构\n     * <p>\n     * [\n     * {\"role\": \"human\", \"content\": \"花呗是什么\"},\n     * {\"role\": \"bot\", \"content\": \"花呗是蚂蚁的平台\"},\n     * {\"role\": \"human\", \"content\": \"蚂蚁是什么\"},\n     * {\"role\": \"bot\", \"content\":\"蚂蚁是支付宝的母公司\"},\n     * {\"role\": \"human\", \"content\": \"支付宝能做什么\",}\n     * ]\n     * <p>\n     * => 从底部开始往上拼接，直到拼接的token数量上限超出2048停止\n     * <human>: \"\"\\n<bot>: \"\"\\n<human>: \"\"\\n<bot>: 的格式\n     */\n    List<Map<String, String>> prompt;\n}\n\ndef convertRequest(String request) {\n\n    // 系统 prompt，请勿直接修改\n    String sys_prompt = \"\"\n\n    Map<String, String> context = new HashMap<>();\n    context.put(\"role\", \"<human>\");\n    context.put(\"content\", sys_prompt + request);\n    List<Map<String, String>> contexts = new ArrayList<>();\n    contexts.add(context);\n\n    OpsGptRequest opsGptRequest = new OpsGptRequest()\n    opsGptRequest.setSceneName(\"Qwen2_7B_Instruct\")\n    opsGptRequest.setChainName(\"v1\")\n    opsGptRequest.setModelEnv(\"prod\")\n    opsGptRequest.setItemId(\"gpt\")\n    Feature feature = new Feature()\n    Data data = new Data()\n    opsGptRequest.setFeature(feature)\n    PromptItem promptItem = new PromptItem()\n    promptItem.setTop_p(0.98)\n    promptItem.setTop_k(50)\n    promptItem.setTemperature(0.1)\n    promptItem.setDo_sample(true)\n    promptItem.setRepetition_penalty(1.0)\n    promptItem.setPrompt(contexts)\n    promptItem.setMax_length(10240)\n    List<PromptItem> promptItems = new ArrayList<>()\n    promptItems.add(promptItem)\n    data.setOut_seq_length(512)\n    data.setApi_version(\"v2\")\n    data.setPrompts(promptItems)\n    data.setStream(false)\n    GsonBuilder gsonBuilder = new GsonBuilder()\n    gsonBuilder.disableHtmlEscaping()\n    Gson gson = gsonBuilder.create()\n    feature.setData(gson.toJson(data))\n\n    def httpParameters =  HttpParameters.builder().build()\n    httpParameters.setRequestBody(gson.toJson(opsGptRequest))\n    return gson.toJson(httpParameters)\n}\n\nconvertRequest(request)",
+  "responseGroovy": "import com.google.gson.Gson\nimport com.google.gson.GsonBuilder\n\nclass OpsGptResult {\n\n    /**\n     * Maya在线服务errorCode，errorCode = 0时，推理请求成功返回\n     */\n    Integer errorCode;\n\n    /**\n     * traceId\n     */\n    String traceId\n\n    /**\n     * 推理服务机器列表\n     */\n    List<String> servers\n\n    /**\n     * 推理耗时\n     */\n    Integer rt;\n\n    /**\n     * Maya在线服务resultMsg\n     */\n    String resultMsg;\n\n    /**\n     * 是否成功\n     */\n    boolean success;\n\n    /**\n     * 推理原始结果\n     */\n    String data;\n}\n\ndef convertResponse (String response) {\n    Gson gson = new GsonBuilder().disableHtmlEscaping().create()\n    OpsGptResult opsGptResult = gson.fromJson(response, OpsGptResult.class)\n    if (!opsGptResult.getSuccess()) {\n        throw new RuntimeException(\"execute error, \" + opsGptResult.getResultMsg());\n    }\n    return opsGptResult.getData()\n}\n\nconvertResponse(response)",
+  "summaryGroovy": null,
+  "manifestSchema": {
+    "schema_version": "v1",
+    "name_for_human": "MODELOPS",
+    "name_for_model": "MODELOPS",
+    "description_for_human": "通过Http访问ModelOps进行Dispatcher，模型基座为QWEN 72B",
+    "description_for_model": "通过Http访问ModelOps进行Dispatcher，模型基座为QWEN 72B",
+    "auth":
+    {
+      "type": "none"
+    },
+    "api":
+    {
+      "type": "HTTP"
+    },
+    "headers":
+    {
+      "MPS-app-name": "test",
+      "MPS-http-version": "1.0"
+    }
+  },
+  "toolApiPath": "QWEN_72B_MODELOPS./.post",
+  "toolProtocol": "HTTP",
+  "serverUrl": null,
+  "apiSchema": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "通用问答大模型",
+      "description": "通过Http访问ModelOps进行Dispatcher，模型基座为QWEN 72B",
+      "version": "0.1.9"
+    },
+    "servers": [
+      {
+        "url": "https://riskautopilot.alipay.com/v1/gateway/codegpt/task"
+      }
+    ],
+    "paths": {
+      "http": {
+        "method": "POST",
+        "parameters": [
+          {
+            "in": "body",
+            "schema": {
+              "$ref": "#ToolSampleController-queryEditableResponse-request-0"
+            }
+          },
+          {
+            "in": "query",
+            "schema": {
+              "$ref": "#ToolSampleController-queryEditableResponse-request-1"
+            }
+          },
+          {
+            "in": "path",
+            "schema": {
+              "$ref": "#ToolSampleController-queryEditableResponse-request-2"
+            }
+          }
+        ],
+        "path": "/api/tool/sample/{pathVariable}",
+        "responses": {
+          "200": {
+            "application/json": {
+              "$ref": "#/definitions/BaseResult_ToolResponse_"
+            }
+          }
+        }
+      }
+    }
+  },
+  "operatorCreate": "169704",
+  "operatorModified": "169704",
+  "version": "11",
+  "owner": "169704",
+  "deleted": null,
+  "type": "OPEN",
+  "status": "PROD_PUBLISHED",
+  "vdbPk": "447890596018626061",
+  "selectSamples": "[null]",
+  "selectVars": null,
+  "invokeType": "SYNC",
+  "tag": null,
+  "toolExtraInfo": {
+    "errMessage": null,
+    "devVdbPk": "447890596018692581",
+    "prodVdbPk": null,
+    "summaryModel": null,
+    "stepConfigList": [
+      "TOOL_EXECUTE"
+    ],
+    "nexExtraInfo": null,
+    "ispInfo": null,
+    "rpcUniqueId": null
+  },
+  "pauseStatusList": null,
+  "configMap": null
+}

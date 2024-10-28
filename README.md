@@ -56,7 +56,7 @@ git clone https://github.com/codefuse-ai/CodeFuse-muAgent.git
 cd CodeFuse-muAgent
 
 # step3. start all container services, it might cost some time
-docker-compose up -d
+docker network create ekg-net && docker-compose up -d
 ```
 
 The current image version includes only the basic EKG service. We plan to launch the front-end interface and back-end interaction services in Octorber. 
