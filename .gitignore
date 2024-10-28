@@ -18,3 +18,23 @@ dist
 zdatafront*
 *antgroup*
 *ipynb
+*log
+
+
+# frontend
+frontend/node_modules
+frontend/.env.local
+frontend/.umirc.local.ts
+frontend/config/config.local.ts
+frontend/src/.umi
+frontend/src/.umi-production
+frontend/src/.umi-test
+frontend/.umi
+frontend/.umi-production
+frontend/.umi-test
+frontend/dist
+frontend/.mfsu
+frontend/.swc
+frontend/pnpm-lock.yaml
+
+*.jar

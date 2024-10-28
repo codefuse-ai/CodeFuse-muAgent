@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Dict
+from pydantic import BaseModel, Field
+from typing import List, Dict, Optional, Union
 from enum import Enum
 
 
@@ -79,3 +79,31 @@ class ThemeEnums(Enum):
     Person: str = "person"
     Event: str = "event"
 
+
+
+###############################
+##### tbase & gbase status #####
+###############################
+
+class TbaseExecStatus(BaseModel):
+    errorMessage: Optional[str] = None
+    statusCode: Optional[int] = None
+    # 
+    total: Optional[int] = None
+    docs: Optional[List[dict]] = None
+
+
+class GbaseExecStatus(BaseModel):
+    # 
+    errorMessage: Optional[str] = Field(
+        "", title="errorMessage", 
+        description="gql execution message",
+    )
+    # 
+    errorCode: int = Field(
+        0, title="errorCode", 
+        description=f"gql exec status, if errorCode is 0"
+        f"the gql execution is succeed",
+    )
+    # 
+    results: Optional[Union[List, Dict]] = None

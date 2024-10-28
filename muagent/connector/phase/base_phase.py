@@ -92,7 +92,8 @@ class BasePhase:
             )
         else:
             self.memory_manager: BaseMemoryManager = LocalMemoryManager(
-                unique_name=phase_name, do_init=True, kb_root_path = kb_root_path, embed_config=embed_config, llm_config=llm_config
+                # unique_name=phase_name, 
+                do_init=True, kb_root_path = kb_root_path, embed_config=embed_config, llm_config=llm_config
                 )
         self.conv_summary_agent = BaseAgent(
             role=role_configs["conv_summary"].role,

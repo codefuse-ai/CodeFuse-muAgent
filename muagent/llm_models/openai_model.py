@@ -63,16 +63,19 @@ class OpenAILLMModel(CustomLLMModel):
                     model_name=os.environ.get("LLM_MODEL", "gpt-3.5-turbo"),
                     temperature=os.environ.get("temperature", 0.5),
                     model_kwargs={"stop": os.environ.get("stop", "")},
-                    http_client=http_client
+                    http_client=http_client,
+                    timeout=120
                 )
         else:
             self.llm = ChatOpenAI(
                     streaming=True,
                     verbose=True,
+                    api_key=llm_config.api_key,
                     model_name=llm_config.model_name,
                     temperature=llm_config.temperature,
                     model_kwargs={"stop": llm_config.stop},
                     http_client=http_client,
+                    timeout=120
                     # callbacks=[callBack],
                 )
         if callBack is not None:
@@ -109,7 +112,15 @@ class LYWWLLMModel(OpenAILLMModel):
                 model_name=model_name,
                 temperature=temperature,
                 model_kwargs=model_kwargs,
+                timeout=120
             )
+
+
+class KIMILLMModel(LYWWLLMModel):
+    pass
+
+class QwenLLMModel(LYWWLLMModel):
+    pass
 
 
 def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None, ) -> Union[ChatOpenAI, LLM, CustomLLMModel]:
@@ -117,7 +128,11 @@ def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbac
     if llm_config and llm_config.llm and isinstance(llm_config.llm, LLM):
         return CustomLLMModel(llm=llm_config.llm)
     elif llm_config:
-        model_class_dict = {"openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel}
+        model_class_dict = {
+            "openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel, 
+            "kimi": KIMILLMModel, "moonshot": KIMILLMModel,
+            "qwen": QwenLLMModel,
+        }
         model_class = model_class_dict[llm_config.model_engine]
         model = model_class(llm_config, callBack)
         # logger.debug(f"{model.llm}")

@@ -8,14 +8,14 @@ try:
     )
     sys.path.append(src_dir)
     import test_config
-    endpoint = os.environ["endpoint"]
-    accessKeyId = os.environ["accessKeyId"]
-    accessKey = os.environ["accessKey"]
+    # endpoint = os.environ["endpoint"]
+    # accessKeyId = os.environ["accessKeyId"]
+    # accessKey = os.environ["accessKey"]
 except Exception as e:
     # set your config
-    endpoint = ""
-    accessKeyId = ""
-    accessKey = ""
+    # endpoint = ""
+    # accessKeyId = ""
+    # accessKey = ""
     logger.error(f"{e}")
 
 # import muagent

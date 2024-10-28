@@ -1,4 +1,4 @@
-version: '3.4'
+version: 'Beta'
 services:
   metad0:
     # image: docker.io/vesoft/nebula-metad:v3.8.0
@@ -127,9 +127,9 @@ services:
       TZ:   "${TZ}"
     ports:
       - 11434:11434
-    volumes:
+    # volumes:
       # - //d/models/ollama:/root/.ollama # windows path
-      - /Users/yunjiu/ant/models:/root/.ollama # linux/mac path
+      # - /Users/xxxx/Desktop/ollama:/root/.ollama # linux/mac path
     networks:
       - ekg-net
     restart: on-failure
@@ -143,18 +143,32 @@ services:
     #           count: all  # 或者您想要的数量，例如 1
     #           capabilities: [gpu]
 
+  runtime:
+    build:
+      context: ./runtime
+      dockerfile: Dockerfile.no-package
+    image: runtime:0.1.0
+    container_name: runtime
+    environment:
+      USER:
+        root
+    ports:
+      # - 5050:3737
+      - 8080:8080
+    networks:
+      - ekg-net
+
   ekgservice:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ekgservice
     image: muagent:0.1.0
-    # image: muagent:0.2.0
     environment:
       USER: root
       TZ:   "${TZ}"
+      OLLAMA_HOST: http://ollama:11434
     ports:
-      # - 5050:3737
       - 3737:3737
     volumes:
       - ./examples:/home/user/muagent/examples
@@ -164,10 +178,26 @@ services:
     networks:
       - ekg-net
     command: ["python", "/home/user/muagent/examples/ekg_examples/start.py"]  # 指定要执行的脚本
-    # command: ["python", "/home/user/muagent/tests/httpapis/fastapi_test.py"]  # 指定要执行的脚本
 
+  ekgfrontend:
+    build:
+      context: .
+      dockerfile: Dockerfile_frontend
+    container_name: ekgfrontend
+    image: ekgfrontend:0.1.0
+    environment:
+      USER: root
+      TZ:   "${TZ}"
+    ports:
+      - 8000:8000
+    volumes:
+      - ./examples:/home/user/muagent/examples
+      - ./frontend:/home/user/muagent/frontend
+    restart: on-failure
+    networks:
+      - ekg-net
+    command: ["sh", "-c", "cp -rf /home/user/muagent/frontend /home/user && cd /home/user/frontend && npm run start"]
 
 networks:
   ekg-net: 
-    # driver: bridge
     external: true
