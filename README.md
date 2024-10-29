@@ -19,7 +19,7 @@
 ## 🔔 News
 - [2024.04.01] muAgent is now open source, focusing on multi-agent orchestration and collaborating with technologies such as FunctionCall, RAG, and CodeInterpreter.
 - [2024.09.05] we release muAgent v2.0: An Innovative Agent Framework Driven By KG Engine.
-
+- [2024.10.28] The release of EKG V1.0, which offers one-click deployment capabilities, including KG-based agent orchestration, Java-based tool and agent registration and management, as well as a user-friendly drag-and-drop front-end product UI.
 
 
 ## 📜 Contents
@@ -59,7 +59,7 @@ cd CodeFuse-muAgent
 docker network create ekg-net && docker-compose up -d
 ```
 
-The current image version includes only the basic EKG service. We plan to launch the front-end interface and back-end interaction services in Octorber. 
+Now is beta version. Once the v1.0+ version is enhanced, we will release v1.0+ image for download.
 
 To Be Continued!
 
