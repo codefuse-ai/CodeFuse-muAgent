@@ -59,6 +59,10 @@ cd CodeFuse-muAgent
 docker network create ekg-net && docker-compose up -d
 ```
 
+<div align="center">
+  <img src="docs/resources/ekg_demo.png" alt="EKG DEMO" width="770">
+</div>
+
 Now is beta version. Once the v1.0+ version is enhanced, we will release v1.0+ image for download.
 
 To Be Continued!
