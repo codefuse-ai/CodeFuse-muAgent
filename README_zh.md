@@ -58,6 +58,11 @@ cd CodeFuse-muAgent
 docker-compose up -d
 ```
 
+<div align="center">
+  <img src="docs/resources/ekg_demo.png" alt="EKG DEMO" width="770">
+</div>
+
+
 现在仍为beta版本，待v1.0版本完善后，会放出v1.0+的镜像以供下载。
 
 敬请期待!
