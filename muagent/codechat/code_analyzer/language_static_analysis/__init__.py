@@ -7,8 +7,8 @@
 '''
 
 from .java_static_analysis import JavaStaticAnalysis
-
+from .python_static_analysis import PythonStaticAnalysis
 
 __all__ = [
-    'JavaStaticAnalysis'
+    'JavaStaticAnalysis','PythonStaticAnalysis'
     ]
