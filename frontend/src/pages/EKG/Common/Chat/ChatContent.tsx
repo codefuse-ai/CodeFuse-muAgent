@@ -1,7 +1,7 @@
 import { dataToJson, jsonToData } from '../../utils/format';
 import { getMyEmpId } from '../../utils/userStore';
 import { Avatar, Button, Space } from 'antd';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   CheckCircleFilled,
   CloseCircleFilled,
@@ -17,6 +17,7 @@ const ChatContent = () => {
   const { msgList, selectedAgent, setHeaderType } = useContext(
     CommonContext,
   ) as CommonContextType;
+  const contentRef = useRef(null);
 
   const formatMsgContent = (dataItem: NEX_MAIN_API.EKGChatJSONMsg) => {
     const { content, type } = dataItem;
@@ -58,8 +59,20 @@ const ChatContent = () => {
     }
   };
 
+  useEffect(() => {
+    const contentElement = contentRef.current;
+    const scrollToBottom = () => {
+      contentElement.scrollTop = contentElement.scrollHeight;
+    };
+    const observer = new MutationObserver(scrollToBottom);
+    observer.observe(contentElement, { childList: true, subtree: true });
+    scrollToBottom();
+    return () => observer.disconnect();
+  }, []);
+
+
   return (
-    <ContentWrapper>
+    <ContentWrapper className='contentClass' ref={contentRef}>
       {!dataToJson(msgList).flag && <AgentPrologue agent={selectedAgent} />}
       {msgList?.length > 0 && (
         <>

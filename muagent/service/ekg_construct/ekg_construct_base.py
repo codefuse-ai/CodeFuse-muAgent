@@ -1,5 +1,6 @@
 from loguru import logger
 import re
+import os
 import json
 from typing import List, Dict, Optional, Tuple, Literal
 
@@ -15,12 +16,14 @@ from redis.commands.search.field import (
 from jieba.analyse import extract_tags
 
 import time
+import jieba
 
 from muagent.schemas.ekg import *
 from muagent.schemas.db import *
 from muagent.schemas.common import *
 from muagent.db_handler import *
 from muagent.orm import table_init
+from muagent.base_configs.env_config import EXTRA_KEYWORDS_PATH
 
 from muagent.connector.configs.generate_prompt import *
 
@@ -81,6 +84,9 @@ class EKGConstructService:
         # init db handler
         self.initialize_space = initialize_space
         self.init_handler()
+        # load custom keywords
+        if os.path.exists(EXTRA_KEYWORDS_PATH):
+            jieba.load_userdict(EXTRA_KEYWORDS_PATH)
 
     def init_handler(self, ):
         """Initializes Database VectorBase GraphDB TbaseDB"""
