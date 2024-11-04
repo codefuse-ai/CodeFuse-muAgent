@@ -49,7 +49,7 @@ const TemplateCode = ({ dataSource }: TemplateIprops) => {
           return dataSource;
         }
       });
-    }, 50); // 调整这个值以改变打字速度
+    }, 20); // 调整这个值以改变打字速度
 
     return () => {
       clearInterval(interval);
