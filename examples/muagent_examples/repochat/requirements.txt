@@ -1,2 +1,4 @@
 python-dotenv
 gitpython
+codefuse-muagent 
+chainlit

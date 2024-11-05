@@ -2,6 +2,21 @@ import os
 import git
 from dotenv import load_dotenv
 import urllib.parse
+# 开始检查 code_path 是否是 Java 项目
+def check_java_project(code_path):
+    # 检查是否存在 pom.xml 文件
+    if not os.path.exists(os.path.join(code_path, "pom.xml")):
+        # 如果没有 pom.xml 文件，检查是否有 .java 文件
+        has_java_file = False
+        for root, dirs, files in os.walk(code_path):
+            if any(file.endswith(".java") for file in files):
+                has_java_file = True
+                break
+        # 如果既没有 pom.xml 也没有 .java 文件，抛出异常
+        if not has_java_file:
+            raise Exception(f"code_path {code_path} is not a Java project")
+    print(f"code_path {code_path} is a Java project")
+    
 def clone_repo_with_token(repo_url, clone_to):
     """
     克隆一个需要认证的GitHub仓库。
