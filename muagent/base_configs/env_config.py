@@ -91,3 +91,6 @@ SEARCH_ENGINE_TOP_K = os.environ.get("SEARCH_ENGINE_TOP_K") or 5
 
 # 代码引擎匹配结题数量
 CODE_SEARCH_TOP_K = os.environ.get("CODE_SEARCH_TOP_K") or 1
+
+# （Jieba) 自定义词库文件路径
+EXTRA_KEYWORDS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'extra_keywords.txt')

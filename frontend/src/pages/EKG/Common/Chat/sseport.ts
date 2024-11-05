@@ -38,6 +38,7 @@ export const ssePost = async (
   fetchEventSource(`${url}`, {
     method: 'POST',
     headers,
+    mode: 'cors',
     body: JSON.stringify(paramValues),
     openWhenHidden: true,
     signal: ctrl.signal,
@@ -104,10 +105,34 @@ export const ssePost = async (
       }
     },
     onmessage: async (msg) => {
-
       if (msg.data !== 'start' && msg.data !== 'end') {
         if (msg.data && jsonToData(msg.data).data[0].type === "role_response") {
-          currentMsg.push(jsonToData(msg.data).data[0]);
+          const data = jsonToData(msg.data).data[0];
+          propsObj?.setMsgList((previousList: any) => {
+            const lastMessage = previousList[previousList.length - 1];
+            if (lastMessage && lastMessage.content.output === '输出中') {
+              return [
+                ...previousList.slice(0, -1),
+                data,
+                {
+                  type: 'json',
+                  msgId: Date.now(),
+                  content: {
+                    output: '输出中',
+                    input: '',
+                    role: 'assistant',
+                    messageType: 'json',
+                    conversationId: Date.now(),
+                    status: 'EXECUTING',
+                  },
+                  traceId: Date.now(),
+                  chatResultTypeCode: 'cover',
+                  streamingDisplay: false,
+                },
+              ];
+            }
+            return previousList;
+          });
         } else {
           currentMsg.push(jsonToData(msg.data).data[0]);
         }

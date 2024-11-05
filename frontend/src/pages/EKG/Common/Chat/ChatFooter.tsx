@@ -154,8 +154,10 @@ const ChatFooter = () => {
         },
       ];
     });
+    // ps: 推master要改成localhost
     ssePost(
-      '/api/portal/conversation/chat',
+      'http://localhost:8080/api/portal/conversation/chat',
+      // 'http://30.183.176.221:8080/api/portal/conversation/chat',
       {
         sessionId: props_sessionId,
         agentId: selectedAgent?.agentId,
@@ -227,9 +229,6 @@ const ChatFooter = () => {
       >
         <Form form={form} style={{ width: '100%', height: '100%' }}>
           <div className="InputMainWrapper">
-            {/* <div style={{ width: '100%', height: '40px' }}>
-              {renderHeader()}
-            </div> */}
             <div
               className="InputWrapper"
               style={{

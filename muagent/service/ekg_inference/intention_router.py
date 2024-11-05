@@ -1,4 +1,6 @@
 import re
+import os
+import jieba
 import numpy as np
 import pandas as pd
 import muagent.base_configs.prompts.intention_template_prompt as itp
@@ -9,6 +11,7 @@ from jieba.analyse import extract_tags
 from dataclasses import dataclass, field, asdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Union, Optional, Any
+from muagent.base_configs.env_config import EXTRA_KEYWORDS_PATH
 from muagent.db_handler.graph_db_handler.base_gb_handler import GBHandler
 from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler
 from muagent.schemas.ekg.ekg_graph import NodeTypesEnum
@@ -64,6 +67,9 @@ class IntentionRouter:
         self._max_num_tb_retrieval = 5
         self._filter_max_depth = 5
         self._dis_threshold = 16
+        # load custom keywords
+        if os.path.exists(EXTRA_KEYWORDS_PATH):
+            jieba.load_userdict(EXTRA_KEYWORDS_PATH)
 
     def _get_intention_by_node_info_match(
         self, gb_handler: GBHandler, root_node_id: str, rule: Rule_type = None, **kwargs
@@ -274,26 +280,30 @@ class IntentionRouter:
   
         ans = [int(x) - 1 for x in re.findall('\d+', ans) if 0 < int(x) <= len(itp.INTENTIONS_WHETHER_EXEC)]
         if ans:
-            return itp.INTENTIONS_WHETHER_EXEC[ans[0]][0] == '执行'
+            return itp.INTENTIONS_WHETHER_EXEC[ans[0]] is itp.INTENTION_EXECUTE
         return False
 
-    def get_intention_consult_which(self, query: str, agent=None) -> str:
+    def get_intention_consult_which(self, query: str, agent=None, root_node_id: Optional[str]=None) -> str:
         agent = agent if agent else self.agent
-        query = itp.CONSULT_WHICH_PROMPT.format(query=query)
-        ans = agent.predict(query)
+        query_consult_which = itp.CONSULT_WHICH_PROMPT.format(query=query)
+        ans = agent.predict(query_consult_which)
 
         ans = [int(x) - 1 for x in re.findall('\d+', ans) if 0 < int(x) <= len(itp.INTENTIONS_CONSULT_WHICH)]
-        if ans:
-            ans = itp.INTENTIONS_CONSULT_WHICH[ans[0]][0]
-            return itp.INTENTIONS_CONSULT_WHICH_CODE[ans]
-        return itp.INTENTIONS_CONSULT_WHICH_CODE[itp.INTENTIONS_CONSULT_WHICH[-1][0]]
+        if ans and itp.INTENTIONS_CONSULT_WHICH[ans[0]] is not itp.INTENTION_CHAT:
+            return itp.INTENTIONS_CONSULT_WHICH[ans[0]].tag
+        
+        if root_node_id:
+            out = self.get_intention_by_node_info_nlp(root_node_id, query, start_from_root=False)
+            if out['status'] == RouterStatus.SUCCESS.value:
+                return itp.INTENTION_ALLPLAN.tag
+        return itp.INTENTION_CHAT.tag
 
     def _tb_match(self, tb_handler: TbaseHandler, query: str, node_type: str, teamids=None) -> set:
         def _filter_by_keyword(r, key: str, query_keyword: set):
             ret = []
             for tnode in r.docs:
                 keyword = getattr(tnode, f'{key}_keyword')
-                keyword = {x.strip() for x in keyword.split('|')}
+                keyword = {x.strip().lower() for x in keyword.split('|')}
                 if query_keyword.intersection(keyword):
                     ret.append(getattr(tnode, 'node_id'))
             return ret
@@ -320,7 +330,8 @@ class IntentionRouter:
                 prefix_team = f'({prefix_team})'
             prefix = f'({prefix} AND {prefix_team})'
 
-        keyword, keys, tb_results = list(extract_tags(query)), ('description', 'name'), []
+        keyword = [x.lower() for x in extract_tags(query)]
+        keys, tb_results = ('description', 'name'), []
         if self.embed_config:
             query_vector = self._get_embedding(query)
             ret = _execute_func_distributed(
@@ -350,12 +361,10 @@ class IntentionRouter:
     def _get_intention_ekg(self, query: str, intentions: list[str], agent, allow_multiplt_choice=False):
         if len(intentions) <= 1:
             return [0] * len(intentions)
-        for i, intention in enumerate(intentions):
-            intentions[i] = intention.replace('{', '{{').replace('}', '}}')
-        intentions.append('与上述意图都不匹配，属于其他类型的询问意图。')
+        
+        intentions = [itp.IntentionInfo(description=x) for x in intentions] + [itp.INTENTION_NOMATCH]
         query_intention = itp.get_intention_prompt(
-            '作为智能助手，您需要根据用户询问判断其主要意图，以确定接下来的行动。', intentions,
-            allow_multiple_choice=allow_multiplt_choice).format(query=query)
+            intentions, allow_multiple_choice=allow_multiplt_choice).format(query=query)
         ans = agent.predict(query_intention)
         ans = [int(x) - 1 for x in re.findall('\d+', ans) if 0 < int(x) < len(intentions)]
         return ans

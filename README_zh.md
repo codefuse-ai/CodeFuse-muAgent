@@ -46,7 +46,7 @@
 ### EKG服务
 
 ```bash
-# 使用我们的EKG服务只需要三步！（beta版本，需要将本地代码打包到容器中）
+# 使用我们的EKG服务只需要四步！（beta版本，需要将本地代码打包到容器中）
 
 # 第一步. 加载代码
 git clone https://github.com/codefuse-ai/CodeFuse-muAgent.git
@@ -54,14 +54,16 @@ git clone https://github.com/codefuse-ai/CodeFuse-muAgent.git
 # 第二步.
 cd CodeFuse-muAgent
 
-# 第三步. 启动所有容器服务，EKG基础镜像构建需要花费点时间
+# 第三步
+docker network create ekg-net
+
+# 第四步. 启动所有容器服务，EKG基础镜像构建需要花费点时间。启动后打开 https://localhost:8000
 docker-compose up -d
 ```
 
-<div align="center">
-  <img src="docs/resources/ekg_demo.png" alt="EKG DEMO" width="770">
-</div>
+https://github.com/user-attachments/assets/7d5251a0-2864-438c-8897-b0445f0b1c30
 
+https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88
 
 现在仍为beta版本，待v1.0版本完善后，会放出v1.0+的镜像以供下载。
 

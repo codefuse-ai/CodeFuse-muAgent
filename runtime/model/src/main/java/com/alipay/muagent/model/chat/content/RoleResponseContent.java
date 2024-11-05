@@ -40,7 +40,7 @@ public class RoleResponseContent extends ChatContent {
     public static RoleResponseContent buildWangpeng(String rsp) {
         RoleResponseContent rrc = getRoleResponseContent(rsp);
         rrc.setName("王鹏");
-        rrc.setUrl("http://localhost:8080/avatar/wanngpeng.png");
+        rrc.setUrl("http://localhost:8080/avatar/wangpeng.png");
 
         return rrc;
     }

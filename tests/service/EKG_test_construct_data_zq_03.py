@@ -244,8 +244,8 @@ def hash_id(nodeId, sessionId='', otherstr = None):
 #     "医疗保险报销的具体步骤是什么？",
 #     "如何合理安排个人体检计划？"
 # ]
-start_nodeid = hash_id('ekg_team_default')
-query_list = ['如何申请贷款']
+start_nodeid = 'ekg_team_default'
+query_list = ['如何使用花呗申请贷款']
 # query = '在线医疗咨询如何进行？'
 for i, query in enumerate(query_list):
     print(f'问题{i}')
@@ -257,7 +257,7 @@ for i, query in enumerate(query_list):
         query=query,
         root_node_id=start_nodeid,
         rule='nlp',
-        start_from_root=True
+        start_from_root=False
     )
     intention_node = intention_router.gb_handler.get_current_node(
         {'id': ret['node_id']}, intention_router._node_type
