@@ -48,20 +48,24 @@ For more [demos](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_ex
 ### EKG Services
 
 ```bash
-# use ekg services only three steps
+# use ekg services only four steps
 # step1. git clone
 git clone https://github.com/codefuse-ai/CodeFuse-muAgent.git
 
 # step2. 
 cd CodeFuse-muAgent
 
-# step3. start all container services, it might cost some time
-docker network create ekg-net && docker-compose up -d
+# step3. create docker-net
+docker network create ekg-net
+
+# step4. start all container services, it might cost some time
+# after starting all services, open https://localhost:8000
+docker-compose up -d
 ```
 
-<div align="center">
-  <img src="docs/resources/ekg_demo.png" alt="EKG DEMO" width="770">
-</div>
+https://github.com/user-attachments/assets/7d5251a0-2864-438c-8897-b0445f0b1c30
+
+https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88
 
 Now is beta version. Once the v1.0+ version is enhanced, we will release v1.0+ image for download.
 
