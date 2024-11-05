@@ -14,6 +14,7 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.service.ekg_construct import EKGConstructService
 from muagent.schemas.ekg.ekg_graph import NodeTypesEnum
 from muagent.schemas.common import GNode, GEdge
+from langchain.llms.base import LLM
 
 
 try:
@@ -161,26 +162,26 @@ ekg_construct_service.add_nodes(list(intention_nodes.values()), teamid='intentio
 ekg_construct_service.add_edges(intention_edges, teamid='intention_test')
 
 # nlp 路由
-# out = intention_router.get_intention_by_node_info_nlp(
-#     root_node_id=intention_nodes[next(iter(descriptions_flow))].id,
-#     query=query,
-#     start_from_root=True
-# )
-# print(out)
+out = intention_router.get_intention_by_node_info_nlp(
+    root_node_id=intention_nodes[next(iter(descriptions_flow))].id,
+    query=query,
+    start_from_root=True
+)
+print(out)
 
 
 # 路由匹配
-rule = """import re
-def func(node: GNode, query: str):
-    nums = re.findall('[1-9]+', getattr(node, 'description', ''))
-    if not nums:
-        return -float('inf')
-    query_time = re.findall('[1-9]+', query)[0]
-    return int(query_time > nums[0])
-"""
-out = intention_router.get_intention_by_node_info_match(
-    root_node_id=intention_nodes[next(iter(descriptions_flow))].id,
-    rule=rule,
-    query=query
-)
-print(out)
+# rule = """import re
+# def func(node: GNode, query: str):
+#     nums = re.findall('[1-9]+', getattr(node, 'description', ''))
+#     if not nums:
+#         return -float('inf')
+#     query_time = re.findall('[1-9]+', query)[0]
+#     return int(query_time > nums[0])
+# """
+# out = intention_router.get_intention_by_node_info_match(
+#     root_node_id=intention_nodes[next(iter(descriptions_flow))].id,
+#     rule=rule,
+#     query=query
+# )
+# print(out)

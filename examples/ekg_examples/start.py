@@ -5,38 +5,74 @@ import requests
 from typing import List
 from loguru import logger
 from tqdm import tqdm
+import ollama
+import shutil
+
 from concurrent.futures import ThreadPoolExecutor
 
 from langchain.llms.base import LLM
 from langchain.embeddings.base import Embeddings
-src_dir = os.path.join(
+grandparent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-sys.path.append(src_dir)
+sys.path.append(grandparent_dir)
 
+parent_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.append(parent_dir)
+logger.info(f'parent_dir is {parent_dir}' )
 try:
-    import os, sys
-    src_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
-    sys.path.append(src_dir)
     import test_config
 except Exception as e:
     # set your config
     logger.error(f"{e}")
+    logger.error(f"please set your test_config")
+
+    if not os.path.exists(os.path.join(parent_dir, "test_config.py")):
+        shutil.copy(
+            os.path.join(parent_dir, "test_config.py.example"), 
+            os.path.join(parent_dir, "test_config.py")
+        )
+    import test_config
 
 from muagent.schemas.db import *
+from muagent.db_handler import *
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.service.ekg_construct.ekg_construct_base import EKGConstructService
+from muagent.service.ekg_inference import IntentionRouter
+from muagent.connector.memory_manager import TbaseMemoryManager
+from muagent.llm_models import getChatModelFromConfig
 
 from pydantic import BaseModel
 
+
+
+
+cur_dir = os.path.dirname(__file__)
+# print(cur_dir)
+
+# # 要打开的YAML文件路径
+# file_path = 'ekg.yaml'
+
+# if not os.path.exists(os.path.join(cur_dir, file_path)):
+#     shutil.copy(
+#         os.path.join(cur_dir, "ekg.yaml.example"), 
+#         os.path.join(cur_dir, "ekg.yaml")
+#     )
+# with open(os.path.join(cur_dir, file_path), 'r') as file:
+#     # 加载YAML文件内容
+#     config_data = yaml.safe_load(file)
+
+
+
+
 # llm config
 class CustomLLM(LLM, BaseModel):
-    url: str = "http://localhost:11434/api/generate"
-    model_name: str = "qwen2:1b"
-    model_type: str = "ollama"
-    api_key: str = ""
+    url: str = os.environ["API_BASE_URL"]# "http://ollama:11434/api/generate"
+    model_name: str=os.environ["model_name"] #str = "qwen2.5:0.5b"
+    model_type: str = os.environ["model_engine"]#"ollama"
+    api_key: str = os.environ["OPENAI_API_KEY"]#""
     stop: str = None
     temperature: float = 0.3
     top_k: int = 50
@@ -68,12 +104,16 @@ class CustomLLM(LLM, BaseModel):
         stop = stop or self.stop
 
         if self.model_type == "ollama":
-            data = {
-                "model": self.model_name,
-                "prompt": prompt
-            }
-            r = requests.post(self.url, json=data, )
-            return r.json()
+            stream = ollama.chat(
+                model=self.model_name,
+                messages=[{'role': 'user', 'content': prompt}],
+                stream=True,
+            )
+            answer = ""
+            for chunk in stream:
+                answer += chunk['message']['content']
+
+            return answer
         elif self.model_type == "openai":
             from muagent.llm_models.openai_model import getChatModelFromConfig
             llm_config = LLMConfig(
@@ -86,11 +126,11 @@ class CustomLLM(LLM, BaseModel):
             )
             model = getChatModelFromConfig(llm_config)
             return model.predict(prompt, stop=self.stop)
-        elif self.model_type == "lingyiwangwu":
+        elif self.model_type in ["lingyiwanwu", "kimi", "moonshot", "qwen"]:
             from muagent.llm_models.openai_model import getChatModelFromConfig
             llm_config = LLMConfig(
                 model_name=self.model_name,
-                model_engine="lingyiwangwu",
+                model_engine=self.model_type,
                 api_key=self.api_key,
                 api_base_url=self.url,
                 temperature=self.temperature,
@@ -106,10 +146,10 @@ class CustomLLM(LLM, BaseModel):
 
 class CustomEmbeddings(Embeddings):
     # ollama embeddings
-    url = "http://localhost:11434/api/embeddings"
+    url = "http://ollama:11434/api/embeddings"
     # 
     embedding_type = "ollama"
-    model_name = ""
+    model_name = "qwen2.5:0.5b"
     api_key = ""
 
     def params(self):
@@ -128,12 +168,12 @@ class CustomEmbeddings(Embeddings):
         调用句子向量提取服务
         """
         if self.embedding_type == "ollama":
-            data = {
-                "model": self.model_name,
-                "prompt": sentence
-            }
-            r = requests.post(self.url, json=data, )
-            return r.json()
+            ollama_embeddings = ollama.embed(
+                model=self.model_name, 
+                input=sentence
+            )
+            return ollama_embeddings["embeddings"][0]
+
         elif self.embedding_type == "openai":
             from muagent.llm_models.get_embedding import get_embedding
             os.environ["OPENAI_API_KEY"] = self.api_key
@@ -181,20 +221,6 @@ class CustomEmbeddings(Embeddings):
         return embedding
     
 
-
-cur_dir = os.path.dirname(__file__)
-print(cur_dir)
-
-# 要打开的YAML文件路径
-file_path = 'ekg.yaml'
-
-# 使用 'with' 语句确保文件正确关闭
-with open(os.path.join(cur_dir, file_path), 'r') as file:
-    # 加载YAML文件内容
-    config_data = yaml.safe_load(file)
-
-
-
 # gb_config = GBConfig(
 #     gb_type="GeaBaseHandler", 
 #     extra_kwargs={
@@ -205,21 +231,15 @@ with open(os.path.join(cur_dir, file_path), 'r') as file:
 #     }
 # )
 
-
-# gb_config = GBConfig(
-#     gb_type="NebulaHandler", 
-#     extra_kwargs={}
-# )
-
 # 初始化 NebulaHandler 实例
 gb_config = GBConfig(
     gb_type="NebulaHandler", 
     extra_kwargs={
-        'host': config_data["nebula_config"]['host'],
-        'port': config_data["nebula_config"]['port'],
-        'username': config_data["nebula_config"]['username'] ,
-        'password': config_data["nebula_config"]['password'],
-        "space": config_data["nebula_config"]['space_name'],    
+        'host': os.environ["nb_host"], # config_data["nebula_config"]['host'],
+        'port': os.environ["nb_port"], # config_data["nebula_config"]['port'],
+        'username': os.environ["nb_username"], # config_data["nebula_config"]['username'] ,
+        'password': os.environ["nb_password"], # config_data["nebula_config"]['password'],
+        "space": os.environ["nb_space"], # config_data["nebula_config"]['space_name'],    
     }
 )
 
@@ -227,16 +247,16 @@ gb_config = GBConfig(
 tb_config = TBConfig(
     tb_type="TbaseHandler",
     index_name="muagent_test",
-    host=config_data["tbase_config"]["host"],
-    port=config_data["tbase_config"]['port'],
-    username=config_data["tbase_config"]['username'],
-    password=config_data["tbase_config"]['password'],
+    host=os.environ["tb_host"], # config_data["tbase_config"]["host"],
+    port=os.environ["tb_port"], # config_data["tbase_config"]['port'],
+    username=os.environ["tb_username"], # config_data["tbase_config"]['username'],
+    password=os.environ["tb_password"], # config_data["tbase_config"]['password'],
     extra_kwargs={
-        'host': config_data["tbase_config"]['host'],
-        'port': config_data["tbase_config"]['port'],
-        'username': config_data["tbase_config"]['username'] ,
-        'password': config_data["tbase_config"]['password'],
-        'definition_value': config_data["tbase_config"]['definition_value']
+        'host': os.environ["tb_host"], # config_data["tbase_config"]['host'],
+        'port': os.environ["tb_port"], # config_data["tbase_config"]['port'],
+        'username': os.environ["tb_username"], # config_data["tbase_config"]['username'] ,
+        'password': os.environ["tb_password"], # config_data["tbase_config"]['password'],
+        'definition_value': os.environ["tb_definition_value"], # config_data["tbase_config"]['definition_value']
     }
 )
 
@@ -261,5 +281,51 @@ ekg_construct_service = EKGConstructService(
     gb_config=gb_config,
 )
 
+
+
+
+
+
+# 指定index_name
+index_name = os.environ["tb_index_name"]
+th = TbaseHandler(tb_config, index_name, definition_value=os.environ['tb_definition_value'])
+# 5、memory 接口配置
+# create tbase memory manager
+memory_manager = TbaseMemoryManager(
+            unique_name="EKG", 
+            embed_config=embed_config, 
+            llm_config=llm_config,
+            tbase_handler=th,
+            use_vector=False
+        )
+
+
+intention_router = IntentionRouter(
+    ekg_construct_service.model,
+    ekg_construct_service.gb,
+    ekg_construct_service.tb,
+    embed_config
+)
+    
+    
+memory_manager = memory_manager
+#geabase_handler    =     GeaBaseHandler(gb_config)
+geabase_handler    =     ekg_construct_service.gb
+intention_router   =     intention_router
+
+
+from who_is_spy_game import load_whoisspy_datas, test_whoisspy_datas
+load_whoisspy_datas(ekg_construct_service)
+test_whoisspy_datas(ekg_construct_service)
+
+
 from muagent.httpapis.ekg_construct import create_api
-create_api(llm, embeddings, ekg_construct_service)
+create_api(
+    llm, 
+    llm_config,
+    embeddings, 
+    ekg_construct_service, 
+    memory_manager, 
+    geabase_handler, 
+    intention_router
+)

@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Optional, Union
 from enum import Enum
 import copy
 import json
@@ -165,9 +165,9 @@ class EKGNodeTbaseSchema(BaseModel):
     # node_str = 'graph_id={graph_id}'/teamids, use for searching by graph_id/teamids
     node_str: str
     name_keyword: str
-    desc_keyword: str
+    description_keyword: str
     name_vector: List
-    desc_vector: List
+    description_vector: List
 
 
 class EKGEdgeTbaseSchema(BaseModel):

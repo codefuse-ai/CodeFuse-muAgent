@@ -31,11 +31,11 @@ except Exception as e:
     embeddings = None
     logger.error(f"{e}")
 
-# # test local code
-# src_dir = os.path.join(
-#     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# )
-# sys.path.append(src_dir)
+# test local code
+src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+sys.path.append(src_dir)
 from muagent.base_configs.env_config import CB_ROOT_PATH
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.connector.phase import BasePhase
@@ -58,7 +58,7 @@ embed_config = EmbedConfig(
 
 # delete codebase
 codebase_name = 'client_local'
-code_path = "D://chromeDownloads/devopschat-bot/client_v2/client"
+code_path = "{add_your_code_path}"
 # initialize codebase
 use_nh = True
 do_interpret = True

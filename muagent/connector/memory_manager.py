@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from typing import List, Dict
-import os, sys, copy, json, uuid
+import os, sys, copy, json, uuid, random
 from jieba.analyse import extract_tags
 from collections import Counter
 from loguru import logger
@@ -238,7 +238,7 @@ class LocalMemoryManager(BaseMemoryManager):
         # self.unique_name = unique_name
         # self.memory_type = memory_type
         self.db_config = db_config
-        self.vb_config = vb_config
+        self.vb_config = vb_config or VBConfig(vb_type="LocalFaissHandler")
         self.gb_config = gb_config
         self.tb_config = tb_config
         self.do_init = do_init
@@ -501,6 +501,18 @@ class LocalMemoryManager(BaseMemoryManager):
 
     def get_vbname_from_chatindex(self, chat_index: str) -> str:
         return self.get_uuid_from_chatindex(chat_index).replace("_", "/")
+    
+
+    def modified_message(self, message: Message, update_rule_text: str) -> Message:
+        # 创建提示语，在更新规则文本中包含当前消息的内容
+        prompt = f"结合以下更新内容修改当前消息内容:\n更新内容: {update_rule_text}\n\n当前消息内容:\n{message.role_content}\n\n请生成新的消息内容:"
+
+        new_content = self.model.predict(prompt)
+
+        message.role_content = new_content
+
+        return message
+
 
 
 from muagent.db_handler.vector_db_handler.tbase_handler import TbaseHandler

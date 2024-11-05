@@ -13,7 +13,6 @@ COPY ./requirements.txt /home/user/docker_requirements.txt
 
 # RUN wget https://oss-cdn.nebula-graph.com.cn/package/3.6.0/nebula-graph-3.6.0.ubuntu1804.amd64.deb
 # RUN dpkg -i nebula-graph-3.6.0.ubuntu1804.amd64.deb
-
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip install -r /home/user/docker_requirements.txt --retries 5 --timeout 120
 

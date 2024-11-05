@@ -1,0 +1,41 @@
+{
+  "private": true,
+  "author": "will.jc <will.jc@antgroup.com>",
+  "scripts": {
+    "build": "max build",
+    "dev": "max dev",
+    "format": "prettier --cache --write .",
+    "postinstall": "max setup",
+    "setup": "max setup",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.0.1",
+    "@ant-design/pro-components": "^2.4.4",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@umijs/max": "^4.3.20",
+    "antd": "^5.20.6",
+    "d3-force": "^3.0.0",
+    "dagre": "^0.8.5",
+    "fetch-event-source": "^1.0.0-alpha.2",
+    "highlight.js": "^10.5.0",
+    "js-cookie": "^3.0.5",
+    "lodash": "^4.17.21",
+    "markdown-it": "^14.1.0",
+    "nanoid": "^5.0.7",
+    "react-json-editor-ajrm": "^2.5.14",
+    "react-markdown": "^9.0.1",
+    "reactflow": "^11.11.3"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
+    "@types/lodash": "^4.17.9",
+    "@types/react": "^18.0.33",
+    "@types/react-dom": "^18.0.11",
+    "prettier": "^2.8.7",
+    "prettier-plugin-organize-imports": "^3.2.2",
+    "prettier-plugin-packagejson": "^2.4.3",
+    "typescript": "^5.0.3"
+  },
+  "repository": "git@code.alipay.com:codefuse_opensource/muagent.git"
+}
