@@ -103,8 +103,7 @@ class IntentionRouter:
         return select_node, error_msg
 
     def get_intention_by_node_info_match(
-        self, root_node_id: str, filter_attribute: Optional[dict] = None,
-        gb_handler: Optional[GBHandler] = None,
+        self, root_node_id: str, gb_handler: Optional[GBHandler] = None,
         rule: Union[Rule_type, list[Rule_type]] = None, **kwargs
     ) -> dict[str, Any]:
         gb_handler = gb_handler if gb_handler is not None else self.gb_handler
@@ -112,24 +111,24 @@ class IntentionRouter:
         is_leaf = False
         if len(kwargs) == 0:
             error_msg = 'No information in query to be matched.'
-            return asdict(
-                RuleRetInfo(node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value))
+            return asdict(RuleRetInfo(
+                node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value
+            ))
 
         args_list = _parse_kwargs(**kwargs)
         if not isinstance(rule, (list, tuple)):
             rule = [rule] * len(args_list)
         if len(rule) != len(args_list):
             error_msg = 'Length of rule should be equal to the length of Arguments.'
-            return asdict(
-                RuleRetInfo(node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value))
+            return asdict(RuleRetInfo(
+                node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value
+            ))
 
         if not (root_node_id and self._node_exist(root_node_id, gb_handler)):
-            if not root_node_id:
-                error_msg = f'No node matches attribute {filter_attribute}.'
-            else:
-                error_msg = f'Node(id={root_node_id}, type={self._node_type}) does not exist!'
-            return asdict(
-                RuleRetInfo(node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value))
+            error_msg = f'Node(id={root_node_id}, type={self._node_type}) does not exist!'
+            return asdict(RuleRetInfo(
+                node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value
+            ))
 
         for cur_kw_arg, cur_rule in zip(args_list, rule):
             next_node_id, error_msg = self._get_intention_by_node_info_match(
@@ -145,8 +144,7 @@ class IntentionRouter:
         next_node_id = root_node_id
         while next_node_id:
             root_node_id = next_node_id
-            intention_nodes = gb_handler.get_neighbor_nodes(
-                {'id': next_node_id}, self._node_type)
+            intention_nodes = gb_handler.get_neighbor_nodes({'id': next_node_id}, self._node_type)
             intention_nodes = [
                 node for node in intention_nodes if node.type == self._node_type
             ]
@@ -167,13 +165,8 @@ class IntentionRouter:
         ))
 
     def get_intention_by_node_info_nlp(
-        self,
-        root_node_id: str,
-        query: str,
-        start_from_root: bool = False,
-        gb_handler: Optional[GBHandler] = None,
-        tb_handler: Optional[TbaseHandler] = None,
-        agent=None,
+        self, root_node_id: str, query: str, start_from_root: bool = False, gb_handler: Optional[GBHandler] = None,
+        tb_handler: Optional[TbaseHandler] = None, agent=None,
     ) -> dict[str, Any]:
         gb_handler = gb_handler if gb_handler is not None else self.gb_handler
         tb_handler = tb_handler if tb_handler is not None else self.tb_handler
@@ -208,7 +201,7 @@ class IntentionRouter:
         
         intention_idx = self._get_intention_ekg(
             query, [x['description'] for x in filter_nodes.values()], agent,
-            allow_multiplt_choice=True
+            allow_multiple_choice=True
         )
         filter_nodes = {k: v for i, (k, v) in enumerate(filter_nodes.items()) if i in intention_idx}
 
@@ -284,7 +277,11 @@ class IntentionRouter:
             return itp.INTENTIONS_WHETHER_EXEC[ans[0]] is itp.INTENTION_EXECUTE
         return False
 
-    def get_intention_consult_which(self, query: str, agent=None, root_node_id: Optional[str]=None) -> str:
+    def get_intention_consult_which(
+        self, query: Union[list, tuple, str], agent=None, root_node_id: Optional[str]=None
+    ) -> str:
+        if isinstance(query, (list, tuple)):
+            query = query[0]
         agent = agent if agent else self.agent
         query_consult_which = itp.CONSULT_WHICH_PROMPT.format(query=query)
         ans = agent.predict(query_consult_which)
@@ -350,8 +347,7 @@ class IntentionRouter:
 
     def is_node_valid(self, node_id: str, gb_handler: Optional[GBHandler] = None) -> bool:
         gb_handler = gb_handler if gb_handler is not None else self.gb_handler
-        canditates = gb_handler.get_neighbor_nodes({'id': node_id},
-                                                   self._node_type)
+        canditates = gb_handler.get_neighbor_nodes({'id': node_id}, self._node_type)
         if len(canditates) == 0:
             return False
         canditates = [n.id for n in canditates if n.type == self._node_type]
@@ -359,16 +355,17 @@ class IntentionRouter:
             return True
         return self.is_node_valid(canditates[0], gb_handler)
     
-    def _get_intention_ekg(self, query: str, intentions: list[str], agent, allow_multiplt_choice=False):
+    def _get_intention_ekg(self, query: str, intentions: list[str], agent, allow_multiple_choice=False):
         if len(intentions) <= 1:
             return [0] * len(intentions)
         
         intentions = [itp.IntentionInfo(description=x) for x in intentions] + [itp.INTENTION_NOMATCH]
         query_intention = itp.get_intention_prompt(
-            intentions, allow_multiple_choice=allow_multiplt_choice).format(query=query)
+            intentions, allow_multiple_choice=allow_multiple_choice).format(query=query)
         ans = agent.predict(query_intention)
         ans = [int(x) - 1 for x in re.findall('\d+', ans) if 0 < int(x) < len(intentions)]
         return ans
+
     def _filter_ancestors(self, gb_handler: GBHandler, nodes: set, root_node: str) -> dict[str, list[str]]:
         split = '<->'
 
