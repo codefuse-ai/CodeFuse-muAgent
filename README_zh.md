@@ -17,9 +17,10 @@
 
 
 ## 🔔 更新
-- [2024.04.01] muAgent正式开源，聚焦多agent编排，协同FunctionCall、RAG、CodeInterpreter等技术
-- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新Agent产品框架
+- [2024.11.06] 量子位公众号专题报道：[文章链接](https://mp.weixin.qq.com/s/di_joj2NInGAGNqjDIsleA )
 - [2024.10.28] 发布 muAgent v2.1，提供 一键式部署能力，包括基于KG的Agent编排、基于java的工具/Agent注册和管理、可拖拉拽编辑的前端产品UI
+- [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新Agent产品框架
+- [2024.04.01] muAgent正式开源，聚焦多agent编排，协同FunctionCall、RAG、CodeInterpreter等技术
 
 ## 📜 目录
 - [🤝 介绍](#-介绍)
