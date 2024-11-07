@@ -33,8 +33,9 @@ class CodeRetrieval:
         self.lang = "java" 
         self.use_nh = use_nh
         self.CB_ROOT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repobase")
+        os.makedirs(self.CB_ROOT_PATH, exist_ok=True)
         
-    def init_codebase(self, codebase_name: str):
+    def init_codebase(self, codebase_name: str,do_interpret:bool = False):
         self.cbh = CodeBaseHandler(codebase_name, self.code_path, crawl_type='dir', use_nh=self.use_nh, local_graph_path=self.CB_ROOT_PATH,
                       llm_config=self.llm_config, embed_config=self.embed_config,language=self.lang)
         self.cbh.import_code(do_interpret=False)

@@ -2,6 +2,36 @@ import os
 import git
 from dotenv import load_dotenv
 import urllib.parse
+
+
+
+def get_directory_structure(directory_path:str, notallow:set=None):
+    """
+    获取指定目录下的文件结构并返回为字符串格式。
+
+    :param directory_path: str, 目录路径
+    :param notallow: set, 不允许包含的文件或目录集合，默认值为None
+    :return: str, 文件结构
+    """
+    structure = []
+    notallow_dict = {'.git', '__pycache__', '.idea','.github','.tx'}
+
+    # 如果 notallow 参数不为空，将其合并到 notallow_dict 中
+    if notallow:
+        notallow_dict.update(notallow)
+    for root, dirs, files in os.walk(directory_path):
+        # 过滤掉不需要的目录
+        dirs[:] = [d for d in dirs if d not in notallow_dict]
+
+        level = root.replace(directory_path, '').count(os.sep)
+        indent = ' ' * 4 * level
+        structure.append(f"{indent}{os.path.basename(root)}/")
+        sub_indent = ' ' * 4 * (level + 1)
+        for file in files:
+            structure.append(f"{sub_indent}{file}")
+
+    return "\n".join(structure)
+
 # 开始检查 code_path 是否是 Java 项目
 def check_java_project(code_path):
     # 检查是否存在 pom.xml 文件
