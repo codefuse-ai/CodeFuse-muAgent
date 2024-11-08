@@ -54,9 +54,10 @@ class CypherGenerator:
         content = self.NGQL_GENERATION_PROMPT.format(schema=schema, question=query)
         # logger.info(content)
         ans = ''
-        message = [HumanMessage(content=content)]
-        chat_res = self.model.predict_messages(message)
-        ans = chat_res.content
+        # message = [HumanMessage(content=content)]
+        # chat_res = self.model.predict_messages(message)
+        # ans = chat_res.content
+        self.model.predict(content)
 
         ans = replace_lt_gt(ans)
 

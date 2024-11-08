@@ -286,6 +286,21 @@ def test_whoisspy_datas(ekg_service, ):
 
     logger.info(neighbor_nodes)
     logger.info(current_nodes)
+    
+    
+    logger.info('剧本杀/谁是卧底/智能交互/开始新一轮的讨论')
+    start_nodetype    ='opsgptkg_task'
+    start_nodeid = hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论')
+
+    neighbor_nodes = ekg_service.gb.get_neighbor_nodes(attributes={"id": start_nodeid,}, 
+                                    node_type=start_nodetype)
+
+    current_nodes = ekg_service.gb.get_current_nodes(attributes={"id": start_nodeid,}, 
+                                    node_type=start_nodetype)
+
+    logger.info(neighbor_nodes)
+    logger.info(current_nodes)
+
 
 
 

@@ -449,7 +449,7 @@ class  GB_handler():
             oneNode = self.geabase_handler.get_current_node(attributes={"id": rootNodeId,}, 
                                     node_type=rootNodeType)
         except:
-            logging.info('user_input_memory_tag 没有找到合适的数据， 可能原因是当前查找对象不是 opsgptkg_task 类型的节点'  )
+            logging.info('get_extra_tag 没有找到合适的数据， 可能原因是当前查找对象不是 opsgptkg_task 类型的节点'  )
             return None
         # print(oneNode)
         if oneNode.attributes['extra'] == '':
@@ -463,6 +463,29 @@ class  GB_handler():
             return None
         else:
             return extra[key]
+        
+    def get_tag(self, rootNodeId = 'None', rootNodeType = 'opsgptkg_task', key = 'ignorememory'):
+        # print(f'rootNodeId is {rootNodeId},  rootNodeType is {rootNodeType}')
+        try:
+            oneNode = self.geabase_handler.get_current_node(attributes={"id": rootNodeId,}, 
+                                    node_type=rootNodeType)
+        except:
+            logging.info(f'get_tag 没有找到合适的数据， 可能原因是当前对象为 {rootNodeType} 类型的节点'  )
+            return None
+        # print(oneNode)
+        if key not in oneNode.attributes.keys():
+            logging.info(f'get_tag 没有找到合适的数据， 可能原因key名错误'  )
+            return None
+        if oneNode.attributes[key] == '':
+            logging.info(f'get_tag 没有找到合适的数据， 可能原因为空字符串'  )
+            return None
+        
+        return oneNode.attributes[key]
+
+        
+        
+
+
 
     def user_input_memory_tag(self,  rootNodeId = 'None', rootNodeType = 'opsgptkg_task'):
         print(f'rootNodeId is {rootNodeId},  rootNodeType is {rootNodeType}')
