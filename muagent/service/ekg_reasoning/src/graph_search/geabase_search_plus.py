@@ -547,7 +547,7 @@ class graph_search_tool():
             
             #查祖先节点 reverse=True
             neighborNodes = self.geabase_handler.get_neighbor_nodes(attributes={"id": nodeid_now,}, node_type=nodetype_now, reverse=True)
-            print(nodeid_now, nodetype_now, neighborNodes, '=========')
+            #print(nodeid_now, nodetype_now, neighborNodes, '=========')
 
 
             for i in range(len(neighborNodes) ):
