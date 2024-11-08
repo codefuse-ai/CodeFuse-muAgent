@@ -40,7 +40,7 @@ from muagent.utils.common_utils import double_hashing
 
 
 def getClassFields(model):
-    # 收集所有字段，包括继承自父类的字段
+    '''收集所有字段，包括继承自父类的字段'''
     all_fields = set(model.__annotations__.keys())
     for base in model.__bases__:
         if hasattr(base, '__annotations__'):
@@ -283,6 +283,14 @@ class EKGConstructService:
                     attributes_dict[k] = 'bool'
                 else:
                     attributes_dict[k] = v.get('type')
+                
+                # Special: 根据属性名添加类型
+                if k == "extra":
+                    attributes_dict[k] = "string"
+
+                if attributes_dict[k] == None:
+                    logger.error(f"The type of Node attribute ({k}) shouldn't be None!")
+
             self.gb.create_tag(node_type, attributes_dict)
 
         # 边属性
@@ -324,16 +332,11 @@ class EKGConstructService:
         rootid_can_arrive_nodeids, _ = self._get_local_graph(
             new_nodes, new_edges, rootid=rootid)
         _, _ = self._get_local_graph(origin_nodes, origin_edges, rootid=rootid)
-        # logger.info(new_nodes)
-        # rootid_can_arrive_node = [n for n in new_nodes if n.id in rootid_can_arrive_nodeids]
-        # rootid_can_arrive_edge = [e for e in new_edges if (e.start_id in rootid_can_arrive_nodeids) and (e.end_id in rootid_can_arrive_nodeids)]
-
+        # diff old_graph from new_graph
         origin_nodeids = set([node.id for node in origin_nodes])
         origin_edgeids = set([f"{edge.start_id}__{edge.end_id}" for edge in origin_edges])
         nodeids = set([node.id for node in new_nodes])
         edgeids = set([f"{edge.start_id}__{edge.end_id}" for edge in new_edges])
-
-        logger.info(edgeids)
 
         unique_nodeids = origin_nodeids&nodeids
         unique_edgeids = origin_edgeids&edgeids
@@ -348,7 +351,7 @@ class EKGConstructService:
         # get add nodes & edges and filter those nodes/edges cant be arrived from rootid
         add_nodes = [node for node in new_nodes if node.id not in origin_nodeids]
         add_nodes = [n for n in add_nodes if n.id in rootid_can_arrive_nodeids]
-        # logger.info(add_nodes)
+
         add_edges = [
             edge for edge in new_edges 
             if f"{edge.start_id}__{edge.end_id}" not in origin_edgeids
@@ -358,7 +361,6 @@ class EKGConstructService:
             if (edge.start_id in rootid_can_arrive_nodeids) and 
             (edge.end_id in rootid_can_arrive_nodeids)
         ]
-        # logger.info(add_edges)
 
         # get delete nodes & edges
         delete_nodes = [node for node in origin_nodes if node.id not in nodeids]
@@ -366,8 +368,6 @@ class EKGConstructService:
             edge for edge in origin_edges 
             if f"{edge.start_id}__{edge.end_id}" not in edgeids
         ]
-        
-        logger.info(delete_edges)
 
         delete_nodeids = [node.id for node in delete_nodes]
         
@@ -399,15 +399,14 @@ class EKGConstructService:
             for edgeid in unique_edgeids 
             if edgeid2edges_dict[edgeid][0]!=edgeid2edges_dict[edgeid][1]
         ]
-        # logger.info(add_nodes)
         # execute action
         add_node_result = self.add_nodes(add_nodes, teamid)
         add_edge_result = self.add_edges(add_edges, teamid)
 
-        logger.info("需要删除的节点")
-        logger.info(delete_nodes) # []
-        logger.info("需要删除的边")
-        logger.info(delete_edges) # 有边
+        logger.info(f"需要删除的节点: {delete_nodes}")
+        logger.info(f"需要删除的边: {delete_edges}")
+        logger.info(f"需要更新的节点: {update_nodes}")
+        logger.info(f"需要更新的边: {update_edges}")
         delete_edge_result = self.delete_edges(delete_edges, teamid)
         delete_node_result = self.delete_nodes(delete_nodes, teamid)
 
@@ -819,7 +818,7 @@ class EKGConstructService:
                 if i.strip()
             ] if r.docs else []
 
-        node.attributes["teamids"] = teamids
+        node.attributes["teamids"] = ', '.join(teamids)
         return node
     
     def get_graph_by_nodeid(
@@ -827,16 +826,18 @@ class EKGConstructService:
             nodeid: str, 
             node_type: str, 
             hop: int = 10, 
-            block_attributes: List[dict] = {}
+            block_attributes: List[dict] = {},
+            reverse: bool = False
         ) -> Graph:
-        if hop<2:
-            raise Exception(f"hop must be smaller than 2, now hop is {hop}")
+        if hop<1:
+            raise Exception(f"hop can't be smaller than 1, now hop is {hop}")
         if hop >= 30:
             raise Exception(f"hop can't be larger than 30, now hop is {hop}")
         # filter the node which dont match teamid
         result = self.gb.get_hop_infos(
             {'id': nodeid}, node_type=node_type, 
-            hop=hop, block_attributes=block_attributes
+            hop=hop, block_attributes=block_attributes,
+            reverse=reverse
         )
         # logger.info(result)
         if result.nodes == []:
@@ -1053,6 +1054,7 @@ class EKGConstructService:
                 node for node in graph_datas["dsl_graph"].nodes if node.id not in id_sets
             ])
             id_sets.update([i.id for i in graph_datas["dsl_graph"].nodes])
+
             merge_dsl_edges.extend([
                 edge for edge in graph_datas["dsl_graph"].edges if edge.id not in id_sets
             ])
@@ -1062,6 +1064,7 @@ class EKGConstructService:
                 node for node in graph_datas["graph"].nodes if node.id not in gid_sets
             ])
             gid_sets.update([i.id for i in graph_datas["graph"].nodes])
+            
             merge_gbase_edges.extend([
                 edge for edge in graph_datas["graph"].edges 
                 if f"{edge.start_id}__{edge.end_id}" not in gid_sets
@@ -1442,12 +1445,24 @@ class EKGConstructService:
 
     def _normalized_nodes_type(self, nodes: List[GNode]) -> List[GNode]:
         '''将数据进行格式转换'''
+        def _fill_default_value(k, v):
+            k_default_value = {
+                'enable': 'False', 'summaryswitch': 'False',
+                'isolation': 'public', 'historyenable': 'no', 'action': 'no',
+                'action': 'single', 'filltype': 'auto', 'dostop': 'no', 
+                'dodisplay': 'no'
+            }
+            if k in k_default_value:
+                return k_default_value[k] if v=="" else v
+            else:
+                return v
+            
         valid_nodes = []
         for node in nodes:
             node_type = node.type
             node_data_dict = {**{"id": node.id, "type": node_type}, **node.attributes}
             node_data_dict = {
-                k: 'False' if k in ["enable", "summaryswitch"] and v=="" else v 
+                k: _fill_default_value(k, v)
                 for k,v in node_data_dict.items()
             }
             node_data: EKGNodeSchema = TYPE2SCHEMA[node_type](**node_data_dict)
@@ -1460,6 +1475,10 @@ class EKGConstructService:
     def _normalized_edges_type(self, edges: List[GEdge]) -> GEdge:
         valid_edges = []
         for edge in edges:
+            if "extra" not in edge.attributes:
+                valid_edges.append(edge)
+                continue
+
             edge_data: EKGEdgeSchema = TYPE2SCHEMA["edge"](
                 **{
                     **{

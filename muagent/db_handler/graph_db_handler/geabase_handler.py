@@ -145,11 +145,17 @@ class GeaBaseHandler(GBHandler):
     
     def delete_edges(self, id_pairs: List, edge_type: str = None) -> GbaseExecStatus:
         # geabase 不支持直接根据边关系进行检索
-        src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
-        # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
-        gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}}}]->() DELETE e"
-        gql = f"MATCH (n:opsgptkg_intent )-[r]->(t1) DELETE r"
-        return self._get_crud_status(self.execute(gql))
+        try:
+            src_id, dst_id, timestamp = self.get_current_edgeID(src_id, dst_id, edge_type)
+            # src_id, dst_id = double_hashing(src_id), double_hashing(dst_id)
+            gql = f"MATCH ()-[e:{edge_type}{{@src_id:{src_id}, @dst_id:{dst_id}}}]->() DELETE e"
+            gql = f"MATCH (n:opsgptkg_intent )-[r]->(t1) DELETE r"
+            return self._get_crud_status(self.execute(gql))
+        except Exception as e:
+            return GbaseExecStatus(
+                errorMessage=e, 
+                errorCode=-1, 
+            )
     
     def get_nodeIDs(self, attributes: dict, node_type: str) -> List[int]:
         result = self.get_current_nodes(attributes, node_type)
@@ -236,22 +242,30 @@ class GeaBaseHandler(GBHandler):
         filter_result = [i for i in result if all([item in i.attributes.items() for item in check_attributes.items()])]
         return len(filter_result) > 0
 
-    def get_hop_infos(self, attributes: dict, node_type: str = None, hop: int = 2, block_attributes: List[dict] = [], select_attributes: dict = {}, reverse=False) -> Graph:
+    def get_hop_infos(
+            self, 
+            attributes: dict, 
+            node_type: str = None, 
+            hop: int = 2, 
+            block_attributes: List[dict] = [], 
+            select_attributes: dict = {}, 
+            reverse=False
+        ) -> Graph:
         '''
-        hop >= 2， 表面需要至少两跳
+        hop >= 1
         '''
         hop_max = self.hop_max
         # 
         where_str = ' and '.join([f"n0.{k}='{v}'" for k, v in attributes.items()])
         if reverse:
-            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})<-[e]-{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})<-[e]-{{0,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
         else:
-            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})-[e]->{{1,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
+            gql = f"MATCH p = (n0:{node_type} WHERE {where_str})-[e]->{{0,{min(hop, hop_max)}}}(n1) RETURN n0, n1, e, p"
         last_node_ids, last_node_types = [], []
 
         result = {}
         iter_index = 0
-        while hop > 1:
+        while hop >= 1:
             if last_node_ids == [] and iter_index==0:
                 # 
                 result = self.execute(gql)
@@ -272,7 +286,8 @@ class GeaBaseHandler(GBHandler):
         
                     result = self.merge_hotinfos(result, _result, reverse=reverse)
             # 
-            last_node_ids, last_node_types, result = self.deduplicate_paths(result, block_attributes, select_attributes, hop=min(hop, hop_max)+iter_index*hop_max, reverse=reverse)
+            last_node_ids, last_node_types, result = self.deduplicate_paths(
+                result, block_attributes, select_attributes, hop=min(hop, hop_max)+iter_index*hop_max, reverse=reverse)
             hop -= hop_max
             iter_index += 1
 
@@ -381,6 +396,7 @@ class GeaBaseHandler(GBHandler):
                 for col_data, rk, sk in zip(row["columns"], return_keys, save_keys):
                     _decode_func = decode_geabase_result_func_by_key.get(sk, self.decode_attribute)
                     # print(sk, json.dumps(col_data, ensure_ascii=False, indent=2))
+                    if col_data is None or col_data == {}: continue
                     decode_reuslt = _decode_func(col_data, rk)
                     if ".attr" in sk:
                         attr_dict.setdefault(sk, {}).update(decode_reuslt)
@@ -447,8 +463,17 @@ class GeaBaseHandler(GBHandler):
         def _decode_edge(data):
             edgeVal= data.get("edgeVal", {})
             edge_val_json = {
-                **{"SRCID": int(edgeVal.get("srcId", "")), "DSTID": int(edgeVal.get("dstId", "")), "type": edgeVal.get("type", "")}, 
-                **{k: v.get("strVal", "") if "strVal" in v else v.get("intVal", "0") for k, v in edgeVal.get("props", {}).items()}
+                **{
+                    "SRCID": int(edgeVal.get("srcId", "")), 
+                    "DSTID": int(edgeVal.get("dstId", "")), 
+                    "type": edgeVal.get("type", ""),
+                    "timestamp": int(edgeVal.get("timestamp", "1"))
+                    }, 
+                **{
+                    k: v.get("strVal", "") 
+                    if "strVal" in v else v.get("intVal", "0") 
+                    for k, v in edgeVal.get("props", {}).items()
+                }
             }
             # 存在业务逻辑
             edge_val_json["start_id"] = edge_val_json.pop("original_src_id1__")
