@@ -42,7 +42,7 @@ from muagent.schemas.common import GNode, GEdge
 from muagent.schemas.db import GBConfig, TBConfig
 from muagent.service.ekg_construct import EKGConstructService
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
-
+from muagent.schemas.ekg import *
 
 
 
@@ -105,6 +105,7 @@ def generate_node(id, type):
     extra_attr = {"tmp": "hello"}
     if type == "opsgptkg_schedule":
         extra_attr["enable"] = False
+        extra_attr["extra"] = {"test": "dsadsa"}
         
     if type == "opsgptkg_task":
         extra_attr["accesscriteria"] = "hello"
@@ -114,15 +115,31 @@ def generate_node(id, type):
         extra_attr["accesscriteria"] = "hello"
         extra_attr["summaryswitch"] = False
         extra_attr['dsltemplate'] = "hello"             
-        
-    return GNode(**{
+
+    if "extra" in extra_attr:
+        extra_attr.update(extra_attr.pop("extra", {}))
+
+    node = GNode(**{
         "id": id, 
         "type": type,
         "attributes": {**{
-            "path": id,
             "name": id,
             "description": id, 
         }, **extra_attr}
+    })
+    schema = TYPE2SCHEMA.get(type,)
+    node_data = schema(
+        **{**{"id": node.id, "type": node.type}, **node.attributes}
+    )
+    node_data = {
+        k:v
+        for k, v in node_data.dict().items()
+        if k not in ["type", "start_id", "end_id", "ID", "id", "extra"]
+    }
+    return GNode(**{
+        "id": id, 
+        "type": type,
+        "attributes": {**node_data, **extra_attr}
     })
 
 def generate_edge(node1, node2):
@@ -376,7 +393,19 @@ edge_ids_by_teamid = {
 neighbors_by_nodeid = {}
 for teamid, origin_edges in edge_ids_by_teamid.items():
     for edge in origin_edges:
-        neighbors_by_nodeid.setdefault(edge.start_id, []).append(edge.end_id)
+        neighbors_by_nodeid.setdefault(edge[0], []).append(edge[1])
+
+origin_edges = []
+origin_nodes = []
+for teamid, edge_ids in edge_ids_by_teamid.items():
+    for src_id, dst_id in edge_ids:
+        origin_edges.append(generate_edge(nodes_dict[src_id], nodes_dict[dst_id]))
+        if src_id not in nodeid_set:
+            nodeid_set.add(src_id)
+            origin_nodes.append(nodes_dict[src_id])
+        if dst_id not in nodeid_set:
+            nodeid_set.add(dst_id)
+            origin_nodes.append(nodes_dict[dst_id])
 
 
 flags = []

@@ -10,6 +10,7 @@ import os
 
 from muagent.service.ekg_construct.ekg_construct_base import EKGConstructService
 from muagent.schemas.apis.ekg_api_schema import *
+from muagent.schemas.ekg import *
 from muagent.service.ekg_reasoning.src.graph_search.graph_search_main import main
 
 
@@ -23,8 +24,39 @@ def wrapping_reponse(result, errorMessage="ok", success=0):
         success=success
     )
 
+def autofill_nodes(nodes: List[GNode]):
+    '''
+    兼容
+    '''
+    new_nodes = []
+    for node in nodes:
+        schema = TYPE2SCHEMA.get(node.type,)
+        node.attributes.update(node.attributes.pop("extra", {}))
+        node_data = schema(
+            **{**{"id": node.id, "type": node.type}, **node.attributes}
+        )
+        node_data = {
+            k:v
+            for k, v in node_data.dict().items()
+            if k not in ["type", "ID", "id", "extra"]
+        }
+        new_nodes.append(GNode(**{
+            "id": node.id, 
+            "type": node.type,
+            "attributes": {**node_data, **node.attributes}
+        }))
+    return new_nodes
+    
 # 
-def init_app(llm, llm_config, embeddings, ekg_construct_service: EKGConstructService, memory_manager, geabase_handler, intention_router):
+def init_app(
+        llm, 
+        llm_config, 
+        embeddings, 
+        ekg_construct_service: EKGConstructService, 
+        memory_manager, 
+        geabase_handler, 
+        intention_router
+):
 
     app = FastAPI()
 
@@ -179,8 +211,6 @@ def init_app(llm, llm_config, embeddings, ekg_construct_service: EKGConstructSer
 
 
     # ~/ekg/graph/update
-    # @app.post("/ekg/graph/update", response_model=EKGResponse)
-    # async def update_graph(request: UpdateGraphRequest):
     @app.post("/ekg/graph/update", response_model=EKGAIResponse)
     async def update_graph(request: EKGFeaturesRequest):
         logger.info(request.features.query)
@@ -196,14 +226,17 @@ def init_app(llm, llm_config, embeddings, ekg_construct_service: EKGConstructSer
 
         # 将 origin_nodes 和 nodes 转换为 GNode 对象
         origin_nodes = [GNode(**n) for n in origin_nodes]
+        origin_nodes = autofill_nodes(origin_nodes)
         nodes = [GNode(**n) for n in nodes]
-
+        nodes = autofill_nodes(nodes)
+                                      
         # 处理 origin_edges，给每个 edge 设置 type 字段
         origin_edges = [
             GEdge(
                 start_id=e['start_id'], 
                 end_id=e['end_id'],
-                type=f"{nodeid2type_dict.get(e['start_id'], 'unknown')}_route_{nodeid2type_dict.get(e['end_id'], 'unknown')}",  # 使用默认值 'unknown' 以防 id 不在字典中
+                 # 使用默认值 'unknown' 以防 id 不在字典中
+                type=f"{nodeid2type_dict.get(e['start_id'], 'unknown')}_route_{nodeid2type_dict.get(e['end_id'], 'unknown')}",
                 attributes=e.get("attributes", {})
             )
             for e in origin_edges
@@ -219,34 +252,6 @@ def init_app(llm, llm_config, embeddings, ekg_construct_service: EKGConstructSer
             )
             for e in edges
         ]
-
-        # 将 GEdge 和 GNode 对象转换回字典以保持原有 JSON 格式
-        # origin_edges_dict = [
-        #     {
-        #         "start_id": edge.start_id,
-        #         "end_id": edge.end_id,
-        #         "type": edge.type,
-        #         "attributes": edge.attributes
-        #     }
-        #     for edge in origin_edges
-        # ]
-
-        # edges_dict = [
-        #     {
-        #         "start_id": edge.start_id,
-        #         "end_id": edge.end_id,
-        #         "type": edge.type,
-        #         "attributes": edge.attributes
-        #     }
-        #     for edge in edges
-        # ]
-
-        # # 更新 query 的内容，将 edges 和 originEdges 部分重新保存
-        # request.features.query['originEdges'] = origin_edges_dict
-        # request.features.query['edges'] = edges_dict
-
-
-        # query = UpdateGraphRequest(**request.features.query)
 
         # 添加预测逻辑的代码
         errorMessage = "ok"
@@ -318,9 +323,6 @@ def init_app(llm, llm_config, embeddings, ekg_construct_service: EKGConstructSer
                     nodeid=query.nodeid, node_type=query.nodeType, 
                     hop=query.hop
                 )
-
-            # nodes = graph.nodes.dict()
-            # edges = graph.edges.dict()
             nodes = graph.nodes
             edges = graph.edges
         except Exception as e:

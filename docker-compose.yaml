@@ -153,10 +153,12 @@ services:
       USER:
         root
     ports:
-      # - 5050:3737
       - 8080:8080
     networks:
       - ekg-net
+    volumes:
+      - ./runtime:/home/user/runtime
+    command: ["bash", "-c", "cd /home/user/runtime && mvn package && java -jar /home/user/runtime/bootstrap/muagent-runtime.jar"]
 
   ekgservice:
     build:
