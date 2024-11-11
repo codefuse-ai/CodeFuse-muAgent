@@ -1,4 +1,4 @@
-name: Docker Image CI Test
+name: Docker Image CI
 
 on:
   workflow_dispatch:  # 允许手动触发工作流
@@ -62,31 +62,76 @@ jobs:
       #     docker manifest create ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
       #     docker manifest inspect ghcr.io/lightislost/python:3.9-slim-bookworm
 
-      - name: Build and push adm64
-        uses: docker/build-push-action@v2
-        with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.dockerfile }}
-          push: true
-          tags: ${{ matrix.image.tag }}-amd64
-          platforms: linux/amd64
+      # - name: Build and push adm64
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ${{ matrix.image.context }}
+      #     file: ${{ matrix.image.dockerfile }}
+      #     push: true
+      #     tags: ${{ matrix.image.tag }}-amd64
+      #     platforms: linux/amd64
 
+      - name: Build and push with retry for amd64
+        run: |
+          max_retries=3
+          count=0
+          success=false
+
+          while [[ $count -lt $max_retries ]]; do
+            echo "Attempt $(($count + 1)) of $max_retries..."
+            docker buildx build --push \
+              --platform linux/amd64 \
+              --tag ${{ matrix.image.tag }}-amd64 \
+              -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
+            
+            count=$(($count + 1))
+            echo "Build failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+          if [ "$success" = false ]; then
+            echo "Build failed after $max_retries attempts."
+            exit 1
+          fi
+          3
       - name: docker image
         run: |
           docker images
           docker rmi ${{ matrix.image.tag }}-amd64
           docker images
 
+      # - name: Build and push amr64
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ${{ matrix.image.context }}
+      #     file: ${{ matrix.image.dockerfile }}
+      #     push: true
+      #     tags: ${{ matrix.image.tag }}-arm64
+      #     platforms: linux/arm64
 
-      - name: Build and push amr64
-        uses: docker/build-push-action@v2
-        with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.dockerfile }}
-          push: true
-          tags: ${{ matrix.image.tag }}-arm64
-          platforms: linux/arm64
-      
+      - name: Build and push with retry for arm64
+        run: |
+          max_retries=3
+          count=0
+          success=false
+
+          while [[ $count -lt $max_retries ]]; do
+            echo "Attempt $(($count + 1)) of $max_retries..."
+            docker buildx build --push \
+              --platform linux/arm64 \
+              --tag ${{ matrix.image.tag }}-arm64 \
+              -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
+            
+            count=$(($count + 1))
+            echo "Build failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+          if [ "$success" = false ]; then
+            echo "Build failed after $max_retries attempts."
+            exit 1
+          fi
+
       - name: docker image
         run: |
           docker images
@@ -98,6 +143,7 @@ jobs:
           docker images
           docker manifest create ${{ matrix.image.tag }} ${{ matrix.image.tag }}-arm64 ${{ matrix.image.tag }}-amd64
           docker manifest inspect ${{ matrix.image.tag }}
+          docker manifest push ${{ matrix.image.tag }}
 
       - name: Check disk space
         run: df -h
