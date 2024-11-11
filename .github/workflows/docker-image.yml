@@ -53,14 +53,14 @@ jobs:
           docker images
           docker pull --platform linux/arm64 python:3.9-slim-bookworm
           docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
-
+          docker images
 
       - name: docker image
         run: |
           docker images
           docker pull --platform linux/amd64 python:3.9-slim-bookworm
           docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
-
+          docker images
           docker buildx imagetools create -t ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
 
       # - name: Build and push
