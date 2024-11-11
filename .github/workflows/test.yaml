@@ -24,13 +24,29 @@ jobs:
           username: ${{ github.actor }}  # 使用当前 GitHub 用户名
           password: ${{ secrets.CR_TOKEN }}  # 使用您刚刚添加的个人访问令牌
 
+      - name: show local dir
+        run: |
+            pwd
+            ls -l
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: .
-          file: ./Dockerfile_frontend
+          context: ./runtime
+          file: Dockerfile.no-package
           push: true
-          tags: ghcr.io/lightislost/ekgfrontend:latest
+          tags: ghcr.io/codefuse-ai/runtime:0.1.0
           platforms: |
             linux/amd64
             linux/arm64
+
+      # - name: Build and push
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile_frontend
+      #     push: true
+      #     tags: ghcr.io/lightislost/ekgfrontend:latest
+      #     platforms: |
+      #       linux/amd64
+      #       linux/arm64
