@@ -36,11 +36,34 @@ jobs:
           context: ./runtime
           file: ./runtime/Dockerfile.no-package
           push: true
-          tags: ghcr.io/codefuse-ai/runtime:0.1.0
+          tags: ghcr.io/lightislost/runtime:0.1.0
           platforms: |
             linux/amd64
             linux/arm64
 
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile_frontend
+          push: true
+          tags: ghcr.io/lightislost/ekgfrontend:0.1.0
+          platforms: |
+            linux/amd64
+            linux/arm64
+            
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/lightislost/ekgservice:0.1.0
+          platforms: |
+            linux/amd64
+            linux/arm64
+
+          
       # - name: Build and push
       #   uses: docker/build-push-action@v2
       #   with:
