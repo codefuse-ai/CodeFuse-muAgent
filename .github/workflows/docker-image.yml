@@ -1,8 +1,6 @@
 name: Docker Image CI
-
 on:
   workflow_dispatch:  # 允许手动触发工作流
-
 
 jobs:
   build:
@@ -35,4 +33,3 @@ jobs:
           file: ./Dockerfile_frontend
           push: true
           tags: lightislost/ekgfrontend:0.1.0
-          platforms: linux/amd64,linux/arm64
