@@ -28,36 +28,6 @@ jobs:
           docker login --username=${{ secrets.ALIYUN_USERNAME }} --password=${{ secrets.ALIYUN_PASSWORD }} registry.cn-hangzhou.aliyuncs.com
 
           # 使用Dockerfile构建镜像
-          docker pull --platform ${{ matrix.os }}/${{ matrix.architecture }}  ghcr.io/codefuse-ai/runtime:0.1.0
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-${{ matrix.architecture }}
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-${{ matrix.architecture }}
-
-          docker pull --platform linux/arm64 ghcr.io/codefuse-ai/runtime:0.1.0
-
-          docker pull --platform linux/amd64 ghcr.io/codefuse-ai/ekgservice:0.1.0
-          docker pull --platform linux/arm64 ghcr.io/codefuse-ai/ekgservice:0.1.0
-
-          docker pull --platform linux/amd64 ghcr.io/codefuse-ai/ekgfrontend:0.1.0
-          docker pull --platform linux/arm64 ghcr.io/codefuse-ai/ekgfrontend:0.1.0
-
-          # 推送镜像到镜像仓库
-          ## runtime-amd
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-amd
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-amd
-          ## runtime-arm
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
-
-          ## runtime-amd
-          docker tag linux/amd64 ghcr.io/codefuse-ai/ekgservice:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/ekgservice:0.1.0-amd
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/ekgservice:0.1.0-amd
-          ## runtime-arm
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
-
-          ## runtime-amd
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-amd
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-amd
-          ## runtime-arm
-          docker tag linux/amd64 ghcr.io/codefuse-ai/runtime:0.1.0 registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-arm
+          docker pull --platform ${{ matrix.os }}/${{ matrix.architecture }}  ghcr.io/codefuse-ai/${{ matrix.service }}
+          docker tag ghcr.io/codefuse-ai/${{ matrix.service }} registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}
+          docker push registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}

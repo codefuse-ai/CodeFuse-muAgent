@@ -1,4 +1,4 @@
-FROM python:3.9-bookworm
+FROM python:3.9-slim-bookworm
 
 WORKDIR /home/user
 
