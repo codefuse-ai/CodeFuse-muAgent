@@ -24,7 +24,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}  # 使用当前 GitHub 用户名
-          password: ${{ secrets.GITHUB_TOKEN }}  # 使用您刚刚添加的个人访问令牌
+          password: ${{ secrets.CR_TOKEN }}  # 使用您刚刚添加的个人访问令牌
 
       - name: Build and push
         uses: docker/build-push-action@v2
