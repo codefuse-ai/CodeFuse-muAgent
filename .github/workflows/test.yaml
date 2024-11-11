@@ -6,9 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        architecture: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout code
@@ -34,4 +31,6 @@ jobs:
           file: ./Dockerfile_frontend
           push: true
           tags: ghcr.io/lightislost/ekgfrontend:latest
-          platforms: ${{ matrix.architecture }}  # 修改这里
+          platforms: |
+            linux/amd64
+            linux/arm64
