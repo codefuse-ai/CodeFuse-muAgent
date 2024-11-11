@@ -32,4 +32,20 @@ jobs:
           context: .
           file: ./Dockerfile_frontend
           push: true
-          tags: ghcr.io/lightislost/ekgfrontend:0.1.0
+          tags: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/codefuse-ai/ekgservice:0.1.0
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./runtime
+          file: Dockerfile.no-package
+          push: true
+          tags: ghcr.io/codefuse-ai/runtime:0.1.0
