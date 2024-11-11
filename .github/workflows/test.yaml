@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64]
-        os: [linux]  # 保持这个配置不变
+        architecture: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout code
@@ -34,5 +33,5 @@ jobs:
           context: .
           file: ./Dockerfile_frontend
           push: true
-          tags: ghcr.io/lightislost/ekgfrontend:0.1.0
-          platforms: linux/${{ matrix.architecture }}  # 修改这里
+          tags: ghcr.io/lightislost/ekgfrontend:latest
+          platforms: ${{ matrix.architecture }}  # 修改这里
