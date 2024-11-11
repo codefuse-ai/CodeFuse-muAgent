@@ -32,4 +32,4 @@ jobs:
           context: .
           file: ./Dockerfile_frontend
           push: true
-          tags: lightislost/ekgfrontend:0.1.0
+          tags: ghcr.io/lightislost/ekgfrontend:0.1.0
