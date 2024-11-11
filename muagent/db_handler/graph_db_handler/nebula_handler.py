@@ -92,6 +92,7 @@ class NebulaHandler:
             if ignore_log == False:
                 if resp.is_succeeded():
                     #logger.info(f"Successfully executed Cypher query: {cypher}")
+                    
                     pass
                     
                 else:
