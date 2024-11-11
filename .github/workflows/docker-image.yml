@@ -6,21 +6,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04  # 或者指定其他版本
-    # strategy:
-    #   matrix:
-    #     image: 
-    #       - name: runtime
-    #         context: ./runtime
-    #         dockerfile: ./runtime/Dockerfile.no-package
-    #         tag: ghcr.io/codefuse-ai/runtime:0.1.0
-    #       - name: ekgfrontend
-    #         context: .
-    #         dockerfile: ./Dockerfile_frontend
-    #         tag: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
-    #       - name: ekgservice
-    #         context: .
-    #         dockerfile: ./Dockerfile_gh
-    #         tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
+    strategy:
+      matrix:
+        image: 
+          - name: runtime
+            context: ./runtime
+            dockerfile: ./runtime/Dockerfile.no-package
+            tag: ghcr.io/codefuse-ai/runtime:0.1.0
+          - name: ekgfrontend
+            context: .
+            dockerfile: ./Dockerfile_frontend
+            tag: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
+          - name: ekgservice
+            context: .
+            dockerfile: ./Dockerfile_gh
+            tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
 
     steps:
       - name: Checkout code
@@ -42,57 +42,62 @@ jobs:
       - name: Check disk space
         run: df -h
 
-      - name: Clean up Docker
-        run: docker system prune -af
-
-      - name: Check disk space
-        run: df -h
-
-      - name: docker image
-        run: |
-          docker images
-          docker pull --platform linux/arm64 python:3.9-slim-bookworm
-          docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
-          docker rmi python:3.9-slim-bookworm
-          docker push ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
-          docker images 
-
-      - name: docker image
-        run: |
-          docker images
-          docker pull --platform linux/amd64 python:3.9-slim-bookworm
-          docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
-          docker rmi python:3.9-slim-bookworm
-          docker push ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
-          docker images
-          docker manifest create ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
-          docker manifest inspect ghcr.io/lightislost/python:3.9-slim-bookworm
-
-      # - name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: ${{ matrix.image.context }}
-      #     file: ${{ matrix.image.dockerfile }}
-      #     push: true
-      #     tags: ${{ matrix.image.tag }}-amd64
-      #     platforms: linux/amd64
-
-      # - name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: ${{ matrix.image.context }}
-      #     file: ${{ matrix.image.dockerfile }}
-      #     push: true
-      #     tags: ${{ matrix.image.tag }}-arm64
-      #     platforms: linux/arm64
-      #     # platforms: |
-      #     #   linux/amd64
-      #     #   linux/arm64
-      
       # - name: docker image
       #   run: |
       #     docker images
-      #     docker buildx imagetools create -t ${{ matrix.image.tag }} ${{ matrix.image.tag }}-arm64 ${{ matrix.image.tag }}-amd64
+      #     docker pull --platform linux/arm64 python:3.9-slim-bookworm
+      #     docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
+      #     docker rmi python:3.9-slim-bookworm
+      #     docker push ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
+      #     docker images 
+
+      # - name: docker image
+      #   run: |
+      #     docker images
+      #     docker pull --platform linux/amd64 python:3.9-slim-bookworm
+      #     docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker rmi python:3.9-slim-bookworm
+      #     docker push ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker images
+      #     docker manifest create ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker manifest inspect ghcr.io/lightislost/python:3.9-slim-bookworm
+
+      - name: Build and push adm64
+        uses: docker/build-push-action@v2
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          push: true
+          tags: ${{ matrix.image.tag }}-amd64
+          platforms: linux/amd64
+
+      - name: docker image
+        run: |
+          docker images
+          docker rmi ${{ matrix.image.tag }}-amd64
+          docker images
+
+
+      - name: Build and push amr64
+        uses: docker/build-push-action@v2
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          push: true
+          tags: ${{ matrix.image.tag }}-arm64
+          platforms: linux/arm64
+      
+      - name: docker image
+        run: |
+          docker images
+          docker rmi ${{ matrix.image.tag }}-arm64
+          docker images
+
+      - name: docker image
+        run: |
+          docker images
+          docker manifest create ${{ matrix.image.tag }} ${{ matrix.image.tag }}-arm64 ${{ matrix.image.tag }}-amd64
+          docker manifest inspect ${{ matrix.image.tag }}
 
       - name: Check disk space
         run: df -h
