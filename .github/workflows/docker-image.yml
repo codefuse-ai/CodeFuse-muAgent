@@ -6,21 +6,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04  # 或者指定其他版本
-    strategy:
-      matrix:
-        image: 
-          - name: runtime
-            context: ./runtime
-            dockerfile: ./runtime/Dockerfile.no-package
-            tag: ghcr.io/codefuse-ai/runtime:0.1.0
-          - name: ekgfrontend
-            context: .
-            dockerfile: ./Dockerfile_frontend
-            tag: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
-          - name: ekgservice
-            context: .
-            dockerfile: ./Dockerfile_gh
-            tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
+    # strategy:
+    #   matrix:
+    #     image: 
+    #       - name: runtime
+    #         context: ./runtime
+    #         dockerfile: ./runtime/Dockerfile.no-package
+    #         tag: ghcr.io/codefuse-ai/runtime:0.1.0
+    #       - name: ekgfrontend
+    #         context: .
+    #         dockerfile: ./Dockerfile_frontend
+    #         tag: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
+    #       - name: ekgservice
+    #         context: .
+    #         dockerfile: ./Dockerfile_gh
+    #         tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
 
     steps:
       - name: Checkout code
@@ -51,14 +51,17 @@ jobs:
       - name: docker image
         run: |
           docker images
-          docker pull --platform linux/amd64 python:3.9-slim-bookworm
-          docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
-
           docker pull --platform linux/arm64 python:3.9-slim-bookworm
           docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
 
-          docker buildx imagetools create -t ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
 
+      - name: docker image
+        run: |
+          docker images
+          docker pull --platform linux/amd64 python:3.9-slim-bookworm
+          docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+
+          docker buildx imagetools create -t ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
 
       # - name: Build and push
       #   uses: docker/build-push-action@v2
