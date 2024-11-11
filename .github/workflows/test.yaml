@@ -28,6 +28,7 @@ jobs:
         run: |
             pwd
             ls -l
+            ls -l ./runtime
 
       - name: Build and push
         uses: docker/build-push-action@v2
