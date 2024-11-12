@@ -39,9 +39,6 @@ jobs:
           username: ${{ github.actor }}  # 使用当前 GitHub 用户名
           password: ${{ secrets.CR_TOKEN }}  # 使用您刚刚添加的个人访问令牌
 
-      - name: Check disk space
-        run: df -h
-
       # - name: docker image
       #   run: |
       #     docker images
@@ -73,20 +70,20 @@ jobs:
 
       - name: Build and push with retry for amd64
         run: |
-          max_retries=3
+          max_retries=5
           count=0
           success=false
 
           while [[ $count -lt $max_retries ]]; do
             echo "Attempt $(($count + 1)) of $max_retries..."
-            docker buildx build --push \
+            docker build --push \
               --platform linux/amd64 \
               --tag ${{ matrix.image.tag }}-amd64 \
               -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
             
             count=$(($count + 1))
             echo "Build failed, retrying in 5 seconds..."
-            sleep 5
+            sleep 15
           done
 
           if [ "$success" = false ]; then
@@ -94,7 +91,7 @@ jobs:
             exit 1
           fi
 
-      - name: docker image
+      - name: docker image for amd64
         run: |
           df -h
           docker images
@@ -110,20 +107,20 @@ jobs:
 
       - name: Build and push with retry for arm64
         run: |
-          max_retries=3
+          max_retries=5
           count=0
           success=false
 
           while [[ $count -lt $max_retries ]]; do
             echo "Attempt $(($count + 1)) of $max_retries..."
-            docker buildx build --push \
+            docker build --push \
               --platform linux/arm64 \
               --tag ${{ matrix.image.tag }}-arm64 \
               -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
             
             count=$(($count + 1))
             echo "Build failed, retrying in 5 seconds..."
-            sleep 5
+            sleep 15
           done
 
           if [ "$success" = false ]; then
@@ -131,14 +128,16 @@ jobs:
             exit 1
           fi
 
-      - name: docker image
+      - name: docker image for arm64
         run: |
           df -h
           docker images
 
-      - name: docker image
+      - name: docker manifest
         run: |
           docker images
+          docker manifest inspect ${{ matrix.image.tag }}-arm64
+          docker manifest inspect ${{ matrix.image.tag }}-amd64
           docker manifest create ${{ matrix.image.tag }} ${{ matrix.image.tag }}-arm64 ${{ matrix.image.tag }}-amd64
           docker manifest inspect ${{ matrix.image.tag }}
           docker manifest push ${{ matrix.image.tag }}
