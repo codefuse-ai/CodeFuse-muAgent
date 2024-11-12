@@ -1,0 +1,33 @@
+name: Docker Image CI Pull
+
+on:
+  workflow_dispatch:  # 允许手动触发工作流
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [amd64, arm64]
+        os: [linux]
+        service: [runtime:0.1.0, ekgservice:0.1.0, ekgfrontend:0.1.0]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build the Docker image
+        run: |
+          # 登录阿里云镜像仓库
+          docker login --username=${{ secrets.ALIYUN_USERNAME }} --password=${{ secrets.ALIYUN_PASSWORD }} registry.cn-hangzhou.aliyuncs.com
+
+          # 使用Dockerfile构建镜像
+          docker pull --platform ${{ matrix.os }}/${{ matrix.architecture }}  ghcr.io/codefuse-ai/${{ matrix.service }}
+          docker tag ghcr.io/codefuse-ai/${{ matrix.service }} registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}
+          docker push registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}

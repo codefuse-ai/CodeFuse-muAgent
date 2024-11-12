@@ -1,13 +1,29 @@
 name: Docker Image CI
+
 on:
   workflow_dispatch:  # 允许手动触发工作流
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04  # 或者指定其他版本
     strategy:
       matrix:
-        architecture: [amd64, arm64]
+        image: 
+          - name: runtime
+            context: ./runtime
+            dockerfile: ./runtime/Dockerfile.no-package
+            tag: ghcr.io/codefuse-ai/runtime:0.1.0
+            tag_latest: ghcr.io/codefuse-ai/runtime:latest
+          - name: ekgfrontend
+            context: .
+            dockerfile: ./Dockerfile_frontend
+            tag: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
+            tag_latest: ghcr.io/codefuse-ai/ekgfrontend:latest
+          - name: ekgservice
+            context: .
+            dockerfile: ./Dockerfile_gh
+            tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
+            tag_latest: ghcr.io/codefuse-ai/ekgservice:latest
 
     steps:
       - name: Checkout code
@@ -26,26 +42,113 @@ jobs:
           username: ${{ github.actor }}  # 使用当前 GitHub 用户名
           password: ${{ secrets.CR_TOKEN }}  # 使用您刚刚添加的个人访问令牌
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile_frontend
-          push: true
-          tags: ghcr.io/codefuse-ai/ekgfrontend:0.1.0
+      - name: Build and push with retry for amd64
+        run: |
+          max_retries=5
+          count=0
+          success=false
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ghcr.io/codefuse-ai/ekgservice:0.1.0
+          while [[ $count -lt $max_retries ]]; do
+            echo "Attempt $(($count + 1)) of $max_retries..."
+            docker build --push \
+              --platform linux/amd64 \
+              --tag ${{ matrix.image.tag }}-amd64 \
+              --tag ${{ matrix.image.tag_latest }}-amd64 \
+              -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
+            
+            count=$(($count + 1))
+            echo "Build failed, retrying in 5 seconds..."
+            sleep 15
+          done
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: ./runtime
-          file: Dockerfile.no-package
-          push: true
-          tags: ghcr.io/codefuse-ai/runtime:0.1.0
+          if [ "$success" = false ]; then
+            echo "Build failed after $max_retries attempts."
+            exit 1
+          fi
+
+      - name: docker image for amd64
+        run: |
+          df -h
+          docker images
+          docker rmi ${{ matrix.image.tag }}-amd64
+          docker rmi ${{ matrix.image.tag_latest }}-amd64
+          df -h
+          docker images
+
+      - name: Build and push with retry for arm64
+        run: |
+          max_retries=5
+          count=0
+          success=false
+
+          while [[ $count -lt $max_retries ]]; do
+            echo "Attempt $(($count + 1)) of $max_retries..."
+            docker build --push \
+              --platform linux/arm64 \
+              --tag ${{ matrix.image.tag }}-arm64 \
+              --tag ${{ matrix.image.tag_latest }}-arm64 \
+              -f ${{ matrix.image.dockerfile }} ${{ matrix.image.context }} && success=true && break
+            
+            count=$(($count + 1))
+            echo "Build failed, retrying in 5 seconds..."
+            sleep 15
+          done
+
+          if [ "$success" = false ]; then
+            echo "Build failed after $max_retries attempts."
+            exit 1
+          fi
+
+      - name: docker image for arm64
+        run: |
+          df -h
+          docker images
+          docker rmi ${{ matrix.image.tag }}-arm64
+          docker rmi ${{ matrix.image.tag_latest }}-arm64
+          df -h
+          docker images
+
+      - name: docker manifest
+        run: |
+          docker images
+          
+          docker manifest create ${{ matrix.image.tag }} ${{ matrix.image.tag }}-arm64 ${{ matrix.image.tag }}-amd64
+          docker manifest create ${{ matrix.image.tag_latest }} ${{ matrix.image.tag_latest }}-arm64 ${{ matrix.image.tag_latest }}-amd64
+          
+          docker manifest inspect ${{ matrix.image.tag }}
+          docker manifest inspect ${{ matrix.image.tag_latest }}
+          
+          docker manifest push ${{ matrix.image.tag }}
+          docker manifest push ${{ matrix.image.tag_latest }}
+
+      - name: Check disk space
+        run: df -h
+
+      # - name: docker image
+      #   run: |
+      #     docker images
+      #     docker pull --platform linux/arm64 python:3.9-slim-bookworm
+      #     docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
+      #     docker rmi python:3.9-slim-bookworm
+      #     docker push ghcr.io/lightislost/python:3.9-slim-bookworm-arm64
+      #     docker images 
+
+      # - name: docker image
+      #   run: |
+      #     docker images
+      #     docker pull --platform linux/amd64 python:3.9-slim-bookworm
+      #     docker tag python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker rmi python:3.9-slim-bookworm
+      #     docker push ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker images
+      #     docker manifest create ghcr.io/lightislost/python:3.9-slim-bookworm ghcr.io/lightislost/python:3.9-slim-bookworm-arm64 ghcr.io/lightislost/python:3.9-slim-bookworm-amd64
+      #     docker manifest inspect ghcr.io/lightislost/python:3.9-slim-bookworm
+
+      # - name: Build and push adm64
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ${{ matrix.image.context }}
+      #     file: ${{ matrix.image.dockerfile }}
+      #     push: true
+      #     tags: ${{ matrix.image.tag }}-amd64
+      #     platforms: linux/amd64
