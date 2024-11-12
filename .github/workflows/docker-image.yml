@@ -96,8 +96,7 @@ jobs:
 
       - name: docker image
         run: |
-          docker images
-          docker rmi ${{ matrix.image.tag }}-amd64
+          df -h
           docker images
 
       # - name: Build and push amr64
@@ -134,8 +133,7 @@ jobs:
 
       - name: docker image
         run: |
-          docker images
-          docker rmi ${{ matrix.image.tag }}-arm64
+          df -h
           docker images
 
       - name: docker image
