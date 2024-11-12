@@ -10,7 +10,10 @@ jobs:
       matrix:
         architecture: [amd64, arm64]
         os: [linux]
-        service: [runtime:0.1.0, ekgservice:0.1.0, ekgfrontend:0.1.0]
+        service:
+          - name: runtime:0.1.0
+          - name: ekgservice:0.1.0
+          - name: ekgfrontend:0.1.0
 
     steps:
       - name: Checkout code
@@ -28,6 +31,6 @@ jobs:
           docker login --username=${{ secrets.ALIYUN_USERNAME }} --password=${{ secrets.ALIYUN_PASSWORD }} registry.cn-hangzhou.aliyuncs.com
 
           # 使用Dockerfile构建镜像
-          docker pull --platform ${{ matrix.os }}/${{ matrix.architecture }}  ghcr.io/codefuse-ai/${{ matrix.service }}
-          docker tag ghcr.io/codefuse-ai/${{ matrix.service }} registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}
-          docker push registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service }}-${{ matrix.architecture }}
+          docker pull --platform ${{ matrix.os }}/${{ matrix.architecture }}  ghcr.io/codefuse-ai/${{ matrix.service.name }}
+          docker tag ghcr.io/codefuse-ai/${{ matrix.service.name }} registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service.name }}-${{ matrix.architecture }}
+          docker push registry.cn-hangzhou.aliyuncs.com/muagent/${{ matrix.service.name }}-${{ matrix.architecture }}
