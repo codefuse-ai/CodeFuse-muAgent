@@ -14,24 +14,28 @@
     <br><br>
 </p>
 
-
-
 ## 🔔 News
+
 - [2024.10.28] The release of muAgent V2.1, which offers one-click deployment capabilities, including KG-based agent orchestration, Java-based tool and agent registration and management, as well as a user-friendly drag-and-drop front-end product UI.
 - [2024.09.05] we release muAgent v2.0: An Innovative Agent Framework Driven By KG Engine.
 - [2024.04.01] muAgent is now open source, focusing on multi-agent orchestration and collaborating with technologies such as FunctionCall, RAG, and CodeInterpreter.
 
-
 ## 📜 Contents
-- [🤝 Introduction](#-Introduction)
-- [🚀 QuickStart](#-QuickStart)
-- [🧭 Features](#-Features)
-- [🤗 Contribution](#-Contribution)
-- [🗂 Miscellaneous](#-Miscellaneous)
-  - [📱 Contact Us](#-Contact-Us)
 
+- [muAgent: An Innovative Agent Framework Driven by KG Engine](#muagent-an-innovative-agent-framework-driven-by-kg-engine)
+  - [🔔 News](#-news)
+  - [📜 Contents](#-contents)
+  - [🤝 Introduction](#-introduction)
+  - [🚀 QuickStart](#-quickstart)
+    - [EKG Services](#ekg-services)
+    - [SDK](#sdk)
+  - [🧭 Features](#-features)
+  - [🤗 Contribution](#-contribution)
+  - [🗂 Miscellaneous](#-miscellaneous)
+    - [📱 Contact Us](#-contact-us)
 
 ## 🤝 Introduction
+
 <p align="justify">
 A brand new Agent Framework driven by LLM and EKG(Eventic Knowledge Graph,  Industry Knowledge Carrier)，collaboratively utilizing MultiAgent, FunctionCall, CodeInterpreter, etc. Through canvas-based drag-and-drop and simple text writing, the large language model can assists you in executing various complex SOP under human guidance. It is compatbile with existing frameworks on the market and can achieve four core differentiating technical functions: Complex Reasoning, Online Collaboration, Human Interaction, Knowledge On-demand.
 This framework has been validated in multiple complex DevOps scenarios within Ant Group. At the sametime, come and experience the Undercover game we quickly built!
@@ -41,9 +45,9 @@ This framework has been validated in multiple complex DevOps scenarios within An
 </div>
 
 ## 🚀 QuickStart
-For complete documentation, see: [CodeFuse-muAgent](https://codefuse.ai/docs/api-docs/MuAgent/overview/multi-agent)
-For more [demos](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_examples)
 
+For complete documentation, see: [CodeFuse-muAgent](https://codefuse.ai/docs/api-docs/MuAgent/overview/multi-agent).
+For more examples, see [demos](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_examples).
 
 ### EKG Services
 
@@ -60,32 +64,31 @@ docker network create ekg-net
 
 # step4. start all container services, it might cost some time
 # after starting all services, open https://localhost:8000
-docker-compose up -d
+docker compose up -d
 ```
 
-https://github.com/user-attachments/assets/7d5251a0-2864-438c-8897-b0445f0b1c30
+<https://github.com/user-attachments/assets/7d5251a0-2864-438c-8897-b0445f0b1c30>
 
-https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88
+<https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88>
 
 Now is beta version. Once the v1.0+ version is enhanced, we will release v1.0+ image for download.
 
 To Be Continued!
 
+### SDK
 
-
-### SDK 
 We also provide a version of the SDK for using muagent.
+
 1. Installation
-```
-pip install codefuse-muagent
-```
 
-2. Code answer Prepare related llm and embedding model configurations
-you can see [docs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_examples) and [~/examples](https://github.com/codefuse-ai/CodeFuse-muAgent/tree/main/examples)
+    ```bash
+    pip install codefuse-muagent
+    ```
 
-
+2. For Code answer Prepare related llm and embedding model configurations, see [ocs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_examples) and [examples](https://github.com/codefuse-ai/CodeFuse-muAgent/tree/main/examples).
 
 ## 🧭 Features
+
 - **EKG Builder**：Through the design of virtual teams, scene intentions, and semantic nodes, you can experience the differences between online and local documentation, or annotated versus unannotated code handover. For a vast amount of existing documents (text, diagrams, etc.), we support intelligent parsing, which is available for one-click import.
 - **EKG Assets**：Through comprehensive KG Schema design—including Intention Nodes, Workflow Nodes, Tool Nodes, and Character Nodes—we can meet various SOP Automation requirements. The inclusion of Tool Nodes in the KG enhances the accuracy of tool selection and parameter filling. Additionally, the incorporation of Characters (whether human or agents) in the KG allows for human-involved process advancement, making it flexible for use in multiplayer text-based games.
 - **EKG Reasoning**：Compared to purely model-based or entirely fix-flow Reasoning, our framework allows LLM to operate under human guidance-flexibility, control, and enabling exploration in unknown scenarios. Additionally, successful exploration experiences can be summarized and documented into KG, minimizing detours for similar issues.
@@ -94,15 +97,17 @@ you can see [docs](https://codefuse.ai/docs/api-docs/MuAgent/connector/customed_
 - **ActionSpace**：Adhering to Swagger protocol, we provide tool registration, tool categorization, and permission management, facilitating LLM Function Calling. We offer a secure and trustworthy code execution environment, and ensuring precise code generation to meet the demands of various scenarios, including visual plot, numerical calculations, and table editing.
 
 ## 🤗 Contribution
+
 Thank you for your interest in the muAgent project! We genuinely appreciate your feedback and invite you to share your suggestions, insights (including constructive criticism), and contributions.
 
 To facilitate this process, we encourage you to submit your feedback directly through GitHub Issues. There are numerous ways to engage with and contribute to the muAgent project, including code implementation, test development, documentation enhancements, and more.
 
 We welcome all forms of contributions and look forward to recognizing your efforts by adding you to our list of contributors. For more details, please refer to our [Contribution Guide](https://codefuse-ai.github.io/contribution/contribution).
 
-
 ## 🗂 Miscellaneous
+
 ### 📱 Contact Us
+
 <div align=center>
   <img src="docs/resources/wechat.png" alt="图片", width="180">
 </div>
