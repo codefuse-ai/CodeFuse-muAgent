@@ -93,7 +93,7 @@ jobs:
             echo "Build failed after $max_retries attempts."
             exit 1
           fi
-          3
+
       - name: docker image
         run: |
           docker images
