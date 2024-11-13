@@ -25,6 +25,8 @@ public class SubmitTaskRequest {
 
     private String memory;
 
+    private boolean ekgRequest;
+
     /**
      * the range of tools needed to execute
      */
