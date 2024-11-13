@@ -21,6 +21,7 @@ class MatchRule:
 
         return max([-Levenshtein.distance(x, s) for x in desc_list])
     
+    
     @classmethod
     def edit_distance_integer(cls, node: GNode, **kwargs):
         return cls.edit_distance(node, pattern='\d+', **kwargs)
