@@ -5,6 +5,7 @@ import json
 
 from muagent.schemas.ekg.ekg_graph import TYPE2SCHEMA
 from muagent.schemas.common import GNode, GEdge
+from muagent.service.utils import decode_biznodes, encode_biznodes
 
 
 import math
@@ -234,7 +235,8 @@ def autofill_nodes(nodes: List[GNode]):
 
 
 def add_nodes(ekg_service, nodes: list[GNode]):
-    newnodes = autofill_nodes(nodes)
+    # newnodes = autofill_nodes(nodes)
+    newnodes, newedges = decode_biznodes(nodes)
     logger.info('尝试查插入节点')
     for one_node  in newnodes:   
         one_node.attributes['description']  = one_node.attributes['description']
@@ -250,8 +252,9 @@ def add_nodes(ekg_service, nodes: list[GNode]):
             one_node.attributes['enable'] = True
 
         ekg_service.add_nodes([one_node], teamid=teamid)
-        # ekg_service.gb.add_node(one_node)
     
+    # add task-tool edge or task-agent edge
+    add_edges(ekg_service, newedges)
 
 def add_edges(ekg_service, edges):
 
