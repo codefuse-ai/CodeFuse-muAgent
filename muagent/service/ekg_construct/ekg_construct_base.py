@@ -922,6 +922,11 @@ class EKGConstructService:
                 node.id, node.type, f"ekg_team_{teamid}"
             ).paths) > 0
         ]
+        # 
+        nodes = [
+            node for node in nodes
+            if node.type not in ["opsgptkg_tool", "opsgptkg_agent"]
+        ]
         return nodes
 
     def search_rootpath_by_nodeid(

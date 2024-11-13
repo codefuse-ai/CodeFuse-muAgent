@@ -11,6 +11,7 @@ import os
 from muagent.service.ekg_construct.ekg_construct_base import EKGConstructService
 from muagent.schemas.apis.ekg_api_schema import *
 from muagent.schemas.ekg import *
+from muagent.service.utils import decode_biznodes, encode_biznodes
 from muagent.service.ekg_reasoning.src.graph_search.graph_search_main import main
 
 
@@ -221,15 +222,20 @@ def init_app(
         origin_edges = request.features.query.get('originEdges', [])
         edges = request.features.query.get('edges', [])
 
-        # 构建 nodeid 到 type 的字典，方便后续查找
-        nodeid2type_dict = {n["id"]: n["type"] for n in origin_nodes + nodes}
-
         # 将 origin_nodes 和 nodes 转换为 GNode 对象
         origin_nodes = [GNode(**n) for n in origin_nodes]
-        origin_nodes = autofill_nodes(origin_nodes)
+        # origin_nodes = autofill_nodes(origin_nodes)
+        origin_nodes, origin_new_edges = decode_biznodes(origin_nodes)
         nodes = [GNode(**n) for n in nodes]
-        nodes = autofill_nodes(nodes)
+        # nodes = autofill_nodes(nodes)
+        nodes, new_edges = decode_biznodes(nodes)
+
+        origin_edges.extend([e.dict() for e in origin_new_edges])
+        edges.extend([e.dict() for e in new_edges])
                                       
+        # 构建 nodeid 到 type 的字典，方便后续查找
+        nodeid2type_dict = {n.id: n.type for n in origin_nodes + nodes}
+
         # 处理 origin_edges，给每个 edge 设置 type 字段
         origin_edges = [
             GEdge(
@@ -293,7 +299,7 @@ def init_app(
             node = ekg_construct_service.get_node_by_id(
                 query.nodeid, query.nodeType
             )
-            # node = node.dict()
+            # might lost agents and tools
         except Exception as e:
             errorMessage = str(e)
             successCode = False
@@ -325,10 +331,11 @@ def init_app(
                 )
             nodes = graph.nodes
             edges = graph.edges
+            nodes, edges = encode_biznodes(nodes, edges)
         except Exception as e:
             errorMessage = str(e)
             successCode = False
-            nodes, edges = {}, {}
+            nodes, edges = [], []
             
         result = EKGGraphResponse(
             successCode=successCode, errorMessage=errorMessage,
@@ -377,14 +384,13 @@ def init_app(
                 nodeid=query.nodeid, node_type=query.nodeType, 
                 rootid=query.rootid
             )
-            # nodes = graph.nodes.dict()
-            # edges = graph.edges.dict()
             nodes = graph.nodes
             edges = graph.edges
+            nodes, edges = encode_biznodes(nodes, edges)
         except Exception as e:
             errorMessage = str(e)
             successCode = False
-            nodes, edges = {}, {}
+            nodes, edges = [], []
             
             
         result = EKGGraphResponse(
