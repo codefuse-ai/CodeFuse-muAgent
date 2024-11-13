@@ -861,7 +861,7 @@ class TbaseMemoryManager(BaseMemoryManager):
     
 
     def init_global_msg(self, chat_index: str, role_name: str, role_content: str, role_type: str = "global_value") -> bool:
-        msg = Message(chat_index=chat_index, role_name=role_name, role_type=role_type, role_content=role_content)
+        msg = Message(chat_index=chat_index, message_index = role_name ,role_name=role_name, role_type=role_type, role_content=role_content)
         try:
             self.append(msg)
             return True  
@@ -889,7 +889,7 @@ class TbaseMemoryManager(BaseMemoryManager):
         if message == None:
             return False 
 
-        prompt = f"{new_content}{message.role_content}{update_rule}"
+        prompt = f"{new_content}\n{role_name}:{message.role_content}\n{update_rule}"
 
         model = getChatModelFromConfig(self.llm_config)
 
@@ -897,6 +897,7 @@ class TbaseMemoryManager(BaseMemoryManager):
 
         if new_role_content is not None:
             message.role_content = new_role_content  
+            self.append(message)
             return True
         else:
             return False
