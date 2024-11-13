@@ -185,6 +185,12 @@ class EKGToolSchema(NodeSchema):
 class EKGAgentSchema(NodeSchema):
     modelname: str = Field("", description='llm model name')
 
+
+class EKGTaskBizNodeSchema(EKGTaskNodeSchema):
+    tools: List['EKGToolSchema'] = []
+    agents: List['EKGAgentSchema'] = []
+
+
 # SLS / Tbase 
 class EKGGraphSlsSchema(BaseModel):
     # node_{NodeTypesEnum}
@@ -254,6 +260,8 @@ TYPE2SCHEMA = {
     NodeTypesEnum.EDGE.value: EKGEdgeSchema
 }
 
+TYPE2SCHEMA_BIZ = copy.deepcopy(TYPE2SCHEMA)
+TYPE2SCHEMA_BIZ[NodeTypesEnum.TASK.value] = EKGTaskBizNodeSchema
 
 #####################
 ##### yuque dsl #####
