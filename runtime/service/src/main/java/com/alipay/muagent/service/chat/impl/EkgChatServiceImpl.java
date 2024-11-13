@@ -54,10 +54,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildHangang;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildHezixuan;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildLiangjun;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildLijing;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildReferee;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildShenqiang;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildWangpeng;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhangwei;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhoujie;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhouxinyi;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhuli;
 import static com.alipay.muagent.model.enums.chat.ChatExtendedKeyEnum.CHAT_UNIQUE_ID;
 import static com.alipay.muagent.model.enums.chat.ChatExtendedKeyEnum.EKG_NODE;
 
@@ -232,6 +239,20 @@ public class EkgChatServiceImpl implements ChatService {
             return buildLijing(userInteraction.replace("**李静:** <br>", ""));
         } else if (userInteraction.contains("**张伟:**")) {
             return buildZhangwei(userInteraction.replace("**张伟:** <br>", ""));
+        } else if (userInteraction.contains("**朱丽:**")) {
+            return buildZhuli(userInteraction.replace("**朱丽:** <br>", ""));
+        } else if (userInteraction.contains("**周杰:**")) {
+            return buildZhoujie(userInteraction.replace("**周杰:** <br>", ""));
+        } else if (userInteraction.contains("**沈强:**")) {
+            return buildShenqiang(userInteraction.replace("**沈强:** <br>", ""));
+        } else if (userInteraction.contains("**韩刚:**")) {
+            return buildHangang(userInteraction.replace("**韩刚:** <br>", ""));
+        } else if (userInteraction.contains("**梁军:**")) {
+            return buildLiangjun(userInteraction.replace("**梁军:** <br>", ""));
+        } else if (userInteraction.contains("**周欣怡:**")) {
+            return buildZhouxinyi(userInteraction.replace("**周欣怡:** <br>", ""));
+        } else if (userInteraction.contains("**贺子轩:**")) {
+            return buildHezixuan(userInteraction.replace("**贺子轩:** <br>", ""));
         }
 
         return buildReferee(userInteraction);
