@@ -118,7 +118,7 @@ public class EkgChatServiceImpl implements ChatService {
             ekgRequest.setIntentionRule(Lists.newArrayList("nlp"));
             ekgRequest.setScene("NEXA");
 
-            ekgHandler(emitter, ekgRequest, "stepNodeId:1");
+            ekgHandler(emitter, ekgRequest, "1");
         } catch (Exception e) {
             LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}]", request.getChatUniqueId());
         }
