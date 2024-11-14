@@ -92,6 +92,7 @@ class NebulaHandler:
             if ignore_log == False:
                 if resp.is_succeeded():
                     #logger.info(f"Successfully executed Cypher query: {cypher}")
+                    
                     pass
                     
                 else:
@@ -291,9 +292,10 @@ class NebulaHandler:
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
                     cypher += f'"{value}",'
                 elif prop_name == 'description':
-                    # 特殊符号需要手动加\转义符
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    # logger.info(value)
+                    cypher += f'"{value}",'
+                elif prop_name == 'envdescription':
+                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
                     cypher += f'"{value}",'
                 else:
                     cypher += f'"{value}",'
