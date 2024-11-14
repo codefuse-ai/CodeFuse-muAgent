@@ -31,7 +31,7 @@ ALIYUN_PASSWWORD={配置访问凭证}
 # 示例，仅支持ekgfrontend、runtime、ekgservice；其他镜像根据需求对docker-image-pull进行修改
 
 # 登录阿里云镜像库
-docker login --username=dingtalk_rgfdbw registry.cn-hangzhou.aliyuncs.com
+docker login --username=xxx registry.cn-hangzhou.aliyuncs.com
 
 # 拉取amd版本的runtime
 docker pull registry.cn-hangzhou.aliyuncs.com/muagent/runtime:0.1.0-amd64
