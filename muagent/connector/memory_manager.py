@@ -870,7 +870,8 @@ class TbaseMemoryManager(BaseMemoryManager):
             return False
     
     def get_msg_by_role_name(self, chat_index: str, role_name: str) -> Optional[Message]:
-        memory = self.get_memory_pool(chat_index)
+        memory = self.get_memory_pool_by_all({"chat_index": chat_index, "role_name": role_name})
+        # memory = self.get_memory_pool(chat_index)
         for msg in memory.messages:
             if msg.role_name == role_name:
                 return msg
