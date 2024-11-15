@@ -14,7 +14,7 @@ setup_test.py
 build
 *egg-info
 dist
-.ipynb_checkpoints
+.ipynb_checkpoints 
 zdatafront*
 *antgroup*
 *ipynb
