@@ -5,6 +5,7 @@ import sys
 #路径增加
 import sys
 import os
+from typing import Union, Optional
 src_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
@@ -532,6 +533,189 @@ class memory_handler_ekg():
         role_content_nodeinfo['section'] = len(memory_save_info_list)  
         self.nodecount_set( sessionId, currentNodeId, role_content_nodeinfo)
 
+    def message_get(self, sessionId:str, NodeId:str, hashpostfix:str,
+                    role_name:str,role_type:str )-> Union[str, list]: 
+        '''
+        得到信息, 作为一个通用函数。如果没有检索到信息，则返回空的list[], 如果检索到了信息，则返回‘’
+        注意对hashpostfix_chapter进行了特殊处理
+        '''
+        node_count_res = self.nodecount_get( sessionId, nodeId)
+        if node_count_res == []:
+            chapter = 1
+        else:
+            chapter = json.loads(node_count_res[0].role_content)['chapter'] 
+        
+        #hashpostfix = '_plan'
+        hashpostfix_chapter = f'_chapter{chapter}' 
+        hashpostfix_all = hashpostfix_chapter + hashpostfix
+        #print(nodeId, sessionId, hashpostfix_all)
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                    #    "chat_index": sessionId, 
+                                                       "message_index" : hash_id(nodeId, sessionId, hashpostfix_all),
+                                                       "role_name" : role_name,#'plan',
+                                                       "role_type" : role_type#"DM"
+                                                      })
+        get_messages_res = memory_manager_res.get_messages()
+        if len(get_messages_res) == 0:
+            #raise ValueError("执行memory查询没有找到")
+            logging.info( "执行memory查询没有找到" )
+            return []
+            
+        return get_messages_res[0].role_content
+
+    def message_save(self, sessionId:str, nodeId:str, role_content:str,
+                     hashpostfix:str, user_name:str, role_name:str, role_type:str)->None:
+         '''
+         将message 存下来，作为一个通用函数
+         注意对hashpostfix_chapter进行了特殊处理
+         
+         for example
+             #hashpostfix = '_plan'
+             #user_name = currentNodeId
+             #role_name = 'plan'
+             #role_type = "DM"
+
+         '''
+     
+
+
+         node_count_res = self.nodecount_get( sessionId, nodeId)
+         if node_count_res == []:
+             chapter = 1
+         else:
+             chapter = json.loads(node_count_res[0].role_content)['chapter']  
+         
+         hashpostfix_chapter = f'_chapter{chapter}' 
+         hashpostfix_all = hashpostfix_chapter + hashpostfix
+         message = Message(
+             chat_index= sessionId,  
+             message_index=  hash_id(nodeId, sessionId, hashpostfix_all),  
+             user_name = hash_id(user_name),
+             role_name = role_name, 
+             role_type = role_type, 
+             role_content = role_content, 
+             
+         )
+         
+         self.memory_manager.append(message)
+
+
+
+    def processed_agentname_get(self, sessionId:str, nodeId:str)-> Union[str, list]:
+        '''
+            得到已经处理的agentname
+        '''
+
+
+        hashpostfix = '_processedAgentName'
+        role_name = 'PAN'   #processedAgentName
+        role_type = "DM"
+    
+        return self.message_get( sessionId ,nodeId ,hashpostfix,
+                        role_name,role_type )
+    
+    def processed_agentname_save(self, sessionId:str, nodeId:str, agentName:str)->None:
+        '''
+        将这次执行完的（lingsi返回的）agentname，存下来，以一个list的格式
+        '''
+        
+        processed_agentname_list = json.loads(self.processed_agentname_get(sessionId, nodeId)   )
+        processed_agentname_list.append(agentName)
+        processed_agentname_list_str = json.dumps(processed_agentname_list, ensure_ascii=False)
+        
+        
+        hashpostfix = '_processedAgentName'
+        user_name = nodeId
+        role_name = 'PAN'
+        role_type = "DM"
+        
+        return self.message_save( sessionId, nodeId, processed_agentname_list_str,
+                     hashpostfix, user_name, role_name, role_type)
+
+        
+
+    def current_plan_save(self, sessionId:str, currentNodeId:str, role_content:str)->None:
+            '''
+            将current_plan 存下来
+            
+            Parameters
+            ----------
+            sessionId : str
+                DESCRIPTION.
+            currentNodeId : str
+                DESCRIPTION.
+            role_content : str
+                DESCRIPTION.
+    
+            Returns
+            -------
+            None
+                DESCRIPTION.
+    
+            '''
+        
+            hashpostfix = '_plan'
+            user_name = currentNodeId
+            role_name = 'plan'
+            role_type = "DM"
+
+            node_count_res = self.nodecount_get( sessionId, currentNodeId)
+            if node_count_res == []:
+                chapter = 1
+            else:
+                chapter = json.loads(node_count_res[0].role_content)['chapter']  
+            
+            hashpostfix_all = f'_chapter{chapter}' + hashpostfix
+            message = Message(
+                chat_index= sessionId,  
+                message_index=  hash_id(currentNodeId, sessionId, hashpostfix_all),  
+                user_name = hash_id(user_name),
+                role_name = role_name, 
+                role_type = role_type, 
+                role_content = role_content, 
+                
+            )
+            
+            self.memory_manager.append(message)
+
+    def current_plan_get(self, sessionId:str, currentNodeId:str)-> str: 
+            '''
+        
+            得到当前的current_plan
+            Parameters
+            ----------
+            sessionId : str
+                DESCRIPTION.
+            currentNodeId : str
+                DESCRIPTION.
+    
+            Returns
+            -------
+            str
+                DESCRIPTION.
+    
+            '''
+            node_count_res = self.nodecount_get( sessionId, currentNodeId)
+            if node_count_res == []:
+                chapter = 1
+            else:
+                chapter = json.loads(node_count_res[0].role_content)['chapter'] 
+            
+            hashpostfix = '_plan'
+            hashpostfix_all = f'_chapter{chapter}' + hashpostfix
+            print(currentNodeId, sessionId, hashpostfix_all)
+            memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                        #    "chat_index": sessionId, 
+                                                           "message_index" : hash_id(currentNodeId, sessionId, hashpostfix_all),
+                                                           "role_name" : 'plan',
+                                                           "role_type" : "DM"
+                                                          })
+            get_messages_res = memory_manager_res.get_messages()
+            return get_messages_res[0].role_content
+
+
+
+            
     def react_current_history_save(self, sessionId, currentNodeId, role_content):
             hashpostfix = '_his'
             user_name = currentNodeId

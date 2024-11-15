@@ -65,7 +65,7 @@ class qa_class():
         resstr = self.geabase_nodediffusion_qa()
         print(resstr)
         print(f'full_link_summary prompt的长度为 {len(resstr)}')
-        resstr_llm_summary = call_llm(input_content = resstr, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        resstr_llm_summary = call_llm(input_content = resstr, llm_model = None,llm_config=self.llm_config)
 
         visualization_url = self.get_visualization_url()
 
@@ -96,7 +96,7 @@ class qa_class():
         print(prompt)
         print(f'prompt的长度为 {len(prompt)}')
 
-        res = call_llm(input_content = prompt, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        res = call_llm(input_content = prompt, llm_model = None, llm_config=self.llm_config)
         
         return res
 
@@ -122,7 +122,7 @@ class qa_class():
         '''
         print(prompt)
         print(f'prompt的长度为 {len(prompt)}')
-        res = call_llm(input_content = prompt, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        res = call_llm(input_content = prompt, llm_model = None,llm_config=self.llm_config)
         # res = robust_call_llm(prompt)
         return res
 

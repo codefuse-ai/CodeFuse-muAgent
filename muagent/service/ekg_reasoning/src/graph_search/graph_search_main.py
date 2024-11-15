@@ -44,6 +44,9 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.schemas.db import GBConfig
 from muagent.service.ekg_construct import EKGConstructService
 from muagent.service.ekg_inference import IntentionRouter
+from muagent.schemas.ekg.ekg_reason import LingSiResponse
+
+
 
 #内部其他函数
 from src.utils.call_llm import call_llm,  extract_final_result
@@ -69,7 +72,7 @@ class graph_search_process():
     '''
         图谱推理主流程class
     '''
-    def __init__(self, geabase_handler, memory_manager,  intention_router, scene , sessionId, currentNodeId, 
+    def __init__(self, geabase_handler, memory_manager,  intention_router, lingsi_response, scene , sessionId, currentNodeId, 
                 observation, userAnswer, inputType, startRootNodeId, intentionRule, intentionData,
                 startFromRoot = True,
                 index_name = 'ekg_migration_new', unique_name="EKG",
@@ -77,6 +80,7 @@ class graph_search_process():
                 ):
         self.memory_manager =  memory_manager #memory_init(index_name = 'ekg_migration', unique_name="EKG")
 
+        self.lingsi_response = lingsi_response
         self.scene = scene
         self.sessionId = sessionId
         self.currentNodeId = currentNodeId
@@ -407,6 +411,49 @@ class graph_search_process():
                     return False
         return True #所有task节点都有observation，则需要summary
 
+
+    def initialize_replacements(self, nodeId: str, nodeType: str) -> bool:
+        """
+        初始化变量，调用self.memory_manager.init_global_msg实现
+        """
+        # nodeId, nodeType = "剧本杀/谁是卧底/智能交互", "opsgptkg_schedule"
+        #cur_node = self.geabase_handler.get_current_node(attributes={"id": nodeId}, node_type=nodeType)
+        #cur_node_envdescription = json.loads(cur_node.attributes['envdescription'])
+        
+        try:
+            node_envdescription = self.gb_handler.get_tag(rootNodeId = nodeId, rootNodeType = nodeType, key = 'envdescription')
+            cur_node_envdescription = json.loads(node_envdescription)
+        except Exception as e:
+            logging.info(f"发生了一个错误：{e}")
+            logging.info(f"变量初始化失败，略过")
+            logging.info(f"node_envdescription：{node_envdescription}")
+            return False
+            
+            #raise ValueError(f"node_envdescription is {node_envdescription}")
+            
+        
+        # cur_node_envdescription = json.loads('{"witch_poision": "当前女巫的毒药个数为1"}')
+
+        try:
+            node_envdescription = self.gb_handler.get_tag(rootNodeId = nodeId, rootNodeType = nodeType, key = 'envdescription')
+            cur_node_envdescription = json.loads(node_envdescription)
+        except Exception as e:
+            logging.info(f"发生了一个错误：{e}")
+            logging.info(f"输入不是json格式或者为空，变量初始化失败，略过")
+            logging.info(f"node_envdescription: {node_envdescription}")
+            return False
+
+        
+        init_flag = False
+        try:
+            for role_name, role_content in cur_node_envdescription.items():
+                if role_name and role_content:
+                    init_flag = self.memory_manager.init_global_msg(self.sessionId, role_name, role_content)
+        except Exception as e:
+            logging.info(f"变量初始化错误！{e}")
+        return init_flag
+
+
     def first_user_memory_write(self):
         #如果当前是第一次输入，memory如何填写
 
@@ -429,12 +476,25 @@ class graph_search_process():
 
         nodeid_in_subtree, _ = self.gb_handler.geabase_search_return_all_nodeandedge(  last_intention_nodeid,  'opsgptkg_intent')
         logging.info(f'整条链路上的节点个数是 len(nodeid_in_subtree) is {len(nodeid_in_subtree)}')
-        nodeid_in_subtree_str = json.dumps(nodeid_in_subtree, ensure_ascii=False)
+        logging.info(f'整条连路上的节点信息是：{nodeid_in_subtree}')
+        
+        nodeid_in_subtree_list = self.gb_handler.geabase_search_reture_nodeslist(  last_intention_nodeid,  'opsgptkg_intent')
+        nodeid_in_subtree_list_str = json.dumps(nodeid_in_subtree_list, ensure_ascii=False)
+        # 获取 `nodeType` 为 `opsgptkg_schedule` 的 `nodeId`
+        try:
+            nodeId = [item['nodeId'] for item in nodeid_in_subtree if item['nodeType'] == 'opsgptkg_schedule'][0]
+        except Exception as e:
+            logging.info("不存在opsgptkg_schedule节点")
+        init_flag = self.initialize_replacements(nodeId, nodeType='opsgptkg_schedule')
+        if init_flag:
+            logging.info('变量初始化完成！')
+        else:
+            logging.info('变量初始化失败！')
         # logging.info(f'=============================================')
         # logging.info(f'nodeid_in_subtree_str {nodeid_in_subtree_str}')
         # logging.info(f'=============================================')
 
-        self.memory_handler.nodeid_in_subtree_save( self.sessionId, last_intention_nodeid, nodeid_in_subtree_str)
+        self.memory_handler.nodeid_in_subtree_save( self.sessionId, last_intention_nodeid, nodeid_in_subtree_list_str)
 
 
         logging.info('first_user_memory_write over')
@@ -502,8 +562,10 @@ class graph_search_process():
     def get_summary(self):
         #后续待优化，当前只输出所有激活的summary节点
         summary_list = [] 
-        nodeid_in_subtree_memory    = self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
-        nodeid_in_subtree           = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        #nodeid_in_subtree_memory    = self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+        #nodeid_in_subtree           = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        
+        nodeid_in_subtree = self.get_nodeid_in_subtree(self.sessionId, self.currentNodeId)
         for i in range(len(nodeid_in_subtree)):
             if nodeid_in_subtree[i]['nodeType'] == 'opsgptkg_analysis':  #从nodeid_in_subtree中找到analysis的节点
                 nodeId = nodeid_in_subtree[i]['nodeId']
@@ -555,17 +617,30 @@ class graph_search_process():
 
         return summary_str
 
-    def get_nodeid_in_subtree(self):
-        logging.info(f'self.sessionId is {self.sessionId}')
+    def get_nodeid_in_subtree(self, sessionId, nodeId):
+        logging.info(f' sessionId is {self.sessionId},  nodeId is {nodeId}')
+        
+        if nodeId == None:
+            logging.info(f' nodeId == None, 为第一次输入，调用 geabase_search_return_all_nodeandedge  取 nodeid_in_subtree的值' )
+            nodeid_in_subtree, _ = self.gb_handler.geabase_search_return_all_nodeandedge(  last_intention_nodeid,  'opsgptkg_intent')
+            return nodeid_in_subtree
+        
+
         # nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
-        nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+        nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": sessionId, "role_type": "nodeid_in_subtree"})
 
         
         logging.info(f'nodeid_in_subtree_memory is {nodeid_in_subtree_memory}')
 
-        nodeid_in_subtree = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
-        # logging.info(f'nodeid_in_subtree is {nodeid_in_subtree}')
-        return nodeid_in_subtree, nodeid_in_subtree_memory
+        nodeid_in_subtree_list = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        if len(nodeid_in_subtree_list) == 0:
+            return nodeid_in_subtree_list[0]
+        for nodeid_in_subtree in nodeid_in_subtree_list:
+            for one_node_info in nodeid_in_subtree:
+                if one_node_info['nodeId'] == nodeId:
+                    return nodeid_in_subtree
+                    
+        raise ValueError('len(nodeid_in_subtree_list)>0 但是当前节点不在nodeid_in_subtree_list 中')
     
     def qaProcess(self, nodeid_in_subtree):
         '''
@@ -734,7 +809,7 @@ class graph_search_process():
 
         #step4 #get_nodeid_in_subtree
         logging.info('#step4  get_nodeid_in_subtree')
-        nodeid_in_subtree, nodeid_in_subtree_memory = self.get_nodeid_in_subtree()
+        nodeid_in_subtree = self.get_nodeid_in_subtree(self.sessionId, self.currentNodeId)
         self.nodeid_in_subtree = nodeid_in_subtree
         logging.info('#step4  get_nodeid_in_subtree')
 
@@ -783,7 +858,7 @@ class graph_search_process():
                 
             logging.info(f'图谱扩散的输入 self.sessionId {self.sessionId}; currentNodeId {currentNodeId}; start_nodetype {start_nodetype}')
             tool_plan, tool_plan_3 = self.gst.geabase_nodediffusion_plus(self.sessionId, 
-currentNodeId,  start_nodetype, agent_respond  )
+currentNodeId,  start_nodetype, agent_respond  , self.lingsi_response)
             self.tool_plan = tool_plan
             self.tool_plan_3 = tool_plan_3
             logging.info(f'step 8 图谱扩散 over')
@@ -813,12 +888,20 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         params      = params_string
         if type(params) == str:
             params = json.loads(params)
+        logging.info(f'=======开始新一轮输入=============')
         logging.info(f'params={params}')
+        logging.info(f'llm_config={llm_config}')
 
+        lingsi_response = LingSiResponse(**params)
+        lingsi_response = lingsi_response_process(lingsi_response) # process，currentnodeid 和 agentname都放到currentnodeid里，需要分割开来
+        logging.info(f'lingsi_response is {lingsi_response}')
+        #params = lingsi_response.dict()
+        
 
         scene           = params.get('scene', None)
         sessionId       = params.get('sessionId', None) #
-        currentNodeId   = params.get('currentNodeId', None) #
+        #currentNodeId   = params.get('currentNodeId', None) #
+        currentNodeId   = lingsi_response.currentNodeId
         observation     = params.get('observation', None) #
         userAnswer      = params.get('userAnswer', None) #
         inputType       = params.get('type', None) #
@@ -826,6 +909,9 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         intentionRule   = params.get('intentionRule', None) #
         intentionData   = params.get('intentionData', None) #
         startFromRoot   = params.get('startFromRoot', True) #
+        
+        
+
         
 
 
@@ -912,6 +998,7 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
                 geabase_handler = geabase_handler, 
                 memory_manager=memory_manager, 
                 intention_router = intention_router,
+                lingsi_response = lingsi_response,
                 scene= scene, 
                 sessionId=sessionId, currentNodeId = currentNodeId, 
                 observation = observation, userAnswer = userAnswer, inputType = inputType, 
@@ -928,6 +1015,28 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
 
 
         return res_to_lingsi
+    
+    
+def lingsi_response_process(lingsi_response:LingSiResponse)->LingSiResponse:
+    '''
+        # currentnodeid 和 agentname都放到currentnodeid里，需要分割开来
+        # 是在agentname字段未上线的临时方案
+        # 后续可以去除
+    '''
+    
+    currentNodeId_add_agentName = lingsi_response.currentNodeId
+    if currentNodeId_add_agentName == None:
+        #不做任何处理
+        return lingsi_response
+    elif '%%@@#' not in currentNodeId_add_agentName:
+        #lingsi_response.currentNodeId = lingsi_response.currentNodeId
+        #lingsi_response.agentName = None
+        return lingsi_response
+    else:
+        currentNodeId, agentName = currentNodeId_add_agentName.split('%%@@#')
+        lingsi_response.currentNodeId = currentNodeId
+        lingsi_response.agentName = agentName
+    return lingsi_response
 
 def save_res_to_memory(res_to_lingsi, sessionId, memory_manager):
     '''

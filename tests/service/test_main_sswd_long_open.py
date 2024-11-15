@@ -206,7 +206,7 @@ if __name__ == '__main__':
     
 
 
-    goc_test_sessionId = "TS_GOC_103346456601_0709002_sswd_06"
+    goc_test_sessionId = "TS_GOC_103346456601_0709002_sswd_24"
 
 
     #debugmode 调试，谁是卧底初次输入
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     #step 1  位置选择tool 返回
 
     params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/分配座位',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/分配座位'),
  'sessionId': goc_test_sessionId,
  'type': 'onlyTool',
  'scene': 'UNDERCOVER'}
@@ -235,6 +235,7 @@ if __name__ == '__main__':
         {"player_name": "player_3", "seat_number": 4}
     ]
 }, ensure_ascii=False)
+    
 
     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
     print('res_to_lingsi', res_to_lingsi)
@@ -245,7 +246,7 @@ if __name__ == '__main__':
     #step 2  角色分配和单词分配
 
     params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/角色分配和单词分配',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/角色分配和单词分配'),
  'sessionId': goc_test_sessionId,
  'type': 'onlyTool',
  'scene': 'UNDERCOVER'}
@@ -291,7 +292,7 @@ if __name__ == '__main__':
     #step 4 剧本杀/谁是卧底/智能交互/关键信息_1
     params_string =\
     {'observation': {'toolResponse': 'ok'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/关键信息_1',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_1'),
  'sessionId': goc_test_sessionId,
  'type': 'onlyTool',
  'scene': 'UNDERCOVER'}
@@ -301,7 +302,7 @@ if __name__ == '__main__':
     ## step 4-1 讨论输入 
     params_string =\
     {'observation': {'toolResponse': '我的单词是一个机械'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -311,7 +312,7 @@ if __name__ == '__main__':
     # step 4-2 讨论输入 
     params_string =\
     {'observation': {'toolResponse': '我的单词可以用于交通运输'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -321,7 +322,7 @@ if __name__ == '__main__':
     ## step 4-3 讨论输入 
     params_string =\
     {'observation': {'toolResponse': '我的单词是一种工业品'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -331,7 +332,7 @@ if __name__ == '__main__':
     ## step 4-4 讨论输入 
     params_string =\
     {'observation': {'toolResponse': '我的单词可以载人'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -342,7 +343,7 @@ if __name__ == '__main__':
     #step 4 剧本杀/谁是卧底/智能交互/关键信息_2
     params_string =\
     {'observation': {'toolResponse': 'ok'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/关键信息_2',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_2'),
  'sessionId': goc_test_sessionId,
  'type': 'onlyTool',
  'scene': 'UNDERCOVER'}
@@ -353,7 +354,7 @@ if __name__ == '__main__':
     ## step 5-1 投票 agent 2  player_1  1号座位
     params_string =\
     {'observation': {'toolResponse': '我投player_2'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/票选卧底_1',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -363,7 +364,7 @@ if __name__ == '__main__':
     ## step 5-2 投票 人类agent  李四 2号
     params_string =\
     {'observation': {'toolResponse': '我投player_1'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/票选卧底_1',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -373,7 +374,7 @@ if __name__ == '__main__':
     ## step 5-3 投票    agent3 player_2 3No
     params_string =\
     {'observation': {'toolResponse': '我投player_1'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/票选卧底_1',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -383,7 +384,7 @@ if __name__ == '__main__':
     # step 5-3 投票   agent1 player_3 4号
     params_string =\
     {'observation': {'toolResponse': '我也投play_1'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/票选卧底_1',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
  'sessionId': goc_test_sessionId,
  'type': 'reactExecution',
  'scene': 'UNDERCOVER'}
@@ -393,7 +394,7 @@ if __name__ == '__main__':
     #step 6 剧本杀/谁是卧底/智能交互/关键信息_4
     params_string =\
     {'observation': {'toolResponse': 'ok'},
- 'currentNodeId': '剧本杀/谁是卧底/智能交互/关键信息_4',
+ 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_4'),
  'sessionId': goc_test_sessionId,
  'type': 'onlyTool',
  'scene': 'UNDERCOVER'}

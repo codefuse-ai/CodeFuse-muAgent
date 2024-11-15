@@ -15,6 +15,7 @@ build
 *egg-info
 dist
 .ipynb_checkpoints 
+.spyproject
 zdatafront*
 *antgroup*
 *ipynb

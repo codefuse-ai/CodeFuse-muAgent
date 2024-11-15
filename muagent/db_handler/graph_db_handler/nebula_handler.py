@@ -63,8 +63,8 @@ class NebulaHandler:
             self.nb_pw = '' or 'nebula'
             self.space_name = "client"
         else:
-            logger.info('NebulaGraph容器启动中，等待20秒')
-            time.sleep(20)
+            #logger.info('NebulaGraph容器启动中，等待20秒')
+            #time.sleep(20)
             self.connection_pool.init([(gb_config.extra_kwargs.get("host"), gb_config.extra_kwargs.get("port"))], config)
             self.username = gb_config.extra_kwargs.get("username")
             self.nb_pw = gb_config.extra_kwargs.get("password")

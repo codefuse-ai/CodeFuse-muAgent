@@ -7,6 +7,7 @@ import sys
 #路径增加
 import sys
 import os
+from typing import List, Dict, Optional, Union
 src_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
@@ -63,14 +64,14 @@ class  GB_handler():
         extra = json.loads(extra)
 
         if 'pattern' in extra.keys():
-            if extra['pattern'] == 'one-tool':
+            if extra['pattern'] == 'one-tool' or extra['pattern'] == 'single':
                 return False
-            elif extra['pattern'] == 'react':
+            elif extra['pattern'] == 'react' or extra['pattern'] == 'parallel' or extra['pattern'] == 'plan':
                 return True
             else:
                 return False
         
-        else: #默认为 one-tool
+        else: #默认为 single
             return False
 
 
@@ -95,6 +96,76 @@ class  GB_handler():
             for i in range(len(t.edges)):
                 edge_in_subtree.append({ "startNodeId": t.edges[i].start_id, "endNodeId": t.edges[i].end_id  })
             return nodeid_in_subtree, edge_in_subtree
+        
+    
+    def geabase_search_reture_nodeslist(self, start_nodeid:str,start_nodetype:str, block_search_nodetype:List=[] ):
+        
+        '''
+            #返回start_nodeid后续子树上的所有节点id , start_nodeid 是一个意图节点的末端节点， 可以设置停止探索的类型，比如
+            #block_search_nodetype = ['opsgptkg_schedule', 'opsgptkg_task'] 时，代表这两种类型的节点不往后继续探索
+            #同时返回边
+        
+            不直接使用 get_hop_infos
+            
+            一个意图节点（非叶子意图节点）下可能有多个叶子节点，每个叶子节点也可能有多个意图节点。 在并行的时候，需要将某个意图节点单独成一个 nodeid_in_subtree
+            如果直接调用 geabase_search_return_all_nodeandedge ，会把某个节点下所有的内容全放到一个list里
+        '''
+        
+        nodeid_in_subtree = [{'nodeId':start_nodeid, 'nodeType':start_nodetype, 'nodeDescription':None, 'nodeName':None}]
+        edge_in_subtree   = []
+        nodeid_in_search  = [{'nodeId':start_nodeid, 'nodeType':start_nodetype}]
+        count = 0
+        
+        reslist = []
+        
+        
+        while len(nodeid_in_search)!= 0:
+            # print(f'count is {count}')
+            nodedict_now = nodeid_in_search.pop()
+            nodeid_now      = nodedict_now['nodeId']
+            nodetype_now    = nodedict_now['nodeType']
+        
+            
+            neighborNodes = self.geabase_handler.get_neighbor_nodes(attributes= {"id": nodeid_now,}
+                                   , node_type= nodetype_now )
+        
+            for i in range(len(neighborNodes)):
+        
+                    nodeid_new = neighborNodes[i].id
+                    nodetype_new = neighborNodes[i].type
+                    nodedescription_new = neighborNodes[i].attributes['description']
+                    nodename_new = neighborNodes[i].attributes['name']
+                    if nodetype_new in  block_search_nodetype:  #遇到阻塞的节点类型就终止， 不继续探索，也不纳入到结果中
+                        continue 
+                    if nodetype_new == 'opsgptkg_schedule':
+                        
+                        one_subtree, _ = self.geabase_search_return_all_nodeandedge(start_nodeid = nodeid_new, 
+                                start_nodetype = nodetype_new, block_search_nodetype = [])
+                        
+                        one_subtree.append({'nodeId':nodeid_now, 'nodeType':nodetype_now, 'nodeDescription':None, 'nodeName':None})
+                        reslist.append(one_subtree)
+                    
+                    
+                    if { "startNodeId": nodeid_now, "endNodeId": nodeid_new  } not in edge_in_subtree:#避免重复导入相同的元素
+                        nodeid_in_subtree.append({'nodeId':nodeid_new, 'nodeType':nodetype_new, 
+                                                  'nodeDescription':nodedescription_new, 
+                                                  'nodeName':nodename_new})
+                        edge_in_subtree.append({ "startNodeId": nodeid_now, "endNodeId": nodeid_new  })
+                        nodeid_in_search.append({'nodeId':nodeid_new, 'nodeType':nodetype_new})
+                    else:
+                        continue
+            count = count +1
+        
+        #去重复
+        unique_set = set(tuple(sorted(d.items())) for d in nodeid_in_subtree)
+        # 将去重后的元组转换回字典形式，得到去重后的list
+        nodeid_in_subtree = [dict(t) for t in unique_set]
+        
+        unique_set = set(tuple(sorted(d.items())) for d in edge_in_subtree)
+        # 将去重后的元组转换回字典形式，得到去重后的list
+        edge_in_subtree = [dict(t) for t in unique_set]
+        
+        return reslist
 
     def geabase_search_return_all_nodeandedge(self,  start_nodeid = 'None', 
             start_nodetype = 'opsgptkg_intent', block_search_nodetype = []):
@@ -464,7 +535,10 @@ class  GB_handler():
         else:
             return extra[key]
         
-    def get_tag(self, rootNodeId = 'None', rootNodeType = 'opsgptkg_task', key = 'ignorememory'):
+    def get_tag(self, rootNodeId = 'None', rootNodeType = 'opsgptkg_task', key = 'ignorememory')->str:
+        '''
+            得到一个节点的属性值
+        '''
         # print(f'rootNodeId is {rootNodeId},  rootNodeType is {rootNodeType}')
         try:
             oneNode = self.geabase_handler.get_current_node(attributes={"id": rootNodeId,}, 
@@ -496,6 +570,8 @@ class  GB_handler():
             logging.info('user_input_memory_tag 没有找到合适的数据， 可能原因是当前查找对象不是 opsgptkg_task 类型的节点'  )
             return None
         # print(oneNode)
+        if oneNode.attributes['extra'] == None:
+            return None
         if oneNode.attributes['extra'] == '':
             return None
         extra = oneNode.attributes['extra']
