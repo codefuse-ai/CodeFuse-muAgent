@@ -20,6 +20,7 @@ import com.alipay.muagent.model.ekg.ExeNodeResponse;
 import com.alipay.muagent.model.ekg.configuration.Config;
 import com.alipay.muagent.model.enums.ekg.ToolPlanTypeEnum;
 import com.alipay.muagent.model.enums.scheduler.TaskSchedulerTypeEnum;
+import com.alipay.muagent.model.exception.EkgToolNotFindException;
 import com.alipay.muagent.model.scheduler.SubmitTaskRequest;
 import com.alipay.muagent.model.scheduler.TaskExeResponse;
 import com.alipay.muagent.service.chat.ChatService;
@@ -40,11 +41,18 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildLijing;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildReferee;
@@ -67,7 +75,6 @@ public class EkgChatServiceImpl implements ChatService {
 
     @Override
     public void chat(SseEmitter emitter, ChatRequest request) {
-        boolean wait = true;
 
         try {
             TextContent content = GsonUtils.fromString(TextContent.class, GsonUtils.toString(request.getContent()));
@@ -102,20 +109,34 @@ public class EkgChatServiceImpl implements ChatService {
             ekgRequest.setIntentionRule(Lists.newArrayList("nlp"));
             ekgRequest.setScene("NEXA");
 
-            while (wait) {
+            ekgHandler(emitter, ekgRequest);
+        } catch (Exception e) {
+            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}]", request.getChatUniqueId());
+        }
+    }
 
+    private static final ExecutorService EKG_NODE_EXE = new ThreadPoolExecutor(
+            100,
+            150,
+            60L,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(1),
+            new ThreadPoolExecutor.AbortPolicy());
+
+    private boolean ekgHandler(SseEmitter emitter, EkgQueryRequest ekgRequest)  {
+        try {
                 EkgAlgorithmResult response = sendRequestToEkgPlanner(ekgRequest);
 
                 if (Objects.isNull(response)) {
                     emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses("图谱执行异常"))));
                     LoggerUtil.warn(LOGGER, "图谱执行异常");
-                    break;
+                    return false;
                 }
 
                 if (StringUtils.isNotBlank(response.getSummary())) {
                     emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses(response.getSummary()))));
                     LoggerUtil.info(LOGGER, "游戏结束");
-                    break;
+                    return false;
                 }
 
                 // 需要给用户反馈信息
@@ -126,44 +147,81 @@ public class EkgChatServiceImpl implements ChatService {
                     emitter.send(SseEmitter.event().data(userMsg));
                 }
 
-                EkgNode node = response.getToolPlan().get(0);
+                // TODO 并行的时候，该如何判断信息退出
 
-                // 需要等待用户回答，通知用户后结束轮询
-                if (ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())) {
-                    EkgQuestionDescription ques = node.getQuestionDescription();
-                    RoleResponseContent rrc = buildRoleResponseContent("<font color='#A9192d'> *请回答：* </font> \n\n >" + ques.getQuestionContent().getQuestion());
+                List<Future<Boolean>> futures = response.getToolPlan().stream().map(node ->
+                        EKG_NODE_EXE.submit(() -> {
+                            try {
+                                LoggerUtil.info(LOGGER, "exeNode:{}", GsonUtils.toString(node));
+                                // 需要等待用户回答，通知用户后结束任务
+                                if (ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())) {
+                                    EkgQuestionDescription ques = node.getQuestionDescription();
+                                    RoleResponseContent rrc = buildRoleResponseContent(
+                                            "<font color='#A9192d'> *请回答：* </font> \n\n >" + ques.getQuestionContent().getQuestion());
 
-                    List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
+                                    List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
 
-                    // 将 node 和 对话id 放入上下文
-                    HashMap<String, Object> exContext = Maps.newHashMap();
-                    exContext.put(EKG_NODE.name(), GsonUtils.toString(node));
-                    exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
-                    crs.get(0).setExtendContext(exContext);
+                                    // 将 node 和 对话id 放入上下文
+                                    HashMap<String, Object> exContext = Maps.newHashMap();
+                                    exContext.put(EKG_NODE.name(), GsonUtils.toString(node));
+                                    exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
+                                    crs.get(0).setExtendContext(exContext);
 
-                    String userMsg = GsonUtils.toString(crs);
-                    LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
-                    emitter.send(SseEmitter.event().data(userMsg));
-                    break;
-                }
+                                    String userMsg = GsonUtils.toString(crs);
+                                    LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
+                                    emitter.send(SseEmitter.event().data(userMsg));
+                                    return false;
+                                }
 
-                // 执行当前 node
-                ExeNodeResponse enr = executeNode(node);
+                                // 执行当前 node
+                                ExeNodeResponse enr = executeNode(node);
 
-                EkgToolResponse toolResponse = EkgToolResponse.builder()
-                        .toolKey(enr.getToolKey())
-                        .toolResponse(enr.getOutput())
-                        .toolParam(node.getToolDescription())
-                        .build();
-                ekgRequest.setCurrentNodeId(node.getCurrentNodeId());
-                ekgRequest.setObservation(GsonUtils.toString(toolResponse));
-                ekgRequest.setType(node.getType());
-                ekgRequest.setIntentionData(null);
-                ekgRequest.setIntentionRule(null);
-            }
-        } catch (Exception e) {
-            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}][{}][{}][{}]", request.getChatUniqueId());
+                                EkgToolResponse toolResponse = EkgToolResponse.builder()
+                                        .toolKey(enr.getToolKey())
+                                        .toolResponse(enr.getOutput())
+                                        .toolParam(node.getToolDescription())
+                                        .build();
+                                ekgRequest.setCurrentNodeId(node.getCurrentNodeId());
+                                ekgRequest.setObservation(GsonUtils.toString(toolResponse));
+                                ekgRequest.setType(node.getType());
+                                ekgRequest.setIntentionData(null);
+                                ekgRequest.setIntentionRule(null);
+
+                                return ekgHandler(emitter, ekgRequest);
+                            } catch (EkgToolNotFindException eetnfe) {
+                                try {
+                                    emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses(eetnfe.getMessage()))));
+                                } catch (Exception e) {
+                                    LoggerUtil.error(LOGGER, e, "[EkgServiceImpl send exception to emitter error][{}]", ekgRequest.getSessionId());
+                                }
+                                return false;
+                            } catch (Exception e) {
+                                LoggerUtil.error(LOGGER, e, "exeNodeError:{}", GsonUtils.toString(node));
+                                return false;
+                            }
+                        })
+                ).toList();
+
+                futures.parallelStream().forEach(future -> {
+                    try {
+                        future.get();
+                    } catch (InterruptedException e) {
+                        LoggerUtil.error(LOGGER, e, "exeNodeError:InterruptedException");
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        LoggerUtil.error(LOGGER, e, "exeNodeError:ExecutionException");
+                        throw new RuntimeException(e);
+                    } catch (Exception e) {
+                        LoggerUtil.error(LOGGER, e, "exeNodeError:Exception");
+                        throw new RuntimeException(e);
+                    }
+                });
+        } catch (IOException e) {
+            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error]");
+            return false;
         }
+
+        return true;
     }
 
     private RoleResponseContent buildRoleResponseContent(String userInteraction) {
@@ -183,10 +241,13 @@ public class EkgChatServiceImpl implements ChatService {
     private SchedulerManager schedulerManager;
 
     private ExeNodeResponse executeNode(EkgNode node) {
+        Scheduler scheduler = schedulerManager.getScheduler(TaskSchedulerTypeEnum.COMMON);
+
         SubmitTaskRequest request = SubmitTaskRequest.builder().intention(node.getToolDescription()).build();
         request.setMemory(node.getMemory());
-        Scheduler scheduler = schedulerManager.getScheduler(TaskSchedulerTypeEnum.COMMON);
         request.setTools(config.getToolKeys());
+        request.setEkgRequest(true);
+
         TaskExeResponse toolExeResponse = scheduler.submitTask(request);
 
         ExeNodeResponse exeNodeResponse = ExeNodeResponse.builder()

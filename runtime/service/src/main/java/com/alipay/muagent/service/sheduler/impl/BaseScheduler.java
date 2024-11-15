@@ -5,6 +5,7 @@
 package com.alipay.muagent.service.sheduler.impl;
 
 import com.alipay.muagent.model.enums.scheduler.TaskSchedulerTypeEnum;
+import com.alipay.muagent.model.exception.EkgToolNotFindException;
 import com.alipay.muagent.model.scheduler.SubmitTaskRequest;
 import com.alipay.muagent.model.scheduler.TaskExeResponse;
 import com.alipay.muagent.model.tool.TaskExeContext;
@@ -16,6 +17,7 @@ import com.alipay.muagent.service.sheduler.Scheduler;
 import com.alipay.muagent.service.tool.loader.ToolLoader;
 import com.alipay.muagent.util.GsonUtils;
 import com.alipay.muagent.util.LoggerUtil;
+import com.alipay.muagent.util.StringUtils;
 import lombok.Data;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,10 +74,30 @@ public class BaseScheduler extends Scheduler implements InitializingBean {
         LoggerUtil.info(LOGGER, "selectedTool:{}", GsonUtils.toString(selectResponse));
         String resultStr = selectResponse.getResult();
         try {
+            if (StringUtils.equalNull(resultStr)) {
+                return getTool(request);
+            }
             SelectToolResult result = GsonUtils.fromString(SelectToolResult.class, resultStr);
+            if (StringUtils.isEmpty(result.getToolKey()) || StringUtils.equalNull(resultStr)) {
+                return getTool(request);
+            }
             return toolLoader.queryToolByKey(result.getToolKey());
+        } catch (EkgToolNotFindException e) {
+           throw e;
         } catch (Exception e) {
             throw new RuntimeException("selectToolResponseInvalid:" + resultStr, e);
+        }
+    }
+
+    private Tool getTool(TaskExeContext request) {
+        if (request.getTaskRequest().isEkgRequest()) {
+            // ekg 不能兜底，直接报错提示 tool 找不到
+            //throw new EkgToolNotFindException("can not select a tool with intention " + request.getTaskRequest().getIntention());
+            throw new EkgToolNotFindException("对不起，根据您的意图，无法找到对应的工具来帮助您，请添加相关工具后再使用图谱。");
+        } else {
+            // 闲聊大模型兜底
+            Tool tool = toolLoader.queryToolByKey("system.llm_query");
+            return tool;
         }
     }
 
