@@ -225,5 +225,7 @@ if __name__ == '__main__':
     print('============================')
     print(tool_plan)
     
+    
+    #测试 memory_manager  
 
 

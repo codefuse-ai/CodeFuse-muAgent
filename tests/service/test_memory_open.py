@@ -213,31 +213,18 @@ if __name__ == '__main__':
     # res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
     # print('res_to_lingsi', res_to_lingsi)
 
-    # time.sleep(1)
-    
-    ##测试 geabase_search_return_all_nodeandedge  得到 全量的nodeid_in_subtree
-    # gb_handler = GB_handler(geabase_handler)
-    # last_intention_nodeid = hash_id('剧本杀')
-    # nodeid_in_subtree, _ = gb_handler.geabase_search_return_all_nodeandedge(  last_intention_nodeid,  'opsgptkg_intent')
-    # print(nodeid_in_subtree)
-    
-    
+    # time.sleep(1) 
 
-    # ## 测试geabase_search_reture_nodeslist， 得到 nodeid_in_subtree list
-    # gb_handler = GB_handler(geabase_handler)
-    # last_intention_nodeid = hash_id('剧本杀')
-    # reslist = gb_handler.geabase_search_reture_nodeslist(last_intention_nodeid,  'opsgptkg_intent')
     
-    # print('============')
-    # print(reslist)
-    # print('============')
+    #测试 memory_manager.get_memory_pool_by_all
+    sessionId =    "TS_GOC_103346456601_0709002_sswd_44"
     
-    
-    #测试 get_extra_tag
-    gb_handler = GB_handler(geabase_handler)
-    res = gb_handler.get_tag(rootNodeId = hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'), rootNodeType = 'opsgptkg_task', key = 'action')
-    print('============')
-    print(res)
-    print('============')
+    memory_handler  = memory_handler_ekg(memory_manager, geabase_handler)
+    memory_manager_res= memory_manager.get_memory_pool_by_all({ 
+                                                        "chat_index": sessionId, 
+                                                        'role_tags': ['all', '人类']})
+    get_messages_res = memory_manager_res.get_messages()
+    for i in range(len(get_messages_res)):
+        print(get_messages_res[i].role_content)
 
 

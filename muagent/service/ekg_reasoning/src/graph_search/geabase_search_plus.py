@@ -574,6 +574,7 @@ class graph_search_tool():
                                 # logging.info(f'sessionId {sessionId}, nodeid_new {nodeid_new}, nodetype_new {nodetype_new}')
                                 
                                 runningFlag, reactPlan = self.task_node_agent.task_running( sessionId, nodeid_new, nodetype_new, None )
+                                logging.info(f'前面节点执行完毕后，在向后探索的过程中，执行了task_running,执行结果为runningFlag is {runningFlag}, reactPlan is {reactPlan}' )
                                 #这种时候是react节点第一次运行，一定是主持人，一定要看到全局信息
 
                                 # logging.info(f'{nodeid_new}#继续执行还是没有执行完, 需要留下 reactPlan，且不往后面扩展')
@@ -600,14 +601,15 @@ class graph_search_tool():
         # logging.info('====tool_plan======')
         
         #2 判断这些tool的父节点是否都已经有observation, 即判断可达性， 进行筛选
-        tool_plan_2 = []
+        tool_plan_reachable = []
         for i in range(len(tool_plan)):
             nodeId = tool_plan[i]['nodeId']
             nodeType = tool_plan[i]['nodeType']
             if self.geabase_judgeNodeReachability( sessionId, 
                 nodeId,  nodeType) == True:
-                tool_plan_2.append({'nodeId':nodeId, 'nodeType':nodeType})
-        # logging.info(f'tool_plan_2 经过可达性判断删选后的 {tool_plan_2}')
+                tool_plan_reachable.append(  tool_plan[i]     )
+        # logging.info(f'tool_plan_reachable 经过可达性判断删选后的 {tool_plan_reachable}')
+
 
         #3 获取每个tool的memory
         tool_plan_return = []
@@ -618,10 +620,12 @@ class graph_search_tool():
         # 	}
 
 
-        for i in range(len(tool_plan_2)):
-            nodeId      = tool_plan[i]['nodeId']
-            nodeType    = tool_plan[i]['nodeType']
-            if 'reactFlag' not in tool_plan[i].keys():
+        for i in range(len(tool_plan_reachable)):
+            nodeId      = tool_plan_reachable[i]['nodeId']
+            nodeType    = tool_plan_reachable[i]['nodeType']
+            
+            if 'reactFlag' not in tool_plan_reachable[i].keys():
+                # 这里表示是tool 执行
                 # memory = self.geabase_getmemory( sessionId,  nodeId,  nodeType)
                 #获取memory， 这个是task tool的memory，
                 # tool_ancestor = self.get_tool_ancestor( sessionId, nodeId, nodeType)
@@ -645,12 +649,19 @@ class graph_search_tool():
                 )
             else:
                 #对于react 模块的 memory，另有方法提取，在制定plan的时候就提取了。
+                #这里也包括 parallel 和 plan类型节点
+                #
+                for m in range(len(tool_plan_reachable[i]['reactPlan']))   :#tool_plan_reachable[i]['reactPlan'] 本身就是一个list, 必须先取元素，否则格式会出错
+                    tool_plan_return.append( tool_plan_reachable[i]['reactPlan'][m]   )
 
-                tool_plan_return.append( tool_plan[i]['reactPlan'][0]   )   #tool_plan[i]['reactPlan'] 本身就是一个list, 必须先取元素，否则格式会出错
-
-
-
-        return  tool_plan, tool_plan_return
+        logging.info('===================================')
+        logging.info('===================================')
+        logging.info('================geabase_nodediffusion_plus end===================')
+        logging.info('===================================')
+        logging.info('===================================')
+        logging.info(f'tool_plan_reachable is {tool_plan_reachable}, tool_plan_return is {tool_plan_return}')
+    
+        return  tool_plan_reachable, tool_plan_return
 if __name__ == "__main__":
 
 

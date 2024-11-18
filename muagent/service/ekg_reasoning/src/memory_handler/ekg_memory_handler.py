@@ -436,11 +436,12 @@ class memory_handler_ekg():
     def react_memory_save(self, sessionId, currentNodeId, llm_res):
         '''
             将一个node中  llm的返回值 解析成json，存储在memory里。 每次覆盖式存储。 存主持人说的话、其他agent说的话； 同时修改count中的计数
+            格式为 [player_name, agent_name, content, memory_tag, section]
         
         llm_str = llm_result_truncation + '":[]}]'
         llm_result_truncation = '[\n    {"action": {"agent_name": "主持人"}, "Dungeon_Master": [{"content": "狼人时刻开始，以下玩家是狼人：player_1（狼人-1），李四（人类玩家）（狼人-2）。", "memory_tag":["agent_1", "人类agent"]}]},\n    {"action": {"agent_name": "agent_1", "player_name":"player_1"}, "observation'
         '''
-
+        
         #1. 解析 llm的输出
         if type(llm_res) == str:
             llm_res_json = json.loads(llm_res)
@@ -451,35 +452,57 @@ class memory_handler_ekg():
         section = 0
         memory_save_info_list = []
         for i in range(len(llm_res_json)):
-            if llm_res_json[i]['action'] == 'taskend':
-                #任务执行完毕
-                break
-            agent_name = llm_res_json[i]['action']['agent_name']
-            if agent_name == '主持人':
+            if 'action' in llm_res_json[i].keys():
+                #react 类型 或者 是 parallel中电脑玩家的返回值
+            
+                if llm_res_json[i]['action'] == 'taskend':
+                    #任务执行完毕
+                    break
+                agent_name = llm_res_json[i]['action']['agent_name']
+                if agent_name == '主持人':
+                    player_name = '主持人'
+                    for j in range(len(llm_res_json[i]['Dungeon_Master'])):
+                        content  = llm_res_json[i]['Dungeon_Master'][j]['content']
+                        memory_tag  = llm_res_json[i]['Dungeon_Master'][j]['memory_tag']
+                        section += 1
+                        memory_save_info_list.append([player_name, agent_name, content, memory_tag, section])
+                else:
+                    #logging.info(f' llm_res_json[i]是{llm_res_json[i]}')
+                    if  llm_res_json[i]['observation'] == []:
+                        continue
+                    player_name = llm_res_json[i]['action']['player_name']
+                    for j in range(len(llm_res_json[i]['observation'])):
+                        content  = llm_res_json[i]['observation'][j]['content']
+                        memory_tag  = llm_res_json[i]['observation'][j]['memory_tag']
+                        section += 1
+                        memory_save_info_list.append([player_name, agent_name, content,  memory_tag, section])
+            
+            elif 'action_plan' in llm_res_json[i].keys():
+                #此时为    PlanningRunningAgentReply 格式，  可能为 plan 或者 parallel的第一次返回值
+                if llm_res_json[i]['action_plan'] == 'taskend':
+                    #任务执行完毕
+                    break
+                agent_name = '主持人' #只有主持人能生成plan
                 player_name = '主持人'
+                
+
                 for j in range(len(llm_res_json[i]['Dungeon_Master'])):
                     content  = llm_res_json[i]['Dungeon_Master'][j]['content']
                     memory_tag  = llm_res_json[i]['Dungeon_Master'][j]['memory_tag']
                     section += 1
                     memory_save_info_list.append([player_name, agent_name, content, memory_tag, section])
-            else:
-                logging.info(f' llm_res_json[i]是{llm_res_json[i]}')
-                if  llm_res_json[i]['observation'] == []:
-                    continue
-                player_name = llm_res_json[i]['action']['player_name']
-                for j in range(len(llm_res_json[i]['observation'])):
-                    content  = llm_res_json[i]['observation'][j]['content']
-                    memory_tag  = llm_res_json[i]['observation'][j]['memory_tag']
-                    section += 1
-                    memory_save_info_list.append([player_name, agent_name, content,  memory_tag, section])
+
         
 
-        if 'taskend' not in  json.dumps(llm_res,  ensure_ascii=False)   and  memory_save_info_list[-1][1] != '主持人': 
+        #logging.info(f'memory_save_info_list 初步 is {memory_save_info_list}')
+        if 'taskend' not in  json.dumps(llm_res,  ensure_ascii=False)   and  memory_save_info_list[-1][1] != '主持人' and \
+        self.gb_handler.get_tag(rootNodeId = currentNodeId, rootNodeType = 'opsgptkg_task', key = 'action') == 'react': 
             #现在还没有run到最后。那么            #最后一个observation，这个是幻觉，主持人替其他玩家说的话， 不能存入到memory里
             #如果run到最后了， 那么最后一个observation是本次填充的
+            #这个只在react模式下生效
             memory_save_info_list = memory_save_info_list[0:-1]
 
-        logging.info(f'memory_save_info_list is {memory_save_info_list}')
+        logging.info(f'memory_save_info_list 最终经过删减（假如是react，如果不是则不删减） is {memory_save_info_list}')
         
         #2. 将llm的输出存入到memory中，更新，已经写入的就不更新了
         hashpostfix = '_reactmemory' 
@@ -506,7 +529,7 @@ class memory_handler_ekg():
                                                 })
             get_messages_res = memory_manager_res.get_messages()
             if get_messages_res != []:
-                #这一条数据已经有了，不用重复写入，只更新没有写入的
+                #这一条数据已经有了，不用重复写入，只更新没有写入的,  这里根据hashpostfix_all 中的 section和chapter 来进行判断
                 continue
 
             user_input_memory_tag = self.gb_handler.user_input_memory_tag(currentNodeId, 'opsgptkg_task')
@@ -533,7 +556,7 @@ class memory_handler_ekg():
         role_content_nodeinfo['section'] = len(memory_save_info_list)  
         self.nodecount_set( sessionId, currentNodeId, role_content_nodeinfo)
 
-    def message_get(self, sessionId:str, NodeId:str, hashpostfix:str,
+    def message_get(self, sessionId:str, nodeId:str, hashpostfix:str,
                     role_name:str,role_type:str )-> Union[str, list]: 
         '''
         得到信息, 作为一个通用函数。如果没有检索到信息，则返回空的list[], 如果检索到了信息，则返回‘’
@@ -559,7 +582,7 @@ class memory_handler_ekg():
         if len(get_messages_res) == 0:
             #raise ValueError("执行memory查询没有找到")
             logging.info( "执行memory查询没有找到" )
-            return []
+            return ''
             
         return get_messages_res[0].role_content
 
@@ -618,8 +641,13 @@ class memory_handler_ekg():
         '''
         将这次执行完的（lingsi返回的）agentname，存下来，以一个list的格式
         '''
-        
-        processed_agentname_list = json.loads(self.processed_agentname_get(sessionId, nodeId)   )
+        processed_agentname_get_str = self.processed_agentname_get(sessionId, nodeId) 
+        logging.info(f'processed_agentname_get_str  is  {processed_agentname_get_str}')
+        if processed_agentname_get_str == '': #第一次有工具返回时，processed_agentname_get_str 值为’‘
+            processed_agentname_list = []
+        else:
+            processed_agentname_list = json.loads( processed_agentname_get_str )
+            
         processed_agentname_list.append(agentName)
         processed_agentname_list_str = json.dumps(processed_agentname_list, ensure_ascii=False)
         
@@ -753,7 +781,7 @@ class memory_handler_ekg():
             
             hashpostfix = '_his'
             hashpostfix_all = f'_chapter{chapter}' + hashpostfix
-            print(currentNodeId, sessionId, hashpostfix_all)
+            #print(currentNodeId, sessionId, hashpostfix_all)
             memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
                                                         #    "chat_index": sessionId, 
                                                            "message_index" : hash_id(currentNodeId, sessionId, hashpostfix_all),

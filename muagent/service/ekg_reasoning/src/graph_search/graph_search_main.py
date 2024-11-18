@@ -889,6 +889,10 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         if type(params) == str:
             params = json.loads(params)
         logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
         logging.info(f'params={params}')
         logging.info(f'llm_config={llm_config}')
 

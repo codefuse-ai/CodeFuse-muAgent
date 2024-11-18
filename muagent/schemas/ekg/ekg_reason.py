@@ -11,6 +11,9 @@ import json
 ############################ LingSiResponse  #############################
 #####################################################################
 class LingSiResponse(BaseModel):
+    '''
+    lingsi的返回值， 算法的输入值
+    '''
     currentNodeId: Optional[str]=None
     observation: Optional[Union[str,Dict]] # jsonstr
     scene: str
@@ -24,6 +27,11 @@ class LingSiResponse(BaseModel):
     agentName:Optional[str]=None
 
 
+
+
+#####################################################################
+############################ #定义PlanningRunning  和 parallel 模式下大模型返回格式  #############################
+#####################################################################
 
 class ActionOneStep(BaseModel):
     '''
@@ -40,7 +48,18 @@ class ActionPlan(BaseModel):
         [{"player_name":str, "agent_name":str}, {"player_name":str, "agent_name":str}, ... ]
     '''
     data: List[ActionOneStep]
-    
+    def get_player_name_by_agent_name(self, agent_name:str)->str:
+        '''
+            根据agent_name 返回 player_name
+
+        '''
+        for i in range(len(self.data)):
+            if self.data[i].agent_name == agent_name:
+                return self.data[i].player_name
+        return None #没找到合适的匹配
+
+
+
 
 class ObservationItem(BaseModel):
     '''
@@ -51,9 +70,7 @@ class ObservationItem(BaseModel):
 
 
 
-#####################################################################
-############################ #定义PlanningRunning模式下大模型返回格式  #############################
-#####################################################################
+
 
 class PlanningRunningAgentReply(BaseModel):
     '''
@@ -199,22 +216,41 @@ if __name__ == '__main__':
     
     
     
-    ###测试 LingSiResponse
-    nodeId = 's'
-    execute_agent_name = 'n'
+    # ###测试 LingSiResponse
+    # nodeId = 's'
+    # execute_agent_name = 'n'
     
-    tool_one_step= ToolPlanOneStep(
-        **{'toolDescription': '请用户回答',
-        'currentNodeId': nodeId + '%%@@#' + execute_agent_name,
-        'currentNodeInfo':execute_agent_name,
-        'memory': None,
-        'type': 'userProblem',
-        'questionDescription': {'questionType': 'essayQuestion',
-        'questionContent': {'question': '请玩家根据当前情况发言',
-        'candidate': None }}}
-        )
-    print(tool_one_step)
+    # tool_one_step= ToolPlanOneStep(
+    #     **{'toolDescription': '请用户回答',
+    #     'currentNodeId': nodeId + '%%@@#' + execute_agent_name,
+    #     'currentNodeInfo':execute_agent_name,
+    #     'memory': None,
+    #     'type': 'userProblem',
+    #     'questionDescription': {'questionType': 'essayQuestion',
+    #     'questionContent': {'question': '请玩家根据当前情况发言',
+    #     'candidate': None }}}
+    #     )
+    # print(tool_one_step)
                 
+    
+    
+    ###测试 ActionPlan
+    
+    
+    
+    ccc  = {'data': [{'agent_name': 'agent_2', 'player_name': 'player_1'},
+      {'agent_name': '人类agent_a', 'player_name': '李四(人类玩家)'},
+      {'agent_name': 'agent_3', 'player_name': 'player_2'},
+      {'agent_name': 'agent_1', 'player_name': 'player_3'}]}
+    
+    action_plan =ActionPlan(**ccc)
+    print(action_plan)
+    
+    agent_name= action_plan.get_player_name_by_agent_name('人类agent_a')
+    print(agent_name)
+    
+    
+    
     
     
     
