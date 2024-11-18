@@ -683,7 +683,7 @@ class graph_search_process():
         if self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True'   \
             or self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'Ture' \
                 or self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True' :
-            outputinfo_str = self.memory_handler.get_output(self.sessionId, self.start_datetime, self.end_datetime)
+            outputinfo_str = self.memory_handler.get_output(self.sessionId, self.start_datetime, self.end_datetime, self.lingsi_response.agentName)
         else:
             dodisplaystr = self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') 
             logging.info(f" 查询dodisplay字段结果为空, 或者为{dodisplaystr}，本次不对外输出")

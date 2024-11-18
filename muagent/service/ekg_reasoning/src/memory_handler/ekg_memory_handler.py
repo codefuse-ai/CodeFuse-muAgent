@@ -433,6 +433,11 @@ class memory_handler_ekg():
             self.memory_manager.append(message)
 
 
+
+        #
+
+
+
     def react_memory_save(self, sessionId, currentNodeId, llm_res):
         '''
             将一个node中  llm的返回值 解析成json，存储在memory里。 每次覆盖式存储。 存主持人说的话、其他agent说的话； 同时修改count中的计数
@@ -519,8 +524,9 @@ class memory_handler_ekg():
         
         for i in range(len(memory_save_info_list)):
             player_name, agent_name, content,  memory_tag, section = memory_save_info_list[i]
-            hashpostfix_all = f'_chapter{chapter}_section{section}' + hashpostfix
-
+            hashpostfix_all = f'_chapter{chapter}_section{section}_agentName{agent_name}' + hashpostfix
+            #    原来react_memory_save 的问题在于， 根据 _chapter{chapter}_section{section} 进行编码的情况会覆盖其他 并行的agent的结果
+            #   另外，取结果时，由于三个agent都是同时发生的，所以原来根据时间取结果的方式也会出现问题，造成三个agent的返回值都是一个
             
             memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
                                                 # "chat_index": sessionId, 
@@ -846,19 +852,63 @@ class memory_handler_ekg():
 
             #logging.info(f'sessionId {sessionId} start_nodeid {start_nodeid} 的 memory 是 {memory}')
 
-    def get_output(self,sessionId, start_datetime, end_datetime):
+    def get_output(self,sessionId, start_datetime, end_datetime, agent_name):
+        
+        #首先提取主持人可能的返回
+        get_messages_res_all = []
         memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : '主持人', 
                                                             "chat_index": sessionId, 
                                                             'role_tags': ['all', '人类'],
                                                             "start_datetime":[start_datetime, end_datetime],
                                                           })
         get_messages_res = memory_manager_res.get_messages()
-        if get_messages_res == []:
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        #再提取 标题 user可能的返回
+        get_messages_res = []
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : 'user', 
+                                                            "chat_index": sessionId, 
+                                                            'role_tags': ['all', '人类'],
+                                                            "start_datetime":[start_datetime, end_datetime],
+                                                          })
+        get_messages_res = memory_manager_res.get_messages()
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        
+        #再提取 agent 可能的返回
+        if agent_name != None and type(agent_name) == str:
+            get_messages_res = []
+            memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                                "role_name" : agent_name, 
+                                                                "chat_index": sessionId, 
+                                                                'role_tags': ['all', '人类'],
+                                                                "start_datetime":[start_datetime, end_datetime],
+                                                          })
+            get_messages_res = memory_manager_res.get_messages()
+            get_messages_res_all = get_messages_res_all + get_messages_res
+            
+        
+        #再提取 tool 可能的返回
+        get_messages_res = []
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : 'function_caller', 
+                                                            "chat_index": sessionId, 
+                                                            'role_tags': ['all', '人类'],
+                                                            "start_datetime":[start_datetime, end_datetime],
+                                                          })
+        get_messages_res = memory_manager_res.get_messages()
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        get_messages_res_all = sorted(get_messages_res_all, key=lambda msg: msg.start_datetime)#按照时间进行排序
+        
+        if get_messages_res_all == []:
             logging.info('本阶段没有能给用户看的信息')
             return None
         outputinfo = []
-        for i in range(len(get_messages_res)):
-            outputinfo.append( get_messages_res[i].role_content   )
+        for i in range(len(get_messages_res_all)):
+            outputinfo.append( get_messages_res_all[i].role_content   )
         logging.info(f'outputinfo is {outputinfo}')
 
         # outputinfo_str = json.dumps(outputinfo, ensure_ascii=False)

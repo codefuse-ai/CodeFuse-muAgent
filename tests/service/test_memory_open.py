@@ -217,14 +217,15 @@ if __name__ == '__main__':
 
     
     #测试 memory_manager.get_memory_pool_by_all
-    sessionId =    "TS_GOC_103346456601_0709002_sswd_44"
+
     
     memory_handler  = memory_handler_ekg(memory_manager, geabase_handler)
     memory_manager_res= memory_manager.get_memory_pool_by_all({ 
                                                         "chat_index": sessionId, 
                                                         'role_tags': ['all', '人类']})
     get_messages_res = memory_manager_res.get_messages()
+    get_messages_res = sorted(get_messages_res, key=lambda msg: msg.start_datetime)#按照时间进行排序
     for i in range(len(get_messages_res)):
-        print(get_messages_res[i].role_content)
+        print(get_messages_res[i].role_content, get_messages_res[i].role_name )
 
 

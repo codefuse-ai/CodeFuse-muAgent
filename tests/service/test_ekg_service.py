@@ -255,13 +255,13 @@ if __name__ == '__main__':
     
     ekg_service = ekg_construct_service
     teamid = "default"
-    node_id = '剧本杀/谁是卧底/智能交互/票选卧底_1'
-    start_nodetype    ='opsgptkg_task'
+    # node_id = '剧本杀/谁是卧底/智能交互/关键信息_4'
+    # start_nodetype    ='opsgptkg_task'
     
     
     #测试加节点
     #one_node= GNode(id=node_id, type='opsgptkg_task', attributes={'ID': 8901447933395410622, 'extra': '{"pattern": "react","dodisplay":"True"}', 'action':'single', 'teamids': '', 'gdb_timestamp': '1728912141060', 'executetype': '', 'description': '##角色##\n你正在参与“谁是卧底”这个游戏，你的角色是[主持人]。你熟悉“谁是卧底”游戏的完整流程，你需要完成[任务]，保证游戏的顺利进行。\n目前已经完成 1)位置分配; 2)角色分配和单词分配。\n##任务##\n向所有玩家通知信息他们的 座位信息和单词信息。\n发送格式是： 【身份通知】你是{player_name}, 你的位置是{位置号}号， 你分配的单词是{单词}\n##详细步骤##\nstep1.依次向所有玩家通知信息他们的 座位信息和单词信息。发送格式是： 你是{player_name}, 你的位置是{位置号}号， 你分配的单词是{单词}\nstpe2.所有玩家信息都发送后，结束\n\n##注意##\n1. 每条信息只能发送给对应的玩家，其他人无法看到。\n2. 不要告诉玩家的角色信息，即不要高斯他是平民还是卧底角色\n3. 在将每个人的信息通知到后，本阶段任务结束\n##输出##\n请以列表的形式，给出参与者的所有行动。每个行动表示为JSON，格式为\n[{"action": {"player_name":str, "agent_name":str}, "observation" or "Dungeon_Master": [{"memory_tag":str,"content":str}]}, ...]\n\n关键词含义如下：\n_ player_name (str): 行动方的 player_name，若行动方为主持人，为空，否则为玩家的 player_name；\n_ agent_name (str): 行动方的 agent_name，若为主持人，则 agent_name 为 "主持人"，否则为玩家的 agent_name。\n_ content (str): 行动方的具体行为，若为主持人，content 为告知信息；否则，content 为玩家的具体行动。\n_ memory_tag (List[str]): 无论行动方是主持人还是玩家，memory_tag 固定为**所有**信息可见对象的agent_name, 如果信息可见对象为所有玩家，固定为 ["all"]\n\n#example#\n如果是玩家发言，则用 {"action": {"agent_name": "agent_name_c", "player_name":"player_name_d"}, "observation": [{ "memory_tag":["agent_name_a","agent_name_b"],"content": "str"}]} 格式表示。content是玩家发出的信息；memory_tag是这条信息可见的对象，需要填写agent名。不要填写 agent_description\n\n如果agent_name是主持人，则无需输入player_name， 且observation变为 Dungeon_Master。即{"action": {"agent_name": "主持人", "player_name":""}, "Dungeon_Master": [{ "memory_tag":["agent_name_a","agent_name_b"], "content": "str",}]}\n\n##注意事项##\n1. 所有玩家的座位、身份、agent_name、存活状态等信息在开头部分已给出。\n2. "observation" or "Dungeon_Master"如何选择？若 agent_name 为"主持人"，则为"Dungeon_Master"，否则为 "observation"。\n3. 输出列表的最后一个元素一定是{"action": "taskend"}。\n4. 整个list是一个jsonstr，请输出jsonstr，不用输出markdown格式\n5. 结合已有的步骤，每次只输出下一个步骤，即一个 {"action": {"player_name":str, "agent_name":str}, "observation" or "Dungeon_Master": [{"memory_tag":str,"content":str}]}', 'name': '通知身份', 'accesscriteria': ''})
-    one_node= GNode(id=node_id, type='opsgptkg_schedule', attributes={'ID': 603563742932974030, 'extra': '', 'envdescription':  '{"存活的玩家": "张伟、王鹏、李静、人类玩家"}', 'teamids': '', 'gdb_timestamp': '1725088469126', 'description': '智能交互', 'name': '智能交互', 'enable': 'True'})
+    one_node=   GNode(id='剧本杀/谁是卧底/智能交互/统计票数', type='opsgptkg_task', attributes={'ID': -6836070348442528830, 'teamids': '', 'action':'react','gdb_timestamp': '1728913701092', 'executetype': '', 'description': '##以上为本局游戏历史记录##\n##角色##\n你是一个统计票数大师，你非常擅长计数以及统计信息。你正在参与“谁是卧底”这个游戏，你的角色是[主持人]。你熟悉“谁是卧底”游戏的完整流程，你需要完成[任务]，保证游戏的顺利进行。 现在是票数统计阶段\n\n##任务##\n以结构化的语句来模拟进行 谁是卧底的票数统计阶段， 也仅仅只票数统计阶段环节，票数统计阶段结束后就本阶段就停止了，由后续的阶段继续进行游戏。 在这一个环节里，由主持人根据上一轮存活的玩家投票结果统计票数。 \n##详细步骤##\n你的任务如下:\nstep1. 主持人感知上一轮投票环节每位玩家的发言, 统计投票结果，格式为[{"player_name":票数}]. \nstep2  然后，主持人宣布死亡的玩家，以最大票数为本轮被投票的目标，如果票数相同，则取座位号高的角色死亡。并告知所有玩家本轮被投票玩家的player_name。（格式为【重要通知】本轮死亡的玩家为XXX）同时向所有玩家宣布，被投票中的角色会视为立即死亡（即不再视为存活角色）\nstep3. 在宣布死亡玩家后，本阶段流程结束，由后续阶段继续推进游戏\n该任务的参与者为主持人和所有存活的玩家，信息可见对象是所有玩家。\n##注意##\n1.如果有2个或者两个以上的被玩家被投的票数相同，则取座位号高的玩家死亡。并告知大家原因：票数相同，取座位号高的玩家死亡\n2.在统计票数时，首先确认存活玩家的数量，再先仔细回忆，谁被投了。 最后统计每位玩家被投的次数。 由于每位玩家只有一票，所以被投次数的总和等于存活玩家的数量 \n3.通知完死亡玩家是谁后，本阶段才结束，由后续阶段继续推进游戏。输出 {"action": "taskend"}即可\n4.主持人只有当通知本轮死亡的玩家时，才使用【重要通知】的前缀，其他情况下不要使用【重要通知】前缀\n5.只统计上一轮投票环节的情况\n##example##\n{"thought": "在上一轮中, 存活玩家有 小北,李光,赵鹤,张良 四个人。 其中 小北投了李光, 赵鹤投了小北, 张良投了李光, 李光投了张良。总结被投票数为： 李光:2票; 小北:1票,张良:1票. Check一下，一共有四个人投票了，被投的票是2（李光）+1（小北）+1（张良）=4，总结被投票数没有问题。 因此李光的票最多", "action": {"agent_name": "主持人", "player_name":""}, "Dungeon_Master": [{ "memory_tag":["all"], "content": "李光:2票; 小北:1票,张良:1票 .因此李光的票最多.【重要通知】本轮死亡玩家是李光",}]}\n\n##example##\n{"thought": "在上一轮中, 存活玩家有 小北,人类玩家,赵鹤,张良 四个人。 其中 小北投了人类玩家, 赵鹤投了小北, 张良投了小北, 人类玩家投了张良。总结被投票数为：小北:2票,人类玩家:1票,张良:0票 .Check一下，一共有四个人投票了，被投的票是2（小北）+1（人类玩家）+张良（0）=3，总结被投票数有问题。 更正总结被投票数为：小北:2票,人类玩家:1票,张良:1票。因此小北的票最多", "action": {"agent_name": "主持人", "player_name":""}, "Dungeon_Master": [{ "memory_tag":["all"], "content": "小北:2票,人类玩家:1票,张良:1票 .因此小北的票最多.【重要通知】本轮死亡玩家是小北",}]}\n\n\n', 'name': '统计票数', 'accesscriteria': '', 'extra': '{"pattern": "react", "endcheck": "True", "memory_tag":"all","model_name":"gpt_4","dodisplay":"True"}','updaterule':'{"存活的玩家":"请根据当前游戏记录更新存活玩家，只输出存活玩家的姓名，不要包含其他信息。"}'})
 
     def autofill_nodes(nodes: List[GNode]):
         '''
@@ -324,6 +324,11 @@ if __name__ == '__main__':
     
     
     ## 测试 get_neighbor_nodes 和  get_current_nodes
+    #node_id = '剧本杀/谁是卧底/智能交互/关键信息_4'
+    node_id = '剧本杀/谁是卧底/智能交互/统计票数'
+    #node_id = '剧本杀/谁是卧底/智能交互/开始新一轮的讨论'
+    start_nodetype    ='opsgptkg_task'
+    
     ekg_service = ekg_construct_service
     logger.info(node_id)
     start_nodetype    =start_nodetype
@@ -335,5 +340,5 @@ if __name__ == '__main__':
     current_nodes = ekg_service.gb.get_current_nodes(attributes={"id": start_nodeid,}, 
                                     node_type=start_nodetype)
 
-    logger.info(neighbor_nodes)
-    logger.info(current_nodes)
+    logger.info(f'neighbor_nodes is {neighbor_nodes}')
+    logger.info(f'current_nodes is {current_nodes}')

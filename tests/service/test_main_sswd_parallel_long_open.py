@@ -204,210 +204,214 @@ if __name__ == '__main__':
     
 
 
-    goc_test_sessionId = "TS_GOC_103346456601_0709002_sswd_45"
+    goc_test_sessionId = "TS_GOC_103346456601_0709002_sswd_55"
 
 
-    #debugmode 调试，谁是卧底初次输入
-    params_string = {'observation': {'content': '一起来玩谁是卧底'},
-        'sessionId': goc_test_sessionId,
-        'scene': 'UNDERCOVER'}
-    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    print('res_to_lingsi', res_to_lingsi)
+#     #debugmode 调试，谁是卧底初次输入
+#     params_string = {'observation': {'content': '一起来玩谁是卧底'},
+#         'sessionId': goc_test_sessionId,
+#         'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('res_to_lingsi', res_to_lingsi)
 
-    time.sleep(1)
+#     time.sleep(1)
 
 
-    #step 1  位置选择tool 返回
+#     #step 1  位置选择tool 返回
 
-    params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
-  'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/分配座位'),
-  'sessionId': goc_test_sessionId,
-  'type': 'onlyTool',
-  'scene': 'UNDERCOVER'}
+#     params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
+#   'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/分配座位'),
+#   'sessionId': goc_test_sessionId,
+#   'type': 'onlyTool',
+#   'scene': 'UNDERCOVER'}
 
-    params_string['observation']['toolResponse'] = json.dumps( {
-    "座位分配结果": [
-        {"player_name": "player_1", "seat_number": 1},
-        {"player_name": "李四(人类玩家)", "seat_number": 2},
-        {"player_name": "player_2", "seat_number": 3},
-        {"player_name": "player_3", "seat_number": 4}
-    ]
-}, ensure_ascii=False)
+#     params_string['observation']['toolResponse'] = json.dumps( {
+#     "座位分配结果": [
+#         {"player_name": "player_1", "seat_number": 1},
+#         {"player_name": "李四(人类玩家)", "seat_number": 2},
+#         {"player_name": "player_2", "seat_number": 3},
+#         {"player_name": "player_3", "seat_number": 4}
+#     ]
+# }, ensure_ascii=False)
     
 
-    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    print('res_to_lingsi', res_to_lingsi)
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('res_to_lingsi', res_to_lingsi)
 
-    time.sleep(1)
+#     time.sleep(1)
 
 
-    #step 2  角色分配和单词分配
+#     #step 2  角色分配和单词分配
 
-    params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
-  'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/角色分配和单词分配'),
-  'sessionId': goc_test_sessionId,
-  'type': 'onlyTool',
-  'scene': 'UNDERCOVER'}
+#     params_string = {'observation': {'toolResponse': '{"座位分配结果": [{"player_name": "player_1", "seat_number": 1}, {"player_name": "player_2", "seat_number": 2}, {"player_name": "player_3", "seat_number": 3}, {"player_name": "player_4", "seat_number": 4}, {"player_name": "player_5", "seat_number": 5}, {"player_name": "player_6", "seat_number": 6}, {"player_name": "李四", "seat_number": 7}]}'},
+#   'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/角色分配和单词分配'),
+#   'sessionId': goc_test_sessionId,
+#   'type': 'onlyTool',
+#   'scene': 'UNDERCOVER'}
 
-    params_string['observation']['toolResponse'] = json.dumps( [
-    {
-        "player_name": "player_1",
-        "seat_number": 1,
-        "agent_name": "agent_2",
-        "agent_description": "平民_1",
-        "单词": "汽车"
-    },
-    {
-        "player_name": "李四(人类玩家)",
-        "seat_number": 2,
-        "agent_name": "人类agent_a",
-        "agent_description": "平民_1",
-        "单词": "汽车"
-    },
-    {
-        "player_name": "player_2",
-        "seat_number": 3,
-        "agent_name": "agent_3",
-        "agent_description": "平民_2",
-        "单词": "汽车"
-    },
-    {
-        "player_name": "player_3",
-        "seat_number": 4,
-        "agent_name": "agent_1",
-        "agent_description": "卧底_1",
-        "单词": "摩托车"
-    }
-], ensure_ascii=False)
+#     params_string['observation']['toolResponse'] = json.dumps( [
+#     {
+#         "player_name": "player_1",
+#         "seat_number": 1,
+#         "agent_name": "agent_2",
+#         "agent_description": "平民_1",
+#         "单词": "汽车"
+#     },
+#     {
+#         "player_name": "李四(人类玩家)",
+#         "seat_number": 2,
+#         "agent_name": "人类agent_a",
+#         "agent_description": "平民_1",
+#         "单词": "汽车"
+#     },
+#     {
+#         "player_name": "player_2",
+#         "seat_number": 3,
+#         "agent_name": "agent_3",
+#         "agent_description": "平民_2",
+#         "单词": "汽车"
+#     },
+#     {
+#         "player_name": "player_3",
+#         "seat_number": 4,
+#         "agent_name": "agent_1",
+#         "agent_description": "卧底_1",
+#         "单词": "摩托车"
+#     }
+# ], ensure_ascii=False)
 
-    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    print('res_to_lingsi', res_to_lingsi)
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('res_to_lingsi', res_to_lingsi)
 
-    time.sleep(1)
-    '''
-    {'intentionRecognitionSituation': 'None', 'sessionId': 'TS_GOC_103346456601_0709001_lrs_105', 'type': 'onlyTool', 'summary': None, 'toolPlan': [{'toolDescription': 'agent_2', 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论', 'memory': '[{"role_type": "user", "role_name": "firstUserInput", "role_content": "{\\"content\\": \\"一起来玩谁是卧底\\"}"}, {"role_type": "observation", "role_name": "function_caller", "role_content": "{\\"座位分配结果\\": [{\\"player_name\\": \\"player_1\\", \\"seat_number\\": 1}, {\\"player_name\\": \\"李四(人类玩家)\\", \\"seat_number\\": 2}, {\\"player_name\\": \\"player_2\\", \\"seat_number\\": 3}, {\\"player_name\\": \\"player_3\\", \\"seat_number\\": 4}]}"}, {"role_type": "userinput", "role_name": "user", "role_content": "分配座位"}, {"role_type": "userinput", "role_name": "user", "role_content": "通知身份"}, "主持人 : 你是player_1, 你的位置是1号， 你分配的单词是汽车", {"role_type": "userinput", "role_name": "user", "role_content": "开始新一轮的讨论"}, "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1"]', 'type': 'reactExecution'}], 'userInteraction': '["通知身份", "主持人 : 你是李四(人类玩家), 你的位置是2号， 你分配的单词是汽车", "开始新一轮的讨论", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1", "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3"]'}
-    '''
+#     time.sleep(1)
+#     '''
+#     {'intentionRecognitionSituation': 'None', 'sessionId': 'TS_GOC_103346456601_0709001_lrs_105', 'type': 'onlyTool', 'summary': None, 'toolPlan': [{'toolDescription': 'agent_2', 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论', 'memory': '[{"role_type": "user", "role_name": "firstUserInput", "role_content": "{\\"content\\": \\"一起来玩谁是卧底\\"}"}, {"role_type": "observation", "role_name": "function_caller", "role_content": "{\\"座位分配结果\\": [{\\"player_name\\": \\"player_1\\", \\"seat_number\\": 1}, {\\"player_name\\": \\"李四(人类玩家)\\", \\"seat_number\\": 2}, {\\"player_name\\": \\"player_2\\", \\"seat_number\\": 3}, {\\"player_name\\": \\"player_3\\", \\"seat_number\\": 4}]}"}, {"role_type": "userinput", "role_name": "user", "role_content": "分配座位"}, {"role_type": "userinput", "role_name": "user", "role_content": "通知身份"}, "主持人 : 你是player_1, 你的位置是1号， 你分配的单词是汽车", {"role_type": "userinput", "role_name": "user", "role_content": "开始新一轮的讨论"}, "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1"]', 'type': 'reactExecution'}], 'userInteraction': '["通知身份", "主持人 : 你是李四(人类玩家), 你的位置是2号， 你分配的单词是汽车", "开始新一轮的讨论", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1", "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3"]'}
+#     '''
     
-    #step 4 剧本杀/谁是卧底/智能交互/关键信息_1
+#     #step 4 剧本杀/谁是卧底/智能交互/关键信息_1
+#     params_string =\
+#     {'observation': {'toolResponse': 'ok'},
+#   'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_1'),
+#   'sessionId': goc_test_sessionId,
+#   'type': 'onlyTool',
+#   'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+#     ## step 4-1 讨论输入 
+#     params_string =\
+#       {'observation': {'toolResponse': '我的单词是一个机械'},
+#       'agentName': 'agent_2',
+#       'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
+#       'sessionId': goc_test_sessionId,
+#       'type': 'reactExecution',
+#       'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+
+#     # step 4-2 讨论输入 
+#     params_string =\
+#     {'observation': {'toolResponse': '我的单词可以用于交通运输'},
+#     'agentName': '人类agent_a',
+#     'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
+#     'sessionId': goc_test_sessionId,
+#     'type': 'reactExecution',
+#     'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+#     ## step 4-3 讨论输入 
+#     params_string =\
+#     {'observation': {'toolResponse': '我的单词是一种工业品'},
+#       'agentName': 'agent_3',
+#     'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
+#     'sessionId': goc_test_sessionId,
+#     'type': 'reactExecution',
+#     'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+#     ## step 4-4 讨论输入 
+#     params_string =\
+#     {'observation': {'toolResponse': '我的单词可以载人'},
+#     'agentName': 'agent_1',
+#     'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
+#     'sessionId': goc_test_sessionId,
+#     'type': 'reactExecution',
+#     'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+
+
+
+
+
+#     #step 4 剧本杀/谁是卧底/智能交互/关键信息_2
+#     params_string =\
+#     {'observation': {'toolResponse': 'ok'},
+#       'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_2'),
+#       'sessionId': goc_test_sessionId,
+#       'type': 'onlyTool',
+#       'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+
+#     # step 5-1 投票 agent 2  player_1  1号座位
+#     params_string =\
+#     {'observation': {'toolResponse': '我投player_2'},
+#       'agentName': 'agent_2',
+#       'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
+#       'sessionId': goc_test_sessionId,
+#       'type': 'reactExecution',
+#       'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+#     ## step 5-2 投票 人类agent  李四 2号
+#     params_string =\
+#     {'observation': {'toolResponse': '我投player_1'},
+#       'agentName': '人类agent_a',
+#     'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
+#     'sessionId': goc_test_sessionId,
+#     'type': 'reactExecution',
+#     'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+#     ## step 5-3 投票    agent3 player_2 3No
+#     params_string =\
+#     {'observation': {'toolResponse': '我投player_1'},
+#       'agentName': 'agent_3',
+#       'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
+#       'sessionId': goc_test_sessionId,
+#       'type': 'reactExecution',
+#       'scene': 'UNDERCOVER'}
+#     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+#     print('UNDERCOVER', res_to_lingsi)
+
+    # # step 5-3 投票   agent1 player_3 4号
+    # params_string =\
+    # {'observation': {'toolResponse': '我也投play_1'},
+    #       'agentName': 'agent_1',
+    #     'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
+    #     'sessionId': goc_test_sessionId,
+    #     'type': 'reactExecution',
+    #     'scene': 'UNDERCOVER'}
+    # res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
+    # print('UNDERCOVER', res_to_lingsi)
+
+    #step 6 剧本杀/谁是卧底/智能交互/关键信息_4
     params_string =\
     {'observation': {'toolResponse': 'ok'},
-  'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_1'),
-  'sessionId': goc_test_sessionId,
-  'type': 'onlyTool',
-  'scene': 'UNDERCOVER'}
-    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    print('UNDERCOVER', res_to_lingsi)
-
-    ## step 4-1 讨论输入 
-    params_string =\
-      {'observation': {'toolResponse': '我的单词是一个机械'},
-      'agentName': 'agent_2',
-      'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
+      'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_4'),
       'sessionId': goc_test_sessionId,
-      'type': 'reactExecution',
+      'type': 'onlyTool',
       'scene': 'UNDERCOVER'}
     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
     print('UNDERCOVER', res_to_lingsi)
-
-
-    # # step 4-2 讨论输入 
-    # params_string =\
-    # {'observation': {'toolResponse': '我的单词可以用于交通运输'},
-    # 'agentName': '人类agent_a',
-    # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
-    # 'sessionId': goc_test_sessionId,
-    # 'type': 'reactExecution',
-    # 'scene': 'UNDERCOVER'}
-    # res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    # print('UNDERCOVER', res_to_lingsi)
-
-    # ## step 4-3 讨论输入 
-    # params_string =\
-    # {'observation': {'toolResponse': '我的单词是一种工业品'},
-    #   'agentName': 'agent_3',
-    # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
-    # 'sessionId': goc_test_sessionId,
-    # 'type': 'reactExecution',
-    # 'scene': 'UNDERCOVER'}
-    # res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    # print('UNDERCOVER', res_to_lingsi)
-
-    # ## step 4-4 讨论输入 
-    # params_string =\
-    # {'observation': {'toolResponse': '我的单词可以载人'},
-    # 'agentName': 'agent_1',
-    # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论'),
-    # 'sessionId': goc_test_sessionId,
-    # 'type': 'reactExecution',
-    # 'scene': 'UNDERCOVER'}
-    # res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
-    # print('UNDERCOVER', res_to_lingsi)
-
-
-
-
-
-
- #    #step 4 剧本杀/谁是卧底/智能交互/关键信息_2
- #    params_string =\
- #    {'observation': {'toolResponse': 'ok'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_2'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'onlyTool',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
-
-
- #    ## step 5-1 投票 agent 2  player_1  1号座位
- #    params_string =\
- #    {'observation': {'toolResponse': '我投player_2'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'reactExecution',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
-
- #    ## step 5-2 投票 人类agent  李四 2号
- #    params_string =\
- #    {'observation': {'toolResponse': '我投player_1'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'reactExecution',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
-
- #    ## step 5-3 投票    agent3 player_2 3No
- #    params_string =\
- #    {'observation': {'toolResponse': '我投player_1'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'reactExecution',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
-
- #    # step 5-3 投票   agent1 player_3 4号
- #    params_string =\
- #    {'observation': {'toolResponse': '我也投play_1'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/票选卧底_1'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'reactExecution',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
-
- #    #step 6 剧本杀/谁是卧底/智能交互/关键信息_4
- #    params_string =\
- #    {'observation': {'toolResponse': 'ok'},
- # 'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_4'),
- # 'sessionId': goc_test_sessionId,
- # 'type': 'onlyTool',
- # 'scene': 'UNDERCOVER'}
- #    res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
- #    print('UNDERCOVER', res_to_lingsi)
 
 
 # #========================

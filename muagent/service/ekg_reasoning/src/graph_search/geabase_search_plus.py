@@ -477,6 +477,7 @@ class graph_search_tool():
         logging.info('================geabase_nodediffusion_plus start===================')
         logging.info('===================================')
         logging.info('===================================')
+        logging.info(f'agent_respond is {agent_respond}; lingsi_response is {lingsi_response}')
         # 0 创建 GB_handler的实例
         gb_handler = self.gb_handler
         self.memory_handler = memory_handler_ekg(self.memory_manager, self.geabase_handler)
@@ -523,6 +524,7 @@ class graph_search_tool():
             nodetype_now    = nodedict_now['nodeType']
 
             neighborNodes = self.geabase_handler.get_neighbor_nodes(attributes={"id": nodeid_now,}, node_type=nodetype_now, reverse=False)
+            logging.info(f'neighborNodes is {neighborNodes}')
             
             if self.gb_handler.all_nodetype_check(rootNodeId = nodeid_now, rootNodeType = nodetype_now, 
         neighborNodeType = 'opsgptkg_phenomenon') == True:

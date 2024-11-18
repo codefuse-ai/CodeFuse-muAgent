@@ -49,7 +49,9 @@ from muagent.service.ekg_construct import EKGConstructService
 from muagent.service.ekg_inference import IntentionRouter
 from muagent.schemas.ekg.ekg_reason import LingSiResponse, ToolPlanOneStep, PlanningRunningAgentReply, ActionOneStep, ActionPlan
 
-from src.graph_search.task_node_prompt import REACT_RUNNING_PROMPT, PLANNING_RUNNING_PROMPT, PLANNING_RUNNING_PROMPT_SUFFIX_1,PLANNING_RUNNING_PROMPT_SUFFIX_2, PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+from src.graph_search.task_node_prompt import REACT_RUNNING_PROMPT, PLANNING_RUNNING_PROMPT,  \
+    PLANNING_RUNNING_PROMPT_SUFFIX_1,PLANNING_RUNNING_PROMPT_SUFFIX_2, PLANNING_RUNNING_AGENT_REPLY_TEMPLATE, \
+    PLANNING_RUNNING_PROMPT_DM_SPEECH,PARALLEL_RUNNING_PROMPT
 # from loguru import logger as logging
 from src.utils.call_llm import call_llm,  extract_final_result , robust_call_llm
 from src.geabase_handler.geabase_handlerplus import GB_handler
@@ -110,6 +112,8 @@ def robust_json_loads(llm_result):
     return llm_result_json
 
 def agent_respond_extract_output(input_str):
+    if input_str == None: 
+        return None
     if 'output' not in input_str:
         return input_str
     input_str = input_str.split('output')[-1]  #取output后面的值
@@ -247,7 +251,7 @@ class TaskNodeAgent():
     
     def task_running(self, sessionId : str, nodeId: str, nodeType:str, lingsi_respond: LingSiResponse):
         '''
-        通用的节点task_running 模块， 根据情况，当前分为  react， parallel，planning
+        通用的节点task_running 模块， 根据情况，当前分为  react， parallel，plan
         '''
 
         if self.gb_handler.get_tag(rootNodeId = nodeId, rootNodeType = nodeType, key = 'action') == 'react':
@@ -300,6 +304,7 @@ class TaskNodeAgent():
                     agent_respond = json.loads(lingsi_respond.observation)['toolResponse']
                 else:
                     agent_respond = lingsi_respond.observation['toolResponse']
+                agent_respond = agent_respond_extract_output(agent_respond) 
         except Exception as e:
             logging.info(f'lingsi_respond is {lingsi_respond}' )
             raise ValueError(f'从lingsi_respond中提取 agent_respond报错, 报错信息：{e}')
@@ -350,7 +355,7 @@ class TaskNodeAgent():
         #step4 执行 llm(如果是第一次调用)
         if first_run_flag == True:
 
-            llm_input = self.naive_agent_input_prompt(assembled_memory, oneNodeName, oneNodeDescription ,PLANNING_RUNNING_PROMPT
+            llm_input = self.naive_agent_input_prompt(assembled_memory, oneNodeName, oneNodeDescription ,PARALLEL_RUNNING_PROMPT
                 , PLANNING_RUNNING_PROMPT_SUFFIX_1 , PLANNING_RUNNING_PROMPT_SUFFIX_2)
 
             logging.info('=============llm_input==================')
@@ -382,6 +387,8 @@ class TaskNodeAgent():
         else:
             logging.info('不是第一次调用，无需执行大模型, 将已运行的agent_name 存下来')
             self.memory_handler.processed_agentname_save(sessionId, nodeId, lingsi_respond.agentName )
+            
+            #if  lingsi_respond.agentName  == '主持人'
             
         
         
@@ -449,8 +456,10 @@ class TaskNodeAgent():
             agent_respond_template['action']['agent_name']  = lingsi_respond.agentName
             agent_respond_template['action']['player_name'] = action_plan.get_player_name_by_agent_name(lingsi_respond.agentName)
             #agent_respond_template['observation'] = [{ "memory_tag":[nodeId],"content": agent_respond}] #
-            agent_respond_template['observation'] = [{ "memory_tag":['all'],"content": agent_respond}] 
-            ## TODO: 这是一个临时解决方案，需要在后续版本中替换为更优的算法,具体为 无论是planning还是parallel，可见范围都最好需要时立即能知道。所以不能等到玩家发言后，再到前端显示
+            first_memory_tag = current_node_history_json[0]['Dungeon_Master'][0]['memory_tag'] #取大模型第一次选中的memory_tag,在这一轮里沿用
+            agent_respond_template['observation'] = [{ "memory_tag":first_memory_tag,"content": agent_respond}] 
+            
+            ## TODO: "memory_tag":["all"] 这是一个临时解决方案，需要在后续版本中替换为更优的算法,具体为 无论是planning还是parallel，可见范围都最好需要时立即能知道。所以不能等到玩家发言后，再到前端显示
             ## 当前设置为all了，但是这是不对的， 有一个解决方案是，将主持人最开始的memory_tag作为后续所有的memory_tag，有一个风险是需要区分 信息的可见范围以及 plan的区别
             ## 可以看见这些memory不一定表示 要参与行动。
             
@@ -496,9 +505,12 @@ class TaskNodeAgent():
                     agent_respond = json.loads(lingsi_respond.observation)['toolResponse']
                 else:
                     agent_respond = lingsi_respond.observation['toolResponse']
+                agent_respond = agent_respond_extract_output(agent_respond) 
         except Exception as e:
             logging.info(f'lingsi_respond is {lingsi_respond}' )
             raise ValueError(f'从lingsi_respond中提取 agent_respond报错, 报错信息：{e}')
+        
+
 
         
         #stpe1 判断当前状态, 看是否是第一次运行
@@ -538,11 +550,9 @@ class TaskNodeAgent():
             current_node_history  = self.memory_handler.react_current_history_get(sessionId, nodeId)
             current_node_history_json = json.loads(current_node_history)
             
-            action_plan = json.loads( self.memory_handler.current_plan_get(sessionId, nodeId ) )
-            logging.info(f'对于 planning 之前存储的action_plan is {action_plan} ，type(action_plan) is {type(action_plan) } ') 
-            action_plan =ActionPlan(**action_plan)
+
             
-        #step4 执行 llm(如果是第一次调用)
+        #step4 执行 llm(如果是第一次调用) 获取action plan
         if first_run_flag == True:
 
             llm_input = self.naive_agent_input_prompt(assembled_memory, oneNodeName, oneNodeDescription ,PLANNING_RUNNING_PROMPT
@@ -564,16 +574,62 @@ class TaskNodeAgent():
             
             
             action_plan = llm_result_json["action_plan"]
+            action_plan =ActionPlan(**{'data':action_plan})
+            
             
             
         else:
+            #存已有的agentName
             logging.info('不是第一次调用，无需执行大模型, 将已运行的agent_name 存下来')
             self.memory_handler.processed_agentname_save(sessionId, nodeId, lingsi_respond.agentName )
         
+            #从memory中获取 action plan
+            action_plan = json.loads( self.memory_handler.current_plan_get(sessionId, nodeId ) )
+            logging.info(f'对于 planning 之前存储的action_plan is {action_plan} ，type(action_plan) is {type(action_plan) } ') 
+            action_plan =ActionPlan(**action_plan)
+            
+            
+            #组装agent返回的格式 agent_respond_template
+            agent_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+
+            agent_respond_template['action']['agent_name']  = lingsi_respond.agentName
+            #agent_respond_template['action']['player_name'] = self.get_player_name_from_action_plan(action_plan, lingsi_respond.agentName)
+            first_memory_tag = current_node_history_json[0]['Dungeon_Master'][0]['memory_tag'] #取大模型第一次选中的memory_tag,在这一轮里沿用
+            agent_respond_template['action']['player_name'] = action_plan.get_player_name_by_agent_name(lingsi_respond.agentName)
+            agent_respond_template['observation'] = [{ "memory_tag":first_memory_tag,"content": agent_respond}]# TODO
+            current_node_history_json.append(agent_respond_template)
+        
+        
+        #step4.5  如果需要执行 主持人。  修改 action_plan 和 current_node_history_json
+        while action_plan.data[0].agent_name == '主持人':
+            
+            llm_input = assembled_memory + '\n' + oneNodeName + '\n' +oneNodeDescription + PLANNING_RUNNING_PROMPT_DM_SPEECH + '\n##已有步骤##\n' + \
+                json.dumps(current_node_history_json,ensure_ascii=False) + PLANNING_RUNNING_PROMPT_SUFFIX_2
+            
+            logging.info('=============llm_input 主持人==================')
+            logging.info(llm_input)
+            
+            llm_result = self.robust_call_llm_with_llmname(llm_input, nodeId)
+            
+            logging.info('=============llm_result 主持人==================')
+            logging.info(llm_result)
+            dm_result_json = robust_json_loads(llm_result)
+            
+            
+            dm_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+            dm_respond_template['action']['agent_name']  = '主持人'
+            dm_respond_template['action']['player_name'] = '主持人'
+            first_memory_tag = current_node_history_json[0]['Dungeon_Master'][0]['memory_tag'] #取大模型第一次选中的memory_tag,在这一轮里沿用
+            dm_respond_template['Dungeon_Master'] = [{ "memory_tag":first_memory_tag, "content": dm_result_json['content']}]# TODO
+            current_node_history_json.append(dm_respond_template) #将当前记录放到current_node_history_json里
+            action_plan.data.pop(0) #从action_plan.data里 抛弃第一个元素
+            
+
+
+            
         
         #step5 分析 llm_result 执行结果
-        
-        if first_run_flag == True and  len(action_plan) >0 :
+        if first_run_flag == True and  len(action_plan.data) >0 :
             react_flag = 'waiting_other_agent'
 
             logging.info(f'当前为{react_flag}, 因为初次运行且plan不为空')
@@ -581,8 +637,8 @@ class TaskNodeAgent():
             # llm_result_truncation_json = json.loads(current_node_history +  llm_result_truncation + '":[]}]')
 
             #提取此时应该执行的agent_name
-            execute_agent_name = action_plan[0]['agent_name']
-            execute_player_name = action_plan[0]['player_name']
+            execute_agent_name = action_plan.data[0].agent_name
+            execute_player_name = action_plan.data[0].player_name
 
             #将该节点的count 设置为 runninng
             self.memory_handler.nodecount_set_key(sessionId, nodeId, 'nodestage', 'running')
@@ -595,9 +651,9 @@ class TaskNodeAgent():
                 raise  ValueError(f'此时不是第一次运行，在memory中应该已经有processed_agentname才对，但是processed_agentname is {processed_agentname} ')
             
             remain_action_plan = []
-            for i in range(len(action_plan)):
-                if action_plan[i]['agent_name'] not in processed_agentname:
-                    remain_action_plan.append(action_plan[i])
+            for i in range(len(action_plan.data)):
+                if action_plan.data[i].agent_name not in processed_agentname:
+                    remain_action_plan.append(action_plan.data[i])
             
             logging.info(f'剩余待处理的的agent_name 为 {remain_action_plan}')
             if len(remain_action_plan) == 0:
@@ -610,8 +666,8 @@ class TaskNodeAgent():
                 logging.info(f'当前为{react_flag}, 因为第一次大模型生成的plan还没有执行成完 ')
                 
                 #提取此时应该执行的agent_name
-                execute_agent_name = remain_action_plan[0]['agent_name']
-                execute_player_name = remain_action_plan[0]['player_name']
+                execute_agent_name = remain_action_plan[0].agent_name
+                execute_player_name = remain_action_plan[0].player_name
 
                 #将该节点的count 设置为 runninng
                 self.memory_handler.nodecount_set_key(sessionId, nodeId, 'nodestage', 'running')
@@ -620,28 +676,14 @@ class TaskNodeAgent():
         #step6 分析 llm_result 执行结果, 并保存
  
         if first_run_flag == True:
-            action_plan = llm_result_json["action_plan"]
-            #存plan
-            self.memory_handler.current_plan_save(sessionId, nodeId, json.dumps(action_plan ,ensure_ascii=False)  )
-            #存对话
-            self.memory_handler.react_current_history_save(sessionId, nodeId, json.dumps(current_node_history_json ,ensure_ascii=False)  )
+            self.memory_handler.current_plan_save(sessionId, nodeId, json.dumps(action_plan.dict() ,ensure_ascii=False)  )
+  
             
-        else:
-            #存agent返回结果的对话
-            #agent_respond_template = self.plan_running_agent_responds_build()
-
-
-            agent_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
-
-            agent_respond_template['action']['agent_name']  = lingsi_respond.agentName
-            #agent_respond_template['action']['player_name'] = self.get_player_name_from_action_plan(action_plan, lingsi_respond.agentName)
-            agent_respond_template['action']['player_name'] = action_plan.get_player_name_by_agent_name(lingsi_respond.agentName)
-            agent_respond_template['observation'] = [{ "memory_tag":['all'],"content": agent_respond}]# TODO
-            current_node_history_json.append(agent_respond_template)
-            self.memory_handler.react_current_history_save(sessionId, nodeId, json.dumps(current_node_history_json ,ensure_ascii=False)  )
-
 
         #step7 存储 memory # for other agent
+        logging.info(f'current_node_history_json if {current_node_history_json}')
+        
+        self.memory_handler.react_current_history_save(sessionId, nodeId, json.dumps(current_node_history_json ,ensure_ascii=False)  )
         self.memory_handler.react_memory_save(sessionId, nodeId,  current_node_history_json)
         
         update_flag = self.update_replacement(sessionId, nodeId)

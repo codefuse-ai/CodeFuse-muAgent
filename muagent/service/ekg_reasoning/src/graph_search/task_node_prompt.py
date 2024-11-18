@@ -1,5 +1,27 @@
 # -*- coding: utf-8 -*-
 
+PARALLEL_RUNNING_PROMPT= \
+'''
+##输出##
+请以dict的形式，给出参与者的所有行动计划。行动计划表示为JSON，格式为
+ {"thought": str, "action_plan": [{"player_name":str, "agent_name":str}, {"player_name":str, "agent_name":str}], "Dungeon_Master": [{"memory_tag":str,"content":str}] }
+
+
+关键词含义如下：
+_ thought (str): 主持人的一些思考,包括分析玩家的存活状态，对历史对话信息的理解，对当前任务情况的判断等。 
+_ player_name (str): 玩家的 player_name
+_ agent_name (str):  玩家的 agent_name;
+_ content (str):     为主持人的告知信息, 
+_ memory_tag (List[str]): memory_tag 固定为本条信息的可见对象的agent_name, 如果信息可见对象为所有玩家，固定为 ["all"]
+
+##example##
+{"thought": "str", "action_plan": [{"player_name":str, "agent_name":str}, {"player_name":str, "agent_name":str}, ... ], "Dungeon_Master": [{ "memory_tag":["agent_name_a","agent_name_b"], "content": "str",}]}
+
+##注意事项##
+1. 所有玩家的座位、身份、agent_name、存活状态等信息在开头部分已给出。
+2. 整个dict是一个jsonstr，请输出jsonstr，不用输出markdown格式
+3. 结合已有的步骤，只输出一个 dict，不要包含其他信息
+'''
 
 
 
@@ -12,13 +34,35 @@ PLANNING_RUNNING_PROMPT= \
 
 关键词含义如下：
 _ thought (str): 主持人的一些思考,包括分析玩家的存活状态，对历史对话信息的理解，对当前任务情况的判断等。 
-_ player_name (str): 为玩家的 player_name；
-_ agent_name (str):  为玩家的 agent_name。
+_ player_name (str): 行动方的 player_name, 若行动方为玩家，否则为玩家的 player_name;如果行动方是主持人，为 "主持人"，
+_ agent_name (str):  行动方的 agent_name, 若行动方为玩家，否则为玩家的 agent_name;如果行动方是主持人，为 "主持人"，
 _ content (str):     为主持人的告知信息, 
 _ memory_tag (List[str]): memory_tag 固定为本条信息的可见对象的agent_name, 如果信息可见对象为所有玩家，固定为 ["all"]
 
 ##example##
 {"thought": "str", "action_plan": [{"player_name":str, "agent_name":str}, {"player_name":str, "agent_name":str}, ... ], "Dungeon_Master": [{ "memory_tag":["agent_name_a","agent_name_b"], "content": "str",}]}
+
+##注意事项##
+1. 所有玩家的座位、身份、agent_name、存活状态等信息在开头部分已给出。
+2. 整个dict是一个jsonstr，请输出jsonstr，不用输出markdown格式
+3. 结合已有的步骤，只输出一个 dict，不要包含其他信息
+'''
+
+
+PLANNING_RUNNING_PROMPT_DM_SPEECH= \
+'''
+##输出##
+本阶段行动计划已经给出了，根据行动计划，此时轮到主持人发言。主持人的发言表示为JSON，格式为
+{"thought": str,  "content":str}]}
+ 
+主持人请尽量不要重复上一轮的发言
+ 
+关键词含义如下：
+_ thought (str): 主持人的一些思考,包括分析玩家的存活状态，对历史对话信息的理解，对当前任务情况的判断等。 
+_ content (str):     为主持人的具体发言信息, 
+
+
+
 
 ##注意事项##
 1. 所有玩家的座位、身份、agent_name、存活状态等信息在开头部分已给出。

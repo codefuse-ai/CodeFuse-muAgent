@@ -42,6 +42,8 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.schemas.db import GBConfig
 from muagent.service.ekg_construct import EKGConstructService
 from muagent.service.ekg_inference import IntentionRouter
+from muagent.schemas.ekg.ekg_reason import LingSiResponse, ToolPlanOneStep, PlanningRunningAgentReply, ActionOneStep, ActionPlan
+
 
 #内部其他函数
 from src.utils.call_llm import call_llm,  extract_final_result
@@ -214,15 +216,32 @@ if __name__ == '__main__':
     # print('res_to_lingsi', res_to_lingsi)
 
     # time.sleep(1) 
-    last_intention_nodeid = hash_id('剧本杀')
+    sessionId =    "TS_GOC_103346456601_0709002_sswd_55"
+    start_nodeid = '30217ede24ec57c7660c50fa0c8271a9'
+    start_nodetype = 'opsgptkg_task'
+    agent_respond = None
+    
+    params_string =\
+    {'observation': {'toolResponse': 'ok'},
+      'currentNodeId': hash_id('剧本杀/谁是卧底/智能交互/关键信息_4'),
+      'sessionId': sessionId,
+      'type': 'onlyTool',
+      'scene': 'UNDERCOVER'}
+    lingsi_response = LingSiResponse(**params_string)
+    
     gst = graph_search_tool(geabase_handler, memory_manager, llm_config=llm_config)
-    tool_plan, tool_plan_return = gst.geabase_nodediffusion_plus(  sessionId = 'none', 
-            start_nodeid = last_intention_nodeid, start_nodetype = 'opsgptkg_intent',  
-            agent_respond = None, lingsi_response = None)
+    
+    
+    tool_plan, tool_plan_return = gst.geabase_nodediffusion_plus(  
+            sessionId       = sessionId, 
+            start_nodeid    = start_nodeid, 
+            start_nodetype  = start_nodetype,  
+            agent_respond   = agent_respond, 
+            lingsi_response = lingsi_response)
     
     
     print(tool_plan_return)
-    print('============================')
+    print('============================')  
     print(tool_plan)
     
     

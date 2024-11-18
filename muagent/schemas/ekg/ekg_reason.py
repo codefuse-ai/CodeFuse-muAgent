@@ -238,10 +238,17 @@ if __name__ == '__main__':
     
     
     
-    ccc  = {'data': [{'agent_name': 'agent_2', 'player_name': 'player_1'},
-      {'agent_name': '人类agent_a', 'player_name': '李四(人类玩家)'},
-      {'agent_name': 'agent_3', 'player_name': 'player_2'},
-      {'agent_name': 'agent_1', 'player_name': 'player_3'}]}
+    # ccc  = {'data': [{'agent_name': 'agent_2', 'player_name': 'player_1'},
+    #   {'agent_name': '人类agent_a', 'player_name': '李四(人类玩家)'},
+    #   {'agent_name': 'agent_3', 'player_name': 'player_2'},
+    #   {'agent_name': 'agent_1', 'player_name': 'player_3'}]}
+    
+    ccc = [{"player_name": "主持人", "agent_name": "主持人"}, 
+           {"player_name": "player_1", "agent_name": "agent_2"},
+           {"player_name": "李四(人类玩家)", "agent_name": "人类agent_a"}, 
+           {"player_name": "player_2", "agent_name": "agent_3"}, 
+           {"player_name": "player_3", "agent_name": "agent_1"}]
+    ccc = {'data':ccc}
     
     action_plan =ActionPlan(**ccc)
     print(action_plan)
