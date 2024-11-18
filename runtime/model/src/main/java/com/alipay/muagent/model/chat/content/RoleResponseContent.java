@@ -53,6 +53,62 @@ public class RoleResponseContent extends ChatContent {
         return rrc;
     }
 
+    public static RoleResponseContent buildZhuli(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("朱丽");
+        rrc.setUrl("http://localhost:8080/avatar/zhuli.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildZhoujie(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("周杰");
+        rrc.setUrl("http://localhost:8080/avatar/zhoujie.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildShenqiang(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("沈强");
+        rrc.setUrl("http://localhost:8080/avatar/shenqiang.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildHangang(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("韩刚");
+        rrc.setUrl("http://localhost:8080/avatar/hangang.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildLiangjun(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("梁军");
+        rrc.setUrl("http://localhost:8080/avatar/liangjun.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildZhouxinyi(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("周心怡");
+        rrc.setUrl("http://localhost:8080/avatar/zhouxinyi.png");
+
+        return rrc;
+    }
+
+    public static RoleResponseContent buildHezixuan(String rsp) {
+        RoleResponseContent rrc = getRoleResponseContent(rsp);
+        rrc.setName("贺子轩");
+        rrc.setUrl("http://localhost:8080/avatar/hezixuan.png");
+
+        return rrc;
+    }
+
     private static RoleResponseContent getRoleResponseContent(String response) {
         RoleResponseContent rrc = new RoleResponseContent();
         rrc.setResponse(ChatResponse.buildTextResponse(response));
