@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -118,7 +119,7 @@ public class EkgChatServiceImpl implements ChatService {
             ekgRequest.setIntentionRule(Lists.newArrayList("nlp"));
             ekgRequest.setScene("NEXA");
 
-            ekgHandler(emitter, ekgRequest, "1");
+            ekgHandler(emitter, ekgRequest, "1", null);
         } catch (Exception e) {
             LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}]", request.getChatUniqueId());
         }
@@ -132,7 +133,7 @@ public class EkgChatServiceImpl implements ChatService {
             new ArrayBlockingQueue<>(1),
             new ThreadPoolExecutor.AbortPolicy());
 
-    private boolean ekgHandler(SseEmitter emitter, EkgQueryRequest ekgRequest, String stepNum) {
+    private boolean ekgHandler(SseEmitter emitter, EkgQueryRequest ekgRequest, String stepNum, HashMap<String, Object> exContext) {
         try {
             MDC.put("stepNodeId", stepNum);
             EkgAlgorithmResult response = sendRequestToEkgPlanner(ekgRequest);
@@ -152,12 +153,22 @@ public class EkgChatServiceImpl implements ChatService {
             // 需要给用户反馈信息
             if (StringUtils.isNotBlank(response.getUserInteraction())) {
                 RoleResponseContent rrc = buildRoleResponseContent(response.getUserInteraction());
-                String userMsg = GsonUtils.toString(ChatResponse.buildRoleResponses(rrc));
+                List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
+                crs.get(0).setExtendContext(exContext);
+                String userMsg = GsonUtils.toString(crs);
                 LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
                 emitter.send(SseEmitter.event().data(userMsg));
             }
 
-            // TODO 并行的时候，该如何判断信息退出
+            Optional<EkgNode> userNode = response.getToolPlan().stream().filter(
+                    node -> ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())).findAny();
+
+            HashMap<String, Object> nodeContext = Maps.newHashMap();
+            if (userNode.isPresent()) {
+                // 将 node 和 对话id 放入上下文
+                exContext.put(EKG_NODE.name(), GsonUtils.toString(userNode.get()));
+                exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
+            }
 
             AtomicInteger step = new AtomicInteger(1);
             List<Future<Boolean>> futures = response.getToolPlan().stream().map(node ->
@@ -173,11 +184,8 @@ public class EkgChatServiceImpl implements ChatService {
 
                                 List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
 
-                                // 将 node 和 对话id 放入上下文
-                                HashMap<String, Object> exContext = Maps.newHashMap();
-                                exContext.put(EKG_NODE.name(), GsonUtils.toString(node));
-                                exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
-                                crs.get(0).setExtendContext(exContext);
+
+                                crs.get(0).setExtendContext(nodeContext);
 
                                 String userMsg = GsonUtils.toString(crs);
                                 LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
@@ -199,7 +207,7 @@ public class EkgChatServiceImpl implements ChatService {
                             ekgRequest.setIntentionData(null);
                             ekgRequest.setIntentionRule(null);
 
-                            return ekgHandler(emitter, ekgRequest, String.format("%s.%s", stepNum, step.getAndAdd(1)));
+                            return ekgHandler(emitter, ekgRequest, String.format("%s.%s", stepNum, step.getAndAdd(1)), nodeContext);
                         } catch (EkgToolNotFindException eetnfe) {
                             try {
                                 emitter.send(
