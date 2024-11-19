@@ -218,7 +218,7 @@ if __name__ == '__main__':
     
     #测试 memory_manager.get_memory_pool_by_all
 
-    
+    sessionId = '7c3193312372449c96951a6259b4eda7'
     memory_handler  = memory_handler_ekg(memory_manager, geabase_handler)
     memory_manager_res= memory_manager.get_memory_pool_by_all({ 
                                                         "chat_index": sessionId, 

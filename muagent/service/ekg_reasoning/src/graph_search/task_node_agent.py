@@ -451,7 +451,7 @@ class TaskNodeAgent():
             #agent_respond_template = self.plan_running_agent_responds_build()
     
 
-            agent_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+            agent_respond_template = copy.deepcopy(PLANNING_RUNNING_AGENT_REPLY_TEMPLATE)
 
             agent_respond_template['action']['agent_name']  = lingsi_respond.agentName
             agent_respond_template['action']['player_name'] = action_plan.get_player_name_by_agent_name(lingsi_respond.agentName)
@@ -466,7 +466,7 @@ class TaskNodeAgent():
             
             current_node_history_json.append(agent_respond_template)
             self.memory_handler.react_current_history_save(sessionId, nodeId, json.dumps(current_node_history_json ,ensure_ascii=False)  )
-            logging.info(f'current_node_history_json is  {current_node_history_json}' )
+            logging.info(f'current_node_history_json is  {current_node_history_json}##### lingsi_respond is {lingsi_respond}; ##### agent_respond is {agent_respond} ##### agent_respond_template is {agent_respond_template}' )
     
 
         #step7 存储 memory # for other agent
@@ -590,7 +590,7 @@ class TaskNodeAgent():
             
             
             #组装agent返回的格式 agent_respond_template
-            agent_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+            agent_respond_template = copy.deepcopy(PLANNING_RUNNING_AGENT_REPLY_TEMPLATE)
 
             agent_respond_template['action']['agent_name']  = lingsi_respond.agentName
             #agent_respond_template['action']['player_name'] = self.get_player_name_from_action_plan(action_plan, lingsi_respond.agentName)
@@ -616,7 +616,7 @@ class TaskNodeAgent():
             dm_result_json = robust_json_loads(llm_result)
             
             
-            dm_respond_template = PLANNING_RUNNING_AGENT_REPLY_TEMPLATE
+            dm_respond_template = copy.deepcopy(PLANNING_RUNNING_AGENT_REPLY_TEMPLATE)
             dm_respond_template['action']['agent_name']  = '主持人'
             dm_respond_template['action']['player_name'] = '主持人'
             first_memory_tag = current_node_history_json[0]['Dungeon_Master'][0]['memory_tag'] #取大模型第一次选中的memory_tag,在这一轮里沿用

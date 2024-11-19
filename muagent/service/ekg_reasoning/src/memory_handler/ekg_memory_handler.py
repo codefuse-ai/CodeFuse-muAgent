@@ -499,7 +499,7 @@ class memory_handler_ekg():
 
         
 
-        #logging.info(f'memory_save_info_list 初步 is {memory_save_info_list}')
+        logging.info(f'memory_save_info_list 初步 is {memory_save_info_list}')
         if 'taskend' not in  json.dumps(llm_res,  ensure_ascii=False)   and  memory_save_info_list[-1][1] != '主持人' and \
         self.gb_handler.get_tag(rootNodeId = currentNodeId, rootNodeType = 'opsgptkg_task', key = 'action') == 'react': 
             #现在还没有run到最后。那么            #最后一个observation，这个是幻觉，主持人替其他玩家说的话， 不能存入到memory里
