@@ -286,22 +286,9 @@ class NebulaHandler:
         for prop_name in properties_name:
             value = node_attributes.get(prop_name)
             if isinstance(value, str):
-                if prop_name == 'extra':
-                    # 转义双引号
-                    # value = value.replace('"', '\\"')
                 if prop_name in {'extra', 'description', 'envdescription','updaterule'}:
                     # 转义换行符和双引号
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                elif prop_name == 'description':
-                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                elif prop_name == 'envdescription':
-                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                else:
-                    cypher += f'"{value}",'
-                #cypher += f'"{value}",'
                 cypher += f'"{value}",'
             else:
                 cypher += f'{value},'
