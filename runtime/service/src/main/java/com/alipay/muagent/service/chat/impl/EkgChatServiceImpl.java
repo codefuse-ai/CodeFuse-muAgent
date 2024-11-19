@@ -150,6 +150,10 @@ public class EkgChatServiceImpl implements ChatService {
                 return false;
             }
 
+            if (CollectionUtils.isEmpty(response.getToolPlan())) {
+                response.setToolPlan(Lists.newArrayList());
+            }
+
             // 需要给用户反馈信息
             if (StringUtils.isNotBlank(response.getUserInteraction())) {
                 RoleResponseContent rrc = buildRoleResponseContent(response.getUserInteraction());
@@ -166,8 +170,8 @@ public class EkgChatServiceImpl implements ChatService {
             HashMap<String, Object> nodeContext = Maps.newHashMap();
             if (userNode.isPresent()) {
                 // 将 node 和 对话id 放入上下文
-                exContext.put(EKG_NODE.name(), GsonUtils.toString(userNode.get()));
-                exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
+                nodeContext.put(EKG_NODE.name(), GsonUtils.toString(userNode.get()));
+                nodeContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
             }
 
             AtomicInteger step = new AtomicInteger(1);
@@ -183,8 +187,6 @@ public class EkgChatServiceImpl implements ChatService {
                                         "<font color='#A9192d'> *请回答：* </font> \n\n >" + ques.getQuestionContent().getQuestion());
 
                                 List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
-
-
                                 crs.get(0).setExtendContext(nodeContext);
 
                                 String userMsg = GsonUtils.toString(crs);
