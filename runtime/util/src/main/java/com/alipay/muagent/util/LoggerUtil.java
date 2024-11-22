@@ -4,6 +4,8 @@
  */
 package com.alipay.muagent.util;
 
+import com.alipay.muagent.model.trace.TraceThreadLocalContext;
+import com.alipay.muagent.model.trace.TraceThreadLocalContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -13,10 +15,16 @@ import org.slf4j.helpers.MessageFormatter;
  */
 public class LoggerUtil {
 
+    /**
+     * 获取当前请求上下文的traceId
+     * @return traceId
+     */
     private static String getTraceId() {
-        // todo
-        return "";
-
+        TraceThreadLocalContext traceThreadLocalContext = TraceThreadLocalContextHolder.getTraceThreadLocalContext();
+        if (!traceThreadLocalContext.isEmpty()) {
+            return traceThreadLocalContext.getCurrentTraceContext().getTraceId();
+        }
+        return null;
     }
 
     /**

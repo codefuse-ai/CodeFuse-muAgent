@@ -19,6 +19,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.alipay.muagent</groupId>
+            <artifactId>model</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
