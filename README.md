@@ -71,9 +71,8 @@ docker compose up -d
 
 <https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88>
 
-Now is beta version. Once the v1.0+ version is enhanced, we will release v1.0+ image for download.
+We provide corresponding muagent-related images (beta) at [codefuse-ai/packages](https://github.com/orgs/codefuse-ai/packages). If needed, you can download them using `bash docker_pull_images.sh`.
 
-To Be Continued!
 
 ### SDK
 

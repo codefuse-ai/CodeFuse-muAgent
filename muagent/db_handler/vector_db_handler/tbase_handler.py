@@ -117,20 +117,24 @@ class TbaseHandler:
         r = self.search(query, index_name, query_params, limit=limit)
         return r
 
-    def delete(self, content):
+    def delete(self, content: str):
         '''
         delete
         :param id:
         :return:
         '''
-        id = f"{self.definition_value}:{content}"
+        id = content if content.startswith(f"{self.definition_value}:") \
+                    else f"{self.definition_value}:{content}"
         res = self.client.delete(id)
         return res
 
-    def get(self, content):
-        id = f"{self.definition_value}:{content}"
-        logger.debug(f"{id}")
-        res = self.client.hgetall(id)
+    def get(self, content, id=None, key=None):
+        id = id or f"{self.definition_value}:{content}"
+
+        if key:
+            res = self.client.hget(id, key)
+        else:
+            res = self.client.hgetall(id)
         return res
 
     def fuzzy_delete(self, collection_name, delete_str, index_name="test"):

@@ -289,7 +289,16 @@ class NebulaHandler:
                 if prop_name in {'extra', 'description', 'envdescription','updaterule'}:
                     # 转义换行符和双引号
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                cypher += f'"{value}",'
+                    cypher += f'"{value}",'
+                elif prop_name == 'description':
+                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
+                    cypher += f'"{value}",'
+                elif prop_name == 'envdescription':
+                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
+                    cypher += f'"{value}",'
+                else:
+                    cypher += f'"{value}",'
+                #cypher += f'"{value}",'
             else:
                 cypher += f'{value},'
         cypher = cypher.rstrip(',')

@@ -481,15 +481,21 @@ class EKGConstructService:
         tbase_nodes = []
         for node in nodes:
             # get the node's teamids
-            r = self.tb.search(
-                f"@node_id: *{node.id}*", index_name=self.node_indexname
-            )
-            
+            r = self.tb.get(node.id, key="node_str")
             teamids = [
                 i.strip()
-                for i in r.docs[0]["node_str"].replace("graph_id=", "").split(",")
-                if i.strip()
-            ] if r.docs else []
+                for i in r.decode().replace("graph_id=", "").split(",")
+            ] if r else []
+
+            # r = self.tb.search(
+            #     f"@node_id: *{node.id}*", index_name=self.node_indexname
+            # )
+            
+            # teamids = [
+            #     i.strip()
+            #     for i in r.docs[0]["node_str"].replace("graph_id=", "").split(",")
+            #     if i.strip()
+            # ] if r.docs else []
             teamids = list(set(teamids+[teamid]))
 
             tbase_nodes.append({
@@ -667,11 +673,17 @@ class EKGConstructService:
             logger.error(f"there must something wrong! "
                          f"ID not match, such as {tbase_missing_nodeids}")
             for nodeid in tbase_missing_nodeids:
-                r = self.tb.search(
-                    f"@node_id: {nodeid.replace('-', '_')}", 
-                    index_name=self.node_indexname)
-                teamids_by_nodeid.update(
-                    {data['node_id']: data["node_str"]  for data in r.docs})
+                r = self.tb.get(nodeid.replace('-', '_'), key="node_str")
+                if r:
+                    teamids_by_nodeid.update(
+                        {nodeid.replace('-', '_'): r.decode()}
+                    )
+
+                # r = self.tb.search(
+                #     f"@node_id: {nodeid.replace('-', '_')}", 
+                #     index_name=self.node_indexname)
+                # teamids_by_nodeid.update(
+                #     {data['node_id']: data["node_str"]  for data in r.docs})
 
         tbase_datas = []
         for node in nodes:
@@ -811,12 +823,18 @@ class EKGConstructService:
         else:
             node = GNode(id=nodeid, type="", attributes={})
         # tbase search
-        r = self.tb.search(f"@node_id: *{nodeid}*", index_name=self.node_indexname)
+        r = self.tb.get(nodeid.replace('-', '_'), key="node_str")
         teamids = [
-                i.strip()
-                for i in r.docs[0]["node_str"].replace("graph_id=", "").split(",")
-                if i.strip()
-            ] if r.docs else []
+            i.strip()
+            for i in r.decode().replace("graph_id=", "").split(",")
+        ] if r else []
+
+        # r = self.tb.search(f"@node_id: *{nodeid}*", index_name=self.node_indexname)
+        # teamids = [
+        #         i.strip()
+        #         for i in r.docs[0]["node_str"].replace("graph_id=", "").split(",")
+        #         if i.strip()
+        #     ] if r.docs else []
 
         node.attributes["teamids"] = ', '.join(teamids)
         return node
