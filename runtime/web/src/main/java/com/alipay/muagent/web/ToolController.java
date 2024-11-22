@@ -35,7 +35,7 @@ public class ToolController {
 
     @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
-    public Tool queryToolById(@RequestParam Long id) {
+    public Tool queryToolById(@RequestParam String id) {
         return toolLoader.queryToolById(id);
     }
 

@@ -16,7 +16,7 @@ import java.util.Date;
 @Data
 public class Tool {
 
-    private Long id;
+    private String id;
 
     /**
      * 创建时间

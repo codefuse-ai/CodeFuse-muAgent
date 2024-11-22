@@ -5,16 +5,15 @@
 package com.alipay.muagent.service.tool.loader.impl;
 
 import com.alipay.muagent.model.tool.meta.Tool;
+import com.alipay.muagent.service.mybatisplus.dto.ToolConverter;
+import com.alipay.muagent.service.mybatisplus.dto.ToolDO;
+import com.alipay.muagent.service.mybatisplus.mapper.TooDOlMapper;
 import com.alipay.muagent.service.tool.loader.ToolLoader;
-import com.alipay.muagent.util.GsonUtils;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
-import java.io.BufferedInputStream;
 import java.util.List;
 
 /**
@@ -27,13 +26,16 @@ public class LocalToolLoader implements ToolLoader {
     @Autowired
     private ResourceLoader resourceLoader;
 
+    @Autowired
+    private TooDOlMapper   tooDOlMapper;
+
     @Override
-    public Tool queryToolById(Long id) {
-        return queryToolByKey(String.valueOf(id));
+    public Tool queryToolById(String id) {
+        return queryToolByKey(id);
     }
 
     @Override
-    public List<Tool> queryToolsByIdList(List<Long> ids) {
+    public List<Tool> queryToolsByIdList(List<String> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return Lists.newArrayList();
         }
@@ -42,20 +44,9 @@ public class LocalToolLoader implements ToolLoader {
 
     @Override
     public Tool queryToolByKey(String id) {
-        String fileName = String.format("tools/%s.json", id);
         try {
-            Resource resource = resourceLoader.getResource("classpath:" + fileName);
-            BufferedInputStream bufferedReader = new BufferedInputStream(resource.getInputStream());
-            byte[] buffer = new byte[1024]; // 设置缓冲区大小
-            int bytesRead = 0;
-            StringBuffer sBuffer = new StringBuffer();
-            while ((bytesRead = bufferedReader.read(buffer)) != -1) {
-                sBuffer.append(new String(buffer, 0, bytesRead));
-            }
-            bufferedReader.close();
-
-            Tool tool = GsonUtils.fromString(Tool.class, sBuffer.toString());
-            return tool;
+            ToolDO toolDO = tooDOlMapper.selectById(id);
+            return new ToolConverter().convertFromDto(toolDO);
         } catch (Exception e) {
             throw new RuntimeException(String.format("loadToolFailed:%s", id), e);
         }

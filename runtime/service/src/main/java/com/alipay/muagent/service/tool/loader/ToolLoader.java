@@ -14,9 +14,9 @@ import java.util.List;
  */
 public interface ToolLoader {
 
-    Tool queryToolById(Long id);
+    Tool queryToolById(String id);
 
-    List<Tool> queryToolsByIdList(List<Long> id);
+    List<Tool> queryToolsByIdList(List<String> id);
 
     Tool queryToolByKey(String toolKey);
 
