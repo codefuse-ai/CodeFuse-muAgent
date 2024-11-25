@@ -3,7 +3,7 @@
 ## 1、使用google/baidu 搜索 阿里云镜像服务
 
 ## 2、登录后点击管理控制台
-![](resources/aliyun_01.webp)
+![](resources/aliyun_01.png)
 
 ## 3、点击个人实例，如果没有就生成一个（免费的）
 ![](resources/aliyun_02.webp)
@@ -28,7 +28,7 @@ ALIYUN_PASSWWORD={配置访问凭证}
 
 ```bash
 # 本地执行拉取镜像
-# 示例，仅支持ekgfrontend、runtime、ekgservice；其他镜像根据需求对docker-image-pull进行修改
+# 示例，仅支持ekgfrontend、runtime、muagent；其他镜像根据需求对docker-image-pull进行修改
 
 # 登录阿里云镜像库
 docker login --username=xxx registry.cn-hangzhou.aliyuncs.com

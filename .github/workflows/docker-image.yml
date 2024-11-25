@@ -22,8 +22,8 @@ jobs:
           - name: ekgservice
             context: .
             dockerfile: ./Dockerfile_gh
-            tag: ghcr.io/codefuse-ai/ekgservice:0.1.0
-            tag_latest: ghcr.io/codefuse-ai/ekgservice:latest
+            tag: ghcr.io/codefuse-ai/muagent:0.1.0
+            tag_latest: ghcr.io/codefuse-ai/muagent:latest
 
     steps:
       - name: Checkout code
