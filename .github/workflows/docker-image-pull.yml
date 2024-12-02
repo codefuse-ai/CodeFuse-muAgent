@@ -12,7 +12,7 @@ jobs:
         os: [linux]
         service:
           - name: runtime:0.1.0
-          - name: ekgservice:0.1.0
+          - name: muagent:0.1.0
           - name: ekgfrontend:0.1.0
 
     steps:

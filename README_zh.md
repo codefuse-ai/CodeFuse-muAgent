@@ -71,9 +71,8 @@ https://github.com/user-attachments/assets/7d5251a0-2864-438c-8897-b0445f0b1c30
 
 https://github.com/user-attachments/assets/34e5efea-f237-4b04-aeca-1f443ed7eb88
 
-现在仍为 beta 版本，待 v1.0 版本完善后，会放出 v1.0+ 的镜像以供下载。
+我们在[codefuse-ai/packages](https://github.com/orgs/codefuse-ai/packages)中提供了对应muagent相关的镜像(beta版本)，有需要可以通过`bash docker_pull_images.sh`进行下载。如果存在网络问题，可通过[个人阿里云镜像方案](docs/gh_image_to_aliyun_image.md)完成镜像同步。
 
-敬请期待！
 
 ### SKD 版本
 
