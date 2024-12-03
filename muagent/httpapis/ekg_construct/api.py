@@ -456,5 +456,4 @@ def init_app(
 
 
 def create_api(llm, llm_config, embeddings,ekg_construct_service: EKGConstructService, memory_manager, geabase_handler, intention_router):
-    app = init_app(llm, llm_config, embeddings,ekg_construct_service, memory_manager, geabase_handler, intention_router)
-    uvicorn.run(app, host="0.0.0.0", port=3737)
+    return init_app(llm, llm_config, embeddings,ekg_construct_service, memory_manager, geabase_handler, intention_router)
