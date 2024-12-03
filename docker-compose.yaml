@@ -166,7 +166,7 @@ services:
     build:
       context: ./runtime
       dockerfile: Dockerfile.no-package
-    image: runtime:0.1.0-mysql
+    image: runtime:0.1.0
     container_name: runtime
     environment:
       USER:
