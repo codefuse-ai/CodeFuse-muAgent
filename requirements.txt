@@ -30,3 +30,4 @@ sseclient
 ollama
 colorama
 pycryptodome
+libcst
