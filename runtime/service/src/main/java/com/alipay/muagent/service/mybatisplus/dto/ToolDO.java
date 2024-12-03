@@ -15,7 +15,7 @@ import java.util.Date;
 @Data
 @TableName(value = "tool")
 public class ToolDO {
-    private String id;
+    private Long id;
 
     /**
      * 创建时间
