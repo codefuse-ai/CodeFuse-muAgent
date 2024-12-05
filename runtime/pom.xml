@@ -79,7 +79,29 @@
 				<artifactId>disruptor</artifactId>
 				<version>3.4.4</version>
 			</dependency>
-
+			<!-- MyBatis Plus -->
+			<dependency>
+				<groupId>com.baomidou</groupId>
+				<artifactId>mybatis-plus-boot-starter</artifactId>
+				<version>3.5.5</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.mybatis</groupId>
+						<artifactId>mybatis-spring</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.mybatis</groupId>
+				<artifactId>mybatis-spring</artifactId>
+				<version>3.0.3</version>
+			</dependency>
+			<!-- MySQL Connector -->
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+				<version>8.0.23</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
