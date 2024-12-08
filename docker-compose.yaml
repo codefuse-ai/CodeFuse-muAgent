@@ -114,9 +114,13 @@ services:
       - "8001:8001"
     volumes:
       - ./logs/redis:/var/lib/redis/logs
+      - ./examples/redis-stack.conf:/redis-stack.conf
+      - ./data/redis:/data
     networks:
       - ekg-net
     restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   
 
   ollama:
