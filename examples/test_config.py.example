@@ -41,6 +41,8 @@ os.environ["tb_index_name"] = "ekg_migration_new"
 os.environ['tb_definition_value'] = 'message_test_new'
 os.environ['tb_expire_time'] = '604800' #86400*7
 
+# clear history data in tb and gb
+os.environ['clear_history_data'] = 'True'
 
 
 ########################################

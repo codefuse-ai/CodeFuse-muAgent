@@ -62,7 +62,8 @@ class EKGConstructService:
             intention_router: Optional[IntentionRouter] = None,
             do_init: bool = False,
             kb_root_path: str = KB_ROOT_PATH,
-            initialize_space=True
+            initialize_space=True,
+            clear_history_data=True
         ):
 
         self.db_config = db_config
@@ -83,6 +84,7 @@ class EKGConstructService:
             self.model, embed_config=self.embed_config)
         # init db handler
         self.initialize_space = initialize_space
+        self.clear_history_data = clear_history_data
         self.init_handler()
         # load custom keywords
         if os.path.exists(EXTRA_KEYWORDS_PATH):
@@ -138,7 +140,6 @@ class EKGConstructService:
             TextField("ekg_type",),
         ]
 
-
         if self.tb_config:
             tb_dict = {"TbaseHandler": TbaseHandler}
             tb_class =  tb_dict.get(self.tb_config.tb_type, TbaseHandler)
@@ -148,6 +149,11 @@ class EKGConstructService:
                 definition_value=self.tb_config.extra_kwargs.get(
                     "definition_value", "muagent_ekg")
             )
+
+            if self.clear_history_data:
+                self.tb.drop_index(self.node_indexname)
+                self.tb.drop_index(self.edge_indexname)
+
             # # create index
             if not self.tb.is_index_exists(self.node_indexname):
                 res = self.tb.create_index(
@@ -176,8 +182,11 @@ class EKGConstructService:
                 self.gb.add_hosts('storaged0', 9779)
                 print('增加NebulaGraph Storage主机中，等待20秒')
                 time.sleep(20)
-                # 初始化space
-                self.gb.drop_space('client')
+
+                if self.clear_history_data:
+                    # 初始化space
+                    self.gb.drop_space('client')
+
                 self.gb.create_space('client')
                 
                 # 创建node tags和edge types
