@@ -84,14 +84,14 @@ public class MysqlToolLoader implements ToolLoader {
 
     private Tool queryMysqlToolById(Long id) {
         ToolDO toolDO = toolDoMapper.selectById(id);
-        return new ToolConverter().convertFromDto(toolDO);
+        return ToolConverter.getInstance().convertFromDto(toolDO);
     }
 
     private Tool queryMysqlToolByKey(String key) {
         QueryWrapper<ToolDO> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("tool_key", key);
         ToolDO toolDO = toolDoMapper.selectOne(queryWrapper);
-        return new ToolConverter().convertFromDto(toolDO);
+        return ToolConverter.getInstance().convertFromDto(toolDO);
     }
 
     /**
@@ -122,7 +122,7 @@ public class MysqlToolLoader implements ToolLoader {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("initialize tools failed, error: " + e.getMessage(), e);
         }
     }
 
@@ -139,7 +139,7 @@ public class MysqlToolLoader implements ToolLoader {
         bufferedReader.close();
 
         Tool tool = GsonUtils.fromString(Tool.class, sBuffer.toString());
-        ToolDO toolDO = new ToolConverter().convertFromEntity(tool);
+        ToolDO toolDO = ToolConverter.getInstance().convertFromEntity(tool);
         toolDO.setId(null);
         try {
             toolDoMapper.insert(toolDO);

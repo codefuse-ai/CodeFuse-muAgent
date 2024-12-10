@@ -13,6 +13,11 @@ import com.alipay.muagent.util.GsonUtils;
  */
 public class ToolConverter extends Converter<ToolDO, Tool> {
 
+    private static final ToolConverter INSTANCE = new ToolConverter();
+    public static ToolConverter getInstance() {
+        return INSTANCE;
+    }
+
     /**
      * Constructor.
      */

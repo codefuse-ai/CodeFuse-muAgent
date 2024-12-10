@@ -2,6 +2,10 @@ package com.alipay.muagent.service.mybatisplus.dto;
 
 import java.util.function.Function;
 
+/**
+ * @author chenjue.wwp
+ * @version : LocalToolLoader.java, v 0.1 2024年12月10日 下午7:23 chenjue.wwp Exp $
+ */
 public class Converter<T, U> {
 
     private final Function<T, U> fromDto;
