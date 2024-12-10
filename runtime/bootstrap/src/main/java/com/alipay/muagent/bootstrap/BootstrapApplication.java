@@ -1,6 +1,7 @@
 package com.alipay.muagent.bootstrap;
 
 import com.alipay.muagent.util.LoggerUtil;
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {"com.alipay.muagent"})
+@MapperScan("com.alipay.muagent.service.mybatisplus.mapper")
 public class BootstrapApplication {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BootstrapApplication.class);
