@@ -191,6 +191,7 @@ services:
       USER: root
       TZ:   "${TZ}"
       OLLAMA_HOST: http://ollama:11434
+      PYTHONPATH: /home/user/muagent/examples/ekg_examples
     ports:
       - 3737:3737
     volumes:
@@ -200,7 +201,7 @@ services:
     restart: on-failure
     networks:
       - ekg-net
-    command: ["python", "/home/user/muagent/examples/ekg_examples/start.py"]  # 指定要执行的脚本
+    command: sh -c "uvicorn start:app --reload --reload-dir /home/user/muagent/examples --reload-dir /home/user/muagent/muagent --port=3737 --host=0.0.0.0"
 
   ekgfrontend:
     build:

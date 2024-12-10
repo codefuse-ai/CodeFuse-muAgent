@@ -320,7 +320,7 @@ test_whoisspy_datas(ekg_construct_service)
 
 
 from muagent.httpapis.ekg_construct import create_api
-create_api(
+app = create_api(
     llm, 
     llm_config,
     embeddings, 
