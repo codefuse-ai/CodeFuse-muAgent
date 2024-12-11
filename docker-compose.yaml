@@ -147,11 +147,30 @@ services:
     #           count: all  # 或者您想要的数量，例如 1
     #           capabilities: [gpu]
 
+
+  mysql:
+    image: mysql:8.0.23
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'muagent'
+      MYSQL_USER: 'muagent'
+      MYSQL_PASSWORD: 'muagent'
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./examples/mysql/db:/var/lib/mysql
+      - ./examples/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      - ./examples/mysql/init:/docker-entrypoint-initdb.d
+    restart: on-failure
+    networks:
+      - ekg-net
+
   runtime:
     build:
       context: ./runtime
       dockerfile: Dockerfile.no-package
-    image: runtime:0.1.0
+    image: runtime:0.1.1
     container_name: runtime
     environment:
       USER:
@@ -162,6 +181,8 @@ services:
       - ekg-net
     volumes:
       - ./runtime:/home/user/runtime
+    depends_on:
+      - mysql
     command: ["bash", "-c", "cd /home/user/runtime && mvn package && java -jar /home/user/runtime/bootstrap/muagent-runtime.jar"]
 
   ekgservice:

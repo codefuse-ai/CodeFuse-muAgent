@@ -4,7 +4,6 @@
  */
 package com.alipay.muagent.model.tool.meta;
 
-import com.google.gson.annotations.JsonAdapter;
 import lombok.Data;
 
 /**

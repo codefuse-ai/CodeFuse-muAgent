@@ -9,6 +9,7 @@ import com.alipay.muagent.service.tool.loader.ToolLoader;
 import com.alipay.muagent.util.GsonUtils;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.List;
  * @version : LocalToolLoader.java, v 0.1 2024年10月11日 下午7:23 renmao.rm Exp $
  */
 @Service
+@ConditionalOnProperty(name = "runtime.tool.datatype", havingValue = "local")
 public class LocalToolLoader implements ToolLoader {
 
     @Autowired
