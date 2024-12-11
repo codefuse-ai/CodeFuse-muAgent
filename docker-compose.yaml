@@ -184,7 +184,7 @@ services:
     restart: on-failure
     networks:
       - ekg-net
-    command: sh -c "uvicorn start:app --reload --reload-dir /home/user/muagent/examples --reload-dir /home/user/muagent/muagent --port=3737 --host=0.0.0.0"
+    command: sh -c "uvicorn start:app --reload --reload-dir /home/user/muagent/examples --reload-dir /home/user/muagent/muagent --reload-exclude */test_config.py --port=3737 --host=0.0.0.0"
 
   ekgfrontend:
     build:
