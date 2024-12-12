@@ -4,6 +4,7 @@
  */
 package com.alipay.muagent.model.tool.meta;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
@@ -17,5 +18,6 @@ public class ProtocolSchema {
      * $ref，参数的引用 id，与 FieldNode.id 是同一个值，该值将二者关联起来
      * 即可以通过 FieldNode.id 找到对应的 schema 参数，进而确定这个参数实际的参数位置
      */
+    @JsonProperty("$ref")
     private String $ref;
 }
