@@ -8,6 +8,7 @@ import com.alipay.muagent.model.ekg.storage.GraphGraph;
 import com.alipay.muagent.model.ekg.storage.GraphNode;
 import com.alipay.muagent.model.ekg.storage.GraphUpdateRequest;
 import com.alipay.muagent.service.ekgmanager.EkgGraphManager;
+import com.alipay.muagent.util.GsonUtils;
 import com.alipay.muagent.util.LoggerUtil;
 import com.alipay.muagent.web.model.Result;
 import org.slf4j.Logger;
@@ -95,6 +96,7 @@ public class EkgStorageController {
     @PostMapping("/graph/update")
     public Result<GraphGraph> updateGraph(@RequestBody GraphUpdateRequest request) {
         try {
+            LoggerUtil.info(LOGGER, "/graph/update", GsonUtils.toString(request));
             return Result.success(ekgGraphManager.updateGraph(request));
         } catch (Exception e) {
             LoggerUtil.error(LOGGER, e, "updateGraph 接口异常");

@@ -128,6 +128,8 @@ public class EkgGraphStorageClientImpl implements EkgGraphStorageClient {
                 .put("nodeType", EkgNodeType.Intent.getCode())
                 .put("layer", "first")
                 .value());
+
+        LoggerUtil.info(LOGGER, "getGraphByTeam:{},{}", teamRootId, GsonUtils.toString(result));
         return convertToGraph(result);
     }
 
