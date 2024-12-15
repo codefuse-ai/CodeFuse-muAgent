@@ -63,12 +63,35 @@ class NebulaHandler:
             self.nb_pw = '' or 'nebula'
             self.space_name = "client"
         else:
-            logger.info('NebulaGraph容器启动中，等待20秒')
-            time.sleep(20)
-            self.connection_pool.init([(gb_config.extra_kwargs.get("host"), gb_config.extra_kwargs.get("port"))], config)
+            logger.info('NebulaGraph容器启动中，请等待')
+            
+            if self.nebula_started(gb_config):
+                self.connection_pool.init([(gb_config.extra_kwargs.get("host"), gb_config.extra_kwargs.get("port"))], config)
+        
             self.username = gb_config.extra_kwargs.get("username")
             self.nb_pw = gb_config.extra_kwargs.get("password")
             self.space_name = gb_config.extra_kwargs.get("space")
+
+    def nebula_started(self, gb_config: GBConfig):
+        '''
+        Continuously ping the nebula server until it has started
+        If it does not start within 40 seconds, raise an exception
+        '''
+        # 80 attempts at 0.5 seconds each = 40 seconds
+        max_attempts = 80 
+
+        host = gb_config.extra_kwargs.get('host')
+        port = gb_config.extra_kwargs.get('port')
+
+        for attempt in range(max_attempts):
+            if self.connection_pool.ping([host, port]):
+                logger.info(f"nebula server is ok, total waiting time: {attempt * 0.5}s")
+                return True
+            
+            logger.info(f"ping nebula server.. waiting time: {attempt * 0.5}s")
+            time.sleep(0.5)
+
+        raise Exception('The nebula server did not start within 40 seconds.')
 
     def execute_cypher(self, cypher: str, space_name: str = '',ignore_log: bool = False, format_res: str = 'as_primitive', use_space_name: bool = True):
         '''
@@ -172,6 +195,11 @@ class NebulaHandler:
     def drop_space(self, space_name):
         cypher = f'DROP SPACE {space_name}'
         return self.execute_cypher(cypher)
+    
+    def show_hosts(self):
+        cypher = 'SHOW HOSTS'
+        resp = self.execute_cypher(cypher, use_space_name=False)
+        return resp
 
     def create_tag(self, tag_name: str, prop_dict: dict = {}):
         '''

@@ -180,20 +180,19 @@ class EKGConstructService:
             initialize_space = self.initialize_space  # True or False
             if initialize_space and self.gb_config.gb_type=="NebulaHandler":
                 self.gb.add_hosts('storaged0', 9779)
-                print('增加NebulaGraph Storage主机中，等待20秒')
-                time.sleep(20)
+                self.waiting_host_initialize()
 
                 if self.clear_history_data:
                     # 初始化space
                     self.gb.drop_space('client')
 
                 self.gb.create_space('client')
+                self.waiting_space_initialize()
                 
                 # 创建node tags和edge types
                 self.create_gb_tags_and_edgetypes()
+                self.waiting_tags_edgetypes_initialize()
 
-                print('Node Tags和Edge Types初始化中，等待20秒......')
-                time.sleep(20)
         else:
             self.gb = None
 
@@ -223,7 +222,54 @@ class EKGConstructService:
                 self.embed_config, vb_config=self.vb_config)
         else:
             self.sls = None
+
+    def wait_for_condition(self, condition, timeout=40, wait_time=0.5, log_prefix=''):
+        max_attempts = int(timeout / wait_time)
+
+        total_time = 0
+
+        for _ in range(max_attempts):
+            if condition():
+                logger.info(f'[{log_prefix}] initialized successfully, total waiting time: {total_time}s')
+                return
+            
+            logger.info(f'[{log_prefix}] have waited for {total_time}s...')
+            total_time += wait_time
+            time.sleep(wait_time)
+
+        raise Exception(f'[{log_prefix}] not initialized within {timeout} seconds')
     
+    def waiting_host_initialize(self):
+        self.wait_for_condition(
+            condition=lambda: any(
+                host.get('Host') == 'storaged0' and host.get('Status') == 'ONLINE'
+                for host in self.gb.show_hosts()
+            ),
+            log_prefix='host_initializing'
+        )
+
+    def waiting_tags_edgetypes_initialize(self):
+        '''
+        Make sure that tags and edgetypes are created properly
+        Refer to create_gb_tags_and_edgetypes for more details
+        '''
+        self.wait_for_condition(
+            condition=lambda: (
+                len(self.gb.show_tags()) == len(TYPE2SCHEMA.items()) - 1 and
+                len(self.gb.show_edge_type()) == (len(TYPE2SCHEMA.items()) - 1) ** 2 * 3
+            ),
+            log_prefix='tags_edgetypes_initializing'
+        )
+
+    def waiting_space_initialize(self):
+        self.wait_for_condition(
+            condition=lambda:any(
+                space.get('Name') == 'client'
+                for space in self.gb.show_space()
+            ),
+            log_prefix='space_initializing'
+        )
+
     def _get_local_graph(
             self, nodes: List[GNode], edges: List[GEdge], rootid
         ) -> Tuple[List[str], Graph]:
