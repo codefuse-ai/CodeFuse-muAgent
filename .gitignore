@@ -19,7 +19,7 @@ zdatafront*
 *antgroup*
 *ipynb
 *log
-
+examples/mysql/db
 
 # frontend
 frontend/node_modules
