@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Literal
 from enum import Enum
 import copy
 import json
@@ -28,6 +28,8 @@ class NodeSchema(BaseModel):
     # depend on user's difine
     description: str
     gdb_timestamp: Optional[int] = None
+    # 
+    extra: Union[str, Dict] = '{}'
 
     def attributes(self, ):
         attrs = copy.deepcopy(vars(self))
@@ -67,8 +69,9 @@ class NodeTypesEnum(Enum):
     PHENOMENON = 'opsgptkg_phenomenon'
     SCHEDULE = 'opsgptkg_schedule'
     INTENT = 'opsgptkg_intent'
+    AGENT = 'opsgptkg_agent'
     TOOL = 'opsgptkg_tool'
-    TOOL_INSTANCE = 'opsgptkg_tool_instance'
+    TOOL_TYPE = 'opsgptkg_tooltype'
     TEAM = 'opsgptkg_team'
     OWNER = 'opsgptkg_owner'
     EDGE = 'edge'
@@ -93,16 +96,57 @@ class EKGIntentNodeSchema(EKGNodeSchema):
 class EKGScheduleNodeSchema(EKGNodeSchema):
     # do action or not
     enable: bool = False
+    envdescription: str = Field("",
+        description=f"Initialization text, used to generate the initial environment, "
+        f"if none is provided, it will be empty string"
+    )
 
 
 class EKGTaskNodeSchema(EKGNodeSchema):
-    # tool: str
-    # needcheck: bool
     # when to access
     accesscriteria: str = '{}'
     executetype: str = ''
-    # 
-    # owner: str
+
+    # communication: str = Field(
+    #     "", 
+    #     description=f"Communication for advancing interaction with users"
+    #     f" (only effective in precise consulting cases), targeting scenarios or risk operations."
+    # )
+    
+    organization: str = Field("", description="the name of organization")
+
+    owner: str = Field("", description="the name of owner")
+
+    isolation: Literal["public", "private", "semi-public"] = Field(
+        "public",
+        description="Method of Message Isolation"
+    )
+    
+    historyenable: Literal["yes", "no"] = Field(
+        "no", description='Reference to historical memory'
+    )
+    
+    action: Literal["parallel", "react", "plan", "single"] = Field(
+        "single", description='Execution method of the task node'
+    )
+    
+    dostop: Literal["yes", "no"] = Field(
+        "no", description='Whether to perform termination checks during execution.'
+    )
+    
+    dodisplay: Literal["yes", "no","True","False"] = Field(
+        "no", description='Whether to display the result.'
+    )
+
+    updaterule: str = Field(
+        "", description='Update rules for environment variables.'
+    )
+    
+    keytext: str = Field(
+        "",
+        description=f'Key information (distinct from description, which may be too lengthy) '
+        f'for retrieving historical session content.'
+    )
     
 
 class EKGAnalysisNodeSchema(EKGNodeSchema):
@@ -113,26 +157,38 @@ class EKGAnalysisNodeSchema(EKGNodeSchema):
     # summary template
     dsltemplate: str = ''
 
+    keytext: str = Field(
+        "",
+        description=f'Key information (distinct from description, which may be too lengthy) '
+        f'for retrieving historical session content.'
+    )
 
 class EKGPhenomenonNodeSchema(EKGNodeSchema):
     pass
     
 
 # Ekg Tool Schemas
-class ToolSchema(NodeSchema):
-    # version:str # yyyy-mm-dd HH:MM:SS
-    extra: str = ''
-
-
-class EKGPToolTypeSchema(ToolSchema):
+class EKGToolTypeSchema(NodeSchema):
     toolprotocol: str
     status: bool
 
 
-class EKGPToolSchema(EKGPToolTypeSchema):
-    input: str # jsonstr
-    output: str # jsonstr
+class EKGToolSchema(NodeSchema):
+    filltype: Literal["auto", "manual", "var"] = Field(
+        "auto",
+        description='parameters fill type'
+    )
+    input: str = Field("", description='jsonstr')
+    output: str = Field("", description='jsonstr')
 
+
+class EKGAgentSchema(NodeSchema):
+    modelname: str = Field("", description='llm model name')
+
+
+class EKGTaskBizNodeSchema(EKGTaskNodeSchema):
+    tools: List['EKGToolSchema'] = []
+    agents: List['EKGAgentSchema'] = []
 
 
 # SLS / Tbase 
@@ -198,11 +254,14 @@ TYPE2SCHEMA = {
     NodeTypesEnum.INTENT.value: EKGIntentNodeSchema,
     NodeTypesEnum.PHENOMENON.value: EKGPhenomenonNodeSchema,
     NodeTypesEnum.SCHEDULE.value: EKGScheduleNodeSchema,
-    NodeTypesEnum.TOOL.value: EKGPToolTypeSchema,
-    NodeTypesEnum.TOOL_INSTANCE.value: EKGPToolSchema,
+    NodeTypesEnum.TOOL_TYPE.value: EKGToolTypeSchema,
+    NodeTypesEnum.TOOL.value: EKGToolSchema,
+    NodeTypesEnum.AGENT.value: EKGAgentSchema,
     NodeTypesEnum.EDGE.value: EKGEdgeSchema
 }
 
+TYPE2SCHEMA_BIZ = copy.deepcopy(TYPE2SCHEMA)
+TYPE2SCHEMA_BIZ[NodeTypesEnum.TASK.value] = EKGTaskBizNodeSchema
 
 #####################
 ##### yuque dsl #####

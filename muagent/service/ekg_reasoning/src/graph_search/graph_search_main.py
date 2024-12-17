@@ -605,11 +605,13 @@ class graph_search_process():
         currentNodeType = self.gst.search_node_type(self.nodeid_in_subtree, self.currentNodeId )
         logging.info(f"currentNodeId is {self.currentNodeId}  ")
         logging.info(f"currentNodeType is {currentNodeType} , currentNodeId is {self.currentNodeId}")
-        if self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True' or self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'Ture':
+        if self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True'   \
+            or self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'Ture' \
+                or self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True' :
             outputinfo_str = self.memory_handler.get_output(self.sessionId, self.start_datetime, self.end_datetime)
         else:
-            dodisplaystr = self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') 
-            logging.info(f" 查询dodisplay字段结果为空, 结果为{dodisplaystr}")
+            dodisplaystr = self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') 
+            logging.info(f" 查询dodisplay字段结果为空, 或者为{dodisplaystr}，本次不对外输出")
             outputinfo_str = None
 
 

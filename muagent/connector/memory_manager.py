@@ -858,3 +858,47 @@ class TbaseMemoryManager(BaseMemoryManager):
         #         if content is not None:
         #             message.setattr(key, content)
         return memory
+    
+
+    def init_global_msg(self, chat_index: str, role_name: str, role_content: str, role_type: str = "global_value") -> bool:
+        msg = Message(chat_index=chat_index, message_index = role_name ,role_name=role_name, role_type=role_type, role_content=role_content)
+        try:
+            self.append(msg)
+            return True  
+        except Exception as e:
+            logger.error(f"Failed to initialize global message: {e}")
+            return False
+    
+    def get_msg_by_role_name(self, chat_index: str, role_name: str) -> Optional[Message]:
+        memory = self.get_memory_pool_by_all({"chat_index": chat_index, "role_name": role_name})
+        # memory = self.get_memory_pool(chat_index)
+        for msg in memory.messages:
+            if msg.role_name == role_name:
+                return msg
+        return None
+    
+    def get_msg_content_by_role_name(self, chat_index: str, role_name: str) -> Optional[str]:
+        message = self.get_msg_by_role_name(chat_index, role_name)
+        if message == None:
+            return None
+        else:
+            return message.role_content
+        
+    def update_msg_content_by_rule(self, chat_index: str, role_name: str, new_content: str,update_rule: str) -> bool:
+        message = self.get_msg_by_role_name(chat_index, role_name)
+        
+        if message == None:
+            return False 
+
+        prompt = f"{new_content}\n{role_name}:{message.role_content}\n{update_rule}"
+
+        model = getChatModelFromConfig(self.llm_config)
+
+        new_role_content = model.predict(prompt)
+
+        if new_role_content is not None:
+            message.role_content = new_role_content  
+            self.append(message)
+            return True
+        else:
+            return False

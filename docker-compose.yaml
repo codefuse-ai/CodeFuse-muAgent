@@ -114,9 +114,13 @@ services:
       - "8001:8001"
     volumes:
       - ./logs/redis:/var/lib/redis/logs
+      - ./examples/redis-stack.conf:/redis-stack.conf
+      - ./data/redis:/data
     networks:
       - ekg-net
     restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   
 
   ollama:
@@ -143,20 +147,43 @@ services:
     #           count: all  # 或者您想要的数量，例如 1
     #           capabilities: [gpu]
 
+
+  mysql:
+    image: mysql:8.0.23
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'muagent'
+      MYSQL_USER: 'muagent'
+      MYSQL_PASSWORD: 'muagent'
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./examples/mysql/db:/var/lib/mysql
+      - ./examples/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      - ./examples/mysql/init:/docker-entrypoint-initdb.d
+    restart: on-failure
+    networks:
+      - ekg-net
+
   runtime:
     build:
       context: ./runtime
       dockerfile: Dockerfile.no-package
-    image: runtime:0.1.0
+    image: runtime:0.1.1
     container_name: runtime
     environment:
       USER:
         root
     ports:
-      # - 5050:3737
       - 8080:8080
     networks:
       - ekg-net
+    volumes:
+      - ./runtime:/home/user/runtime
+    depends_on:
+      - mysql
+    command: ["bash", "-c", "cd /home/user/runtime && mvn package && java -jar /home/user/runtime/bootstrap/muagent-runtime.jar"]
 
   ekgservice:
     build:
@@ -168,6 +195,7 @@ services:
       USER: root
       TZ:   "${TZ}"
       OLLAMA_HOST: http://ollama:11434
+      PYTHONPATH: /home/user/muagent/examples/ekg_examples
     ports:
       - 3737:3737
     volumes:
@@ -177,7 +205,7 @@ services:
     restart: on-failure
     networks:
       - ekg-net
-    command: ["python", "/home/user/muagent/examples/ekg_examples/start.py"]  # 指定要执行的脚本
+    command: sh -c "uvicorn start:app --reload --reload-dir /home/user/muagent/examples --reload-dir /home/user/muagent/muagent --reload-exclude */test_config.py --port=3737 --host=0.0.0.0"
 
   ekgfrontend:
     build:

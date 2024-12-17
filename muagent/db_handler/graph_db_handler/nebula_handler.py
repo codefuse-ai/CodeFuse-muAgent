@@ -91,7 +91,9 @@ class NebulaHandler:
             
             if ignore_log == False:
                 if resp.is_succeeded():
-                    logger.info(f"Successfully executed Cypher query: {cypher}")
+                    #logger.info(f"Successfully executed Cypher query: {cypher}")
+                    
+                    pass
                     
                 else:
                     logger.error(f"Failed to execute Cypher query: {cypher}")
@@ -284,15 +286,15 @@ class NebulaHandler:
         for prop_name in properties_name:
             value = node_attributes.get(prop_name)
             if isinstance(value, str):
-                if prop_name == 'extra':
-                    # 转义双引号
-                    # value = value.replace('"', '\\"')
+                if prop_name in {'extra', 'description', 'envdescription','updaterule'}:
+                    # 转义换行符和双引号
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
                     cypher += f'"{value}",'
                 elif prop_name == 'description':
-                    # 特殊符号需要手动加\转义符
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    # logger.info(value)
+                    cypher += f'"{value}",'
+                elif prop_name == 'envdescription':
+                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
                     cypher += f'"{value}",'
                 else:
                     cypher += f'"{value}",'

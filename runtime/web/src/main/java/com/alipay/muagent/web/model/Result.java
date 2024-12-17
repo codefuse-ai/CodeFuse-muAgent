@@ -27,6 +27,8 @@ public class Result<T> {
 
     private String host = getLocalHost();
 
+    private String traceId;
+
     /**
      * 创建一个方法执行成功的Result对象
      *

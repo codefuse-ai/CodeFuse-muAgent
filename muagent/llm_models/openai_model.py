@@ -66,7 +66,7 @@ class OpenAILLMModel(CustomLLMModel):
                     http_client=http_client,
                     timeout=120
                 )
-        else:
+        elif http_client:
             self.llm = ChatOpenAI(
                     streaming=True,
                     verbose=True,
@@ -78,6 +78,18 @@ class OpenAILLMModel(CustomLLMModel):
                     timeout=120
                     # callbacks=[callBack],
                 )
+        else:
+            self.llm = ChatOpenAI(
+                    streaming=True,
+                    verbose=True,
+                    api_key=llm_config.api_key,
+                    model_name=llm_config.model_name,
+                    base_url=llm_config.api_base_url,
+                    temperature=llm_config.temperature,
+                    model_kwargs={"stop": llm_config.stop},
+                    timeout=120
+                )
+
         if callBack is not None:
             self.llm.callBacks = [callBack]
 

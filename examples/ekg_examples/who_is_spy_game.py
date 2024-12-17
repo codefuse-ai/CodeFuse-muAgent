@@ -1,7 +1,11 @@
+from typing import List
 from loguru import logger
+import json
 
 
+from muagent.schemas.ekg.ekg_graph import TYPE2SCHEMA
 from muagent.schemas.common import GNode, GEdge
+from muagent.service.utils import decode_biznodes, encode_biznodes
 
 
 import math
@@ -36,11 +40,11 @@ new_edges_1 = []
 
 
 new_nodes_1 = \
-[GNode(id='haPvrjEkz4LARZyR7OAuPmVMHMIQPMew', type='opsgptkg_intent', attributes={'ID': 79745654784, 'extra': '{}', 'teamids': '8400001', 'gdb_timestamp': '1729496822', 'description': '需要公司多人参与的事务，以及相关的问题', 'name': '公司事务'}),
- GNode(id='dicVRAk5rT3y9LxcmBCN2jDi1TjHc5rm', type='opsgptkg_intent', attributes={'ID': 6028807454720, 'description': '与个人有关的事务(如个人贷款），或遇到的个人问题，不涉及公司事务', 'name': '个人事务', 'extra': '{}', 'teamids': '8400001', 'gdb_timestamp': '1729496798'}),
- GNode(id='ClKvwjBRZUJC7ttSZaiT0dh7lhSujNWi', type='opsgptkg_intent', attributes={'ID': 7905077215232, 'gdb_timestamp': '1729496904', 'description': '公司活动', 'name': '公司活动', 'extra': '{}', 'teamids': '8400001'}),
- GNode(id='NyBXAHQckQx1xL5lnSgBGlotbZkkQ9C7', type='opsgptkg_intent', attributes={'ID': 5876942970880, 'gdb_timestamp': '1729496969', 'description': '金融（如借款、存款、贷款等）', 'name': '金融', 'extra': '{}', 'teamids': '8400001'}),
- GNode(id='6sa4zJCnVKJxKMtOtypapjZk4sdo93QU', type='opsgptkg_intent', attributes={'ID': 8505664413696, 'extra': '{}', 'teamids': '8400001', 'gdb_timestamp': '1729496951', 'description': '医疗(包括预约、挂号、看病、诊断等)', 'name': '医疗'}),
+[GNode(id='haPvrjEkz4LARZyR7OAuPmVMHMIQPMew', type='opsgptkg_intent', attributes={'ID': 79745654784,  'teamids': '8400001', 'gdb_timestamp': '1729496822', 'description': '需要公司多人参与的事务，以及相关的问题', 'name': '公司事务'}),
+ GNode(id='dicVRAk5rT3y9LxcmBCN2jDi1TjHc5rm', type='opsgptkg_intent', attributes={'ID': 6028807454720, 'description': '与个人有关的事务(如个人贷款），或遇到的个人问题，不涉及公司事务', 'name': '个人事务',  'teamids': '8400001', 'gdb_timestamp': '1729496798'}),
+ GNode(id='ClKvwjBRZUJC7ttSZaiT0dh7lhSujNWi', type='opsgptkg_intent', attributes={'ID': 7905077215232, 'gdb_timestamp': '1729496904', 'description': '公司活动', 'name': '公司活动',  'teamids': '8400001'}),
+ GNode(id='NyBXAHQckQx1xL5lnSgBGlotbZkkQ9C7', type='opsgptkg_intent', attributes={'ID': 5876942970880, 'gdb_timestamp': '1729496969', 'description': '金融（如借款、存款、贷款等）', 'name': '金融',  'teamids': '8400001'}),
+ GNode(id='6sa4zJCnVKJxKMtOtypapjZk4sdo93QU', type='opsgptkg_intent', attributes={'ID': 8505664413696,  'teamids': '8400001', 'gdb_timestamp': '1729496951', 'description': '医疗(包括预约、挂号、看病、诊断等)', 'name': '医疗'}),
  GNode(id='a8d85669_141a_4f54_ab8c_209c08d27c35', type='opsgptkg_schedule', attributes={'ID': 8284119801856, 'extra': '{"graphid": "", "cnode_nums": 1}', 'teamids': '8400001', 'gdb_timestamp': '1729497515', 'description': '组织一次公司活动', 'name': '组织一次公司活动', 'enable': 'False'}),
  GNode(id='2b8df337_f29e_4d49_865f_84088c3a94e7', type='opsgptkg_schedule', attributes={'ID': 8971031896064, 'teamids': '8400001', 'gdb_timestamp': '1729497515', 'description': '在线申请贷款', 'name': '在线申请贷款', 'enable': 'False', 'extra': '{"graphid": "", "cnode_nums": 1}'}),
  GNode(id='b9fe38f1_33f6_468b_a1dd_43efdfd8e2d1', type='opsgptkg_schedule', attributes={'ID': 2223780347904, 'extra': '{"graphid": "", "cnode_nums": 1}', 'teamids': '8400001', 'gdb_timestamp': '1729497515', 'description': '预约医生', 'name': '预约医生', 'enable': 'False'}),
@@ -88,46 +92,46 @@ new_edges_1 = \
  GEdge(start_id='ClKvwjBRZUJC7ttSZaiT0dh7lhSujNWi', end_id='a8d85669_141a_4f54_ab8c_209c08d27c35', type='opsgptkg_intent_route_opsgptkg_schedule', attributes={'SRCID': 7905077215232, 'DSTID': 8284119801856, 'extra': '{"sourceHandle": "0", "targetHandle": "2"}', 'gdb_timestamp': '1729496918'}),
  GEdge(start_id='NyBXAHQckQx1xL5lnSgBGlotbZkkQ9C7', end_id='2b8df337_f29e_4d49_865f_84088c3a94e7', type='opsgptkg_intent_route_opsgptkg_schedule', attributes={'SRCID': 5876942970880, 'DSTID': 8971031896064, 'gdb_timestamp': '1729496975', 'extra': '{"sourceHandle": "0", "targetHandle": "2"}'}),
  GEdge(start_id='6sa4zJCnVKJxKMtOtypapjZk4sdo93QU', end_id='b9fe38f1_33f6_468b_a1dd_43efdfd8e2d1', type='opsgptkg_intent_route_opsgptkg_schedule', attributes={'SRCID': 8505664413696, 'DSTID': 2223780347904, 'gdb_timestamp': '1729496969', 'extra': '{"sourceHandle": "0", "targetHandle": "2"}'}),
- GEdge(start_id='a8d85669_141a_4f54_ab8c_209c08d27c35', end_id='98234102_4e4a_4997_9b1e_3cda6382b1c7', type='opsgptkg_schedule_route_opsgptkg_task', attributes={'SRCID': 8284119801856, 'DSTID': 711254376448, 'extra': '{}', 'gdb_timestamp': '1725541635'}),
- GEdge(start_id='2b8df337_f29e_4d49_865f_84088c3a94e7', end_id='59030678_760d_4a10_8d61_0d4e4cc5fbcb', type='opsgptkg_schedule_route_opsgptkg_task', attributes={'SRCID': 8971031896064, 'DSTID': 3166553161728, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='a8d85669_141a_4f54_ab8c_209c08d27c35', end_id='98234102_4e4a_4997_9b1e_3cda6382b1c7', type='opsgptkg_schedule_route_opsgptkg_task', attributes={'SRCID': 8284119801856, 'DSTID': 711254376448,  'gdb_timestamp': '1725541635'}),
+ GEdge(start_id='2b8df337_f29e_4d49_865f_84088c3a94e7', end_id='59030678_760d_4a10_8d61_0d4e4cc5fbcb', type='opsgptkg_schedule_route_opsgptkg_task', attributes={'SRCID': 8971031896064, 'DSTID': 3166553161728,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='b9fe38f1_33f6_468b_a1dd_43efdfd8e2d1', end_id='5afab73b_8f03_422f_856e_386f183bdd71', type='opsgptkg_schedule_route_opsgptkg_task', attributes={'SRCID': 2223780347904, 'DSTID': 6192381952, 'gdb_timestamp': '1725541526', 'extra': '{}'}),
- GEdge(start_id='98234102_4e4a_4997_9b1e_3cda6382b1c7', end_id='95ec00ef_cc9c_4947_a21c_88eeb9a71af5', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 711254376448, 'DSTID': 1876388151296, 'extra': '{}', 'gdb_timestamp': '1725541635'}),
- GEdge(start_id='59030678_760d_4a10_8d61_0d4e4cc5fbcb', end_id='5504af87_416e_4ee5_bfce_86b969a63433', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 3166553161728, 'DSTID': 6316483026944, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='98234102_4e4a_4997_9b1e_3cda6382b1c7', end_id='95ec00ef_cc9c_4947_a21c_88eeb9a71af5', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 711254376448, 'DSTID': 1876388151296,  'gdb_timestamp': '1725541635'}),
+ GEdge(start_id='59030678_760d_4a10_8d61_0d4e4cc5fbcb', end_id='5504af87_416e_4ee5_bfce_86b969a63433', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 3166553161728, 'DSTID': 6316483026944,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='5afab73b_8f03_422f_856e_386f183bdd71', end_id='3ff8f54a_fa65_4368_86ce_d65058035dd0', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 6192381952, 'DSTID': 7833205129216, 'gdb_timestamp': '1725541526', 'extra': '{}'}),
  GEdge(start_id='95ec00ef_cc9c_4947_a21c_88eeb9a71af5', end_id='d5e760b4_ae82_410d_a73d_4c0c98926ae5', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 1876388151296, 'DSTID': 4450592235520, 'gdb_timestamp': '1725541635', 'extra': '{}'}),
  GEdge(start_id='95ec00ef_cc9c_4947_a21c_88eeb9a71af5', end_id='2a37b90a_fd96_4548_989c_7c1e8fa9d881', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 1876388151296, 'DSTID': 5557429084160, 'gdb_timestamp': '1725541635', 'extra': '{}'}),
- GEdge(start_id='5504af87_416e_4ee5_bfce_86b969a63433', end_id='88d4cf2b_7cf5_4e40_b54e_59268f119f63', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 6316483026944, 'DSTID': 5471766437888, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='5504af87_416e_4ee5_bfce_86b969a63433', end_id='88d4cf2b_7cf5_4e40_b54e_59268f119f63', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 6316483026944, 'DSTID': 5471766437888,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='3ff8f54a_fa65_4368_86ce_d65058035dd0', end_id='39021995_6e63_4907_9d67_26ba50d0cd44', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 7833205129216, 'DSTID': 24387616768, 'gdb_timestamp': '1725541526', 'extra': '{}'}),
- GEdge(start_id='d5e760b4_ae82_410d_a73d_4c0c98926ae5', end_id='59fe9c1d_0731_403e_936a_2e2bbba4b3ee', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 4450592235520, 'DSTID': 7311708086272, 'extra': '{}', 'gdb_timestamp': '1725541635'}),
+ GEdge(start_id='d5e760b4_ae82_410d_a73d_4c0c98926ae5', end_id='59fe9c1d_0731_403e_936a_2e2bbba4b3ee', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 4450592235520, 'DSTID': 7311708086272,  'gdb_timestamp': '1725541635'}),
  GEdge(start_id='2a37b90a_fd96_4548_989c_7c1e8fa9d881', end_id='60163dc6_87af_4972_b350_6b9275975c83', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 5557429084160, 'DSTID': 7678175674368, 'gdb_timestamp': '1725541635', 'extra': '{}'}),
  GEdge(start_id='88d4cf2b_7cf5_4e40_b54e_59268f119f63', end_id='910f3634_b999_4cf3_94c9_346a67b0d5ed', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 5471766437888, 'DSTID': 9145981739008, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
  GEdge(start_id='39021995_6e63_4907_9d67_26ba50d0cd44', end_id='1330ad69_dfc3_4538_864e_6867a3fd8dd4', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 24387616768, 'DSTID': 4367816081408, 'gdb_timestamp': '1725541526', 'extra': '{}'}),
  GEdge(start_id='59fe9c1d_0731_403e_936a_2e2bbba4b3ee', end_id='fcbc3e04_ad8c_4aad_9f75_191f8037ced8', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 7311708086272, 'DSTID': 868313473024, 'gdb_timestamp': '1725541635', 'extra': '{}'}),
  GEdge(start_id='60163dc6_87af_4972_b350_6b9275975c83', end_id='fcbc3e04_ad8c_4aad_9f75_191f8037ced8', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 7678175674368, 'DSTID': 868313473024, 'gdb_timestamp': '1725541635', 'extra': '{}'}),
- GEdge(start_id='910f3634_b999_4cf3_94c9_346a67b0d5ed', end_id='2c7a0d7b_a490_41b9_a6f8_e71b5212e0be', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 9145981739008, 'DSTID': 5168810909696, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
- GEdge(start_id='1330ad69_dfc3_4538_864e_6867a3fd8dd4', end_id='3cd46fb7_e11c_4181_8670_2f080a453142', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 4367816081408, 'DSTID': 7081063784448, 'extra': '{}', 'gdb_timestamp': '1725541526'}),
+ GEdge(start_id='910f3634_b999_4cf3_94c9_346a67b0d5ed', end_id='2c7a0d7b_a490_41b9_a6f8_e71b5212e0be', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 9145981739008, 'DSTID': 5168810909696,  'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='1330ad69_dfc3_4538_864e_6867a3fd8dd4', end_id='3cd46fb7_e11c_4181_8670_2f080a453142', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 4367816081408, 'DSTID': 7081063784448,  'gdb_timestamp': '1725541526'}),
  GEdge(start_id='2c7a0d7b_a490_41b9_a6f8_e71b5212e0be', end_id='0f4610cd_cf6a_475b_8ac0_80166569a292', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 5168810909696, 'DSTID': 7170049368064, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
- GEdge(start_id='0f4610cd_cf6a_475b_8ac0_80166569a292', end_id='b9f81925_b43a_459d_9902_1bc4b024f5a1', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 7170049368064, 'DSTID': 2310638313472, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='0f4610cd_cf6a_475b_8ac0_80166569a292', end_id='b9f81925_b43a_459d_9902_1bc4b024f5a1', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 7170049368064, 'DSTID': 2310638313472,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='0f4610cd_cf6a_475b_8ac0_80166569a292', end_id='191687cd_1b76_4e77_9f2a_e67936dd372e', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 7170049368064, 'DSTID': 3083664605184, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
  GEdge(start_id='b9f81925_b43a_459d_9902_1bc4b024f5a1', end_id='18c33ec1_08ef_4df8_b938_7244852d19c8', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 2310638313472, 'DSTID': 1978980810752, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
- GEdge(start_id='191687cd_1b76_4e77_9f2a_e67936dd372e', end_id='b73c2551_0890_40fb_b0ca_04912bc21b65', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 3083664605184, 'DSTID': 8995127967744, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='191687cd_1b76_4e77_9f2a_e67936dd372e', end_id='b73c2551_0890_40fb_b0ca_04912bc21b65', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 3083664605184, 'DSTID': 8995127967744,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='18c33ec1_08ef_4df8_b938_7244852d19c8', end_id='e95adaa2_d177_435b_bac7_a8b6047ecc3d', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 1978980810752, 'DSTID': 8207832350720, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
- GEdge(start_id='e95adaa2_d177_435b_bac7_a8b6047ecc3d', end_id='0c561d68_ee31_49d2_82c1_1dac81e731ff', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 8207832350720, 'DSTID': 2242499641344, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='e95adaa2_d177_435b_bac7_a8b6047ecc3d', end_id='0c561d68_ee31_49d2_82c1_1dac81e731ff', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 8207832350720, 'DSTID': 2242499641344,  'gdb_timestamp': '1725541385'}),
  GEdge(start_id='e95adaa2_d177_435b_bac7_a8b6047ecc3d', end_id='81f579ac_851d_4b85_8608_d2732a2612ff', type='opsgptkg_task_route_opsgptkg_phenomenon', attributes={'SRCID': 8207832350720, 'DSTID': 6852580294656, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
  GEdge(start_id='0c561d68_ee31_49d2_82c1_1dac81e731ff', end_id='1f0b64aa_5d45_4cf5_bcdd_084b8c125889', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 2242499641344, 'DSTID': 6605313998848, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
  GEdge(start_id='81f579ac_851d_4b85_8608_d2732a2612ff', end_id='5fd5901a_8adc_4b76_aea2_dcf18884ea0e', type='opsgptkg_phenomenon_route_opsgptkg_task', attributes={'SRCID': 6852580294656, 'DSTID': 8029006143488, 'gdb_timestamp': '1725541385', 'extra': '{}'}),
- GEdge(start_id='5fd5901a_8adc_4b76_aea2_dcf18884ea0e', end_id='8c999c60_baa7_4e74_903b_f10f148dd12f', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 8029006143488, 'DSTID': 3902763704320, 'extra': '{}', 'gdb_timestamp': '1725541385'}),
- GEdge(start_id='3cd46fb7_e11c_4181_8670_2f080a453142', end_id='e1004c60_5c0c_4f32_b765_a57cc4d39dcc', type='opsgptkg_phenomenon_route_opsgptkg_analysis', attributes={'SRCID': 7081063784448, 'DSTID': 9098881261568, 'extra': '{}', 'gdb_timestamp': '1725541526'}),
- GEdge(start_id='fcbc3e04_ad8c_4aad_9f75_191f8037ced8', end_id='c50ff5e3_aa01_4a6c_96d7_d8645303846d', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 868313473024, 'DSTID': 1676448784384, 'extra': '{}', 'gdb_timestamp': '1725541635'}),
- GEdge(start_id='c50ff5e3_aa01_4a6c_96d7_d8645303846d', end_id='4f540a57_f73d_451e_aafb_43f1335a18a7', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 1676448784384, 'DSTID': 4546036121600, 'extra': '{}', 'gdb_timestamp': '1725541635'}),
+ GEdge(start_id='5fd5901a_8adc_4b76_aea2_dcf18884ea0e', end_id='8c999c60_baa7_4e74_903b_f10f148dd12f', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 8029006143488, 'DSTID': 3902763704320,  'gdb_timestamp': '1725541385'}),
+ GEdge(start_id='3cd46fb7_e11c_4181_8670_2f080a453142', end_id='e1004c60_5c0c_4f32_b765_a57cc4d39dcc', type='opsgptkg_phenomenon_route_opsgptkg_analysis', attributes={'SRCID': 7081063784448, 'DSTID': 9098881261568,  'gdb_timestamp': '1725541526'}),
+ GEdge(start_id='fcbc3e04_ad8c_4aad_9f75_191f8037ced8', end_id='c50ff5e3_aa01_4a6c_96d7_d8645303846d', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 868313473024, 'DSTID': 1676448784384,  'gdb_timestamp': '1725541635'}),
+ GEdge(start_id='c50ff5e3_aa01_4a6c_96d7_d8645303846d', end_id='4f540a57_f73d_451e_aafb_43f1335a18a7', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 1676448784384, 'DSTID': 4546036121600,  'gdb_timestamp': '1725541635'}),
  GEdge(start_id='4f540a57_f73d_451e_aafb_43f1335a18a7', end_id='c9952fa7_7f82_4737_8cfd_bdbb2dabb20e', type='opsgptkg_task_route_opsgptkg_task', attributes={'SRCID': 4546036121600, 'DSTID': 8324758257664, 'gdb_timestamp': '1725541635', 'extra': '{}'})]
 
 
 new_nodes_2 = \
 [GNode(id='剧本杀/谁是卧底', type='opsgptkg_intent', attributes={'ID': -5201231166222141228, 'teamids': '', 'gdb_timestamp': '1725088421109', 'description': '谁是卧底', 'name': '谁是卧底', 'extra': ''}),
   GNode(id='剧本杀/狼人杀', type='opsgptkg_intent', attributes={'ID': 5476827419397129797, 'description': '狼人杀', 'name': '狼人杀', 'extra': '', 'teamids': '', 'gdb_timestamp': '1724815561170'}),
-  GNode(id='剧本杀/谁是卧底/智能交互', type='opsgptkg_schedule', attributes={'ID': 603563742932974030, 'extra': '', 'teamids': '', 'gdb_timestamp': '1725088469126', 'description': '智能交互', 'name': '智能交互', 'enable': ''}),
-  GNode(id='剧本杀/狼人杀/智能交互', type='opsgptkg_schedule', attributes={'ID': -5931163481230280444, 'extra': '', 'teamids': '', 'gdb_timestamp': '1724815624907', 'description': '智能交互', 'name': '智能交互', 'enable': ''}),
+  GNode(id='剧本杀/谁是卧底/智能交互', type='opsgptkg_schedule', attributes={'ID': 603563742932974030, 'extra': '', 'teamids': '', 'gdb_timestamp': '1725088469126', 'description': '智能交互', 'name': '智能交互', 'enable': 'True'}),
+  GNode(id='剧本杀/狼人杀/智能交互', type='opsgptkg_schedule', attributes={'ID': -5931163481230280444, 'extra': '', 'teamids': '', 'gdb_timestamp': '1724815624907', 'description': '智能交互', 'name': '智能交互', 'enable': 'False'}),
   GNode(id='剧本杀/谁是卧底/智能交互/分配座位', type='opsgptkg_task', attributes={'ID': 2011080219630105469, 'extra': '{"dodisplay":"True"}', 'teamids': '', 'gdb_timestamp': '1728912109030', 'executetype': '', 'description': '分配座位', 'name': '分配座位', 'accesscriteria': ''}),
   GNode(id='剧本杀/狼人杀/智能交互/位置选择', type='opsgptkg_task', attributes={'ID': 2541178858602010284, 'description': '位置选择', 'name': '位置选择', 'accesscriteria': '', 'extra': '{"memory_tag": "all"}', 'teamids': '', 'gdb_timestamp': '1724849735167', 'executetype': ''}),
   GNode(id='剧本杀/谁是卧底/智能交互/角色分配和单词分配', type='opsgptkg_task', attributes={'ID': -1817533533893637377, 'accesscriteria': '', 'extra': '{"memory_tag": "None","dodisplay":"True"}', 'teamids': '', 'gdb_timestamp': '1728912123682', 'executetype': '', 'description': '角色分配和单词分配', 'name': '角色分配和单词分配'}),
@@ -195,11 +199,46 @@ new_edges = new_edges_1 + new_edges_2 + new_edges_3
 
 teamid = "default"
 
+def autofill_nodes(nodes: List[GNode]):
+    '''
+    兼容
+    '''
+    new_nodes = []
+    for node in nodes:
+        schema = TYPE2SCHEMA.get(node.type,)
+        logger.info(schema)
+        logger.info(node)
+        extra = node.attributes.pop("extra", {})
+        if extra == "":
+            extra = {}
+
+        if isinstance(extra, str):
+            extra = json.loads(extra)  # 尝试将字符串 "extra" 转换为字典
+        # logger.info(extra)
+
+        node.attributes.update(extra)
+        logger.info(node)
+        node_data = schema(
+            **{**{"id": node.id, "type": node.type}, **node.attributes}
+        )
+        node_data = {
+            k:v
+            for k, v in node_data.dict().items()
+            if k not in ["type", "ID", "id", "extra"]
+        }
+        new_nodes.append(GNode(**{
+            "id": node.id, 
+            "type": node.type,
+            "attributes": {**node_data, **node.attributes}
+        }))
+    return new_nodes
+
 
 def add_nodes(ekg_service, nodes: list[GNode]):
-
+    # newnodes = autofill_nodes(nodes)
+    newnodes, newedges = decode_biznodes(nodes)
     logger.info('尝试查插入节点')
-    for one_node  in nodes:   
+    for one_node  in newnodes:   
         one_node.attributes['description']  = one_node.attributes['description']
         one_node.attributes['gdb_timestamp'] = int(one_node.attributes['gdb_timestamp'] )
         if one_node.id != "ekg_team_default":
@@ -213,8 +252,9 @@ def add_nodes(ekg_service, nodes: list[GNode]):
             one_node.attributes['enable'] = True
 
         ekg_service.add_nodes([one_node], teamid=teamid)
-        # ekg_service.gb.add_node(one_node)
     
+    # add task-tool edge or task-agent edge
+    add_edges(ekg_service, newedges)
 
 def add_edges(ekg_service, edges):
 
@@ -249,6 +289,21 @@ def test_whoisspy_datas(ekg_service, ):
 
     logger.info(neighbor_nodes)
     logger.info(current_nodes)
+    
+    
+    logger.info('剧本杀/谁是卧底/智能交互/开始新一轮的讨论')
+    start_nodetype    ='opsgptkg_task'
+    start_nodeid = hash_id('剧本杀/谁是卧底/智能交互/开始新一轮的讨论')
+
+    neighbor_nodes = ekg_service.gb.get_neighbor_nodes(attributes={"id": start_nodeid,}, 
+                                    node_type=start_nodetype)
+
+    current_nodes = ekg_service.gb.get_current_nodes(attributes={"id": start_nodeid,}, 
+                                    node_type=start_nodetype)
+
+    logger.info(neighbor_nodes)
+    logger.info(current_nodes)
+
 
 
 

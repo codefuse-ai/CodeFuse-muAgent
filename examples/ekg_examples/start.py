@@ -273,12 +273,14 @@ embeddings = CustomEmbeddings()
 # )
 embed_config = None
 
+clear_history_data = os.environ.get('clear_history_data', 'False') == 'True'
 
 ekg_construct_service = EKGConstructService(
     embed_config=embed_config,
     llm_config=llm_config,
     tb_config=tb_config,
     gb_config=gb_config,
+    clear_history_data=clear_history_data
 )
 
 
@@ -320,7 +322,7 @@ test_whoisspy_datas(ekg_construct_service)
 
 
 from muagent.httpapis.ekg_construct import create_api
-create_api(
+app = create_api(
     llm, 
     llm_config,
     embeddings, 

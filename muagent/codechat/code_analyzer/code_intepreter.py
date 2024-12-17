@@ -32,9 +32,10 @@ class CodeIntepreter:
         res = {}
         for code in code_list:
             message = CODE_INTERPERT_TEMPLATE.format(code=code)
-            message = [HumanMessage(content=message)]
-            chat_res = chat_model.predict_messages(message)
-            content = chat_res.content
+            # message = [HumanMessage(content=message)]
+            # chat_res = chat_model.predict_messages(message)
+            # content = chat_res.content
+            content = chat_model.predict(message)
             res[code] = content
         return res
 
