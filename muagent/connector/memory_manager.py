@@ -5,6 +5,7 @@ from jieba.analyse import extract_tags
 from collections import Counter
 from loguru import logger
 import numpy as np
+import logging
 
 from langchain_community.docstore.document import Document
 
@@ -877,7 +878,7 @@ class TbaseMemoryManager(BaseMemoryManager):
                 return msg
         return None
     
-    def get_msg_content_by_role_name(self, chat_index: str, role_name: str) -> Optional[str]:
+    def get_msg_content_by_rule_name(self, chat_index: str, role_name: str) -> Optional[str]:
         message = self.get_msg_by_role_name(chat_index, role_name)
         if message == None:
             return None
@@ -889,15 +890,32 @@ class TbaseMemoryManager(BaseMemoryManager):
         
         if message == None:
             return False 
-
-        prompt = f"{new_content}\n{role_name}:{message.role_content}\n{update_rule}"
-
+        if update_rule == '':
+            prompt = '任务：请根据游戏内容，更新变量，变量名为：' + role_name + '，变量更新前的内容为：' + message.role_content + '。本节点游戏记录：' + new_content + '。请根据游戏内容，输出更新后的变量内容，不要包含其他信息，不要重复变量名，只输出变量更新后的内容即可。。'
+        else:
+            prompt = '任务：请根据游戏内容，更新变量，变量名为：' + role_name + '，变量更新前的内容为：' + message.role_content + '。本节点游戏记录：' + new_content + '。变量更新规则为：' + update_rule + '。请根据游戏内容和变量更新规则，输出更新后的变量内容，不要包含其他信息，不要重复变量名，只输出变量更新后的内容即可。'
+        logging.info(f'变量更新的prompt:{prompt}')
         model = getChatModelFromConfig(self.llm_config)
 
         new_role_content = model.predict(prompt)
-
+        logging.info(f'变量更新的输出结果:{new_role_content}')
         if new_role_content is not None:
             message.role_content = new_role_content  
+            self.append(message)
+            logging.info(f'输出结果：{self.get_msg_content_by_rule_name(chat_index, role_name)}')
+
+            return True
+        else:
+            return False
+        
+    def update_global_msg_content(self, chat_index: str, role_name: str, new_content: str) -> bool:
+        message = self.get_msg_by_role_name(chat_index, role_name)
+        print(f'  message if {message}')
+        if message == None:
+            return False 
+
+        if new_content is not None:
+            message.role_content = new_content  
             self.append(message)
             return True
         else:

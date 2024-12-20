@@ -2,18 +2,18 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT-APPENDER" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d %-5p %c{2} - %m%n%throwable" charset="UTF-8"/>
+            <PatternLayout pattern="%d %-5p %c{2} %X{stepNodeId} - %m%n%throwable" charset="UTF-8"/>
         </Console>
 
         <Console name="STDERR-APPENDER" target="SYSTEM_ERR">
-            <PatternLayout pattern="%d %-5p %c{2} - %m%n%throwable" charset="UTF-8"/>
+            <PatternLayout pattern="%d %-5p %c{2} %X{stepNodeId} - %m%n%throwable" charset="UTF-8"/>
         </Console>
 
         <RollingFile name="ERROR-APPENDER" fileName="${spring:logging.path}/${spring:spring.application.name}/common-error.log"
                      filePattern="${spring:logging.path}/${spring:spring.application.name}/common-error.log.%d{yyyy-MM-dd}"
                      append="true">
             <PatternLayout
-                    pattern="%d [%X{traceId} %X{rpcId} - %X{loginUserEmail}/%X{loginUserID}/%X{remoteAddr}/%X{clientId} - %X{requestURIWithQueryString}] %-5p %c{2} - %m%n%throwable"
+                    pattern="%d %-5p %c{2} %X{stepNodeId} - %m%n%throwable"
                     charset="UTF-8"/>
             <TimeBasedTriggeringPolicy/>
             <DefaultRolloverStrategy/>
@@ -24,7 +24,7 @@
                      filePattern="${spring:logging.path}/${spring:spring.application.name}/app-default.log.%d{yyyy-MM-dd}"
                      append="true">
             <PatternLayout
-                    pattern="%d  %-5p %c{2} - %m%n%throwable"
+                    pattern="%d %-5p %c{2} %X{stepNodeId} - %m%n%throwable"
                     charset="UTF-8"/>
             <TimeBasedTriggeringPolicy/>
             <DefaultRolloverStrategy/>

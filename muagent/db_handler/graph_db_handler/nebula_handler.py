@@ -63,11 +63,13 @@ class NebulaHandler:
             self.nb_pw = '' or 'nebula'
             self.space_name = "client"
         else:
+
             logger.info('NebulaGraph容器启动中，请等待')
             
             if self.nebula_started(gb_config):
                 self.connection_pool.init([(gb_config.extra_kwargs.get("host"), gb_config.extra_kwargs.get("port"))], config)
         
+
             self.username = gb_config.extra_kwargs.get("username")
             self.nb_pw = gb_config.extra_kwargs.get("password")
             self.space_name = gb_config.extra_kwargs.get("space")
@@ -317,16 +319,7 @@ class NebulaHandler:
                 if prop_name in {'extra', 'description', 'envdescription','updaterule'}:
                     # 转义换行符和双引号
                     value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                elif prop_name == 'description':
-                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                elif prop_name == 'envdescription':
-                    value = value.replace("\n", "\\n").replace("\"", "\\\"")
-                    cypher += f'"{value}",'
-                else:
-                    cypher += f'"{value}",'
-                #cypher += f'"{value}",'
+                cypher += f'"{value}",'
             else:
                 cypher += f'{value},'
         cypher = cypher.rstrip(',')

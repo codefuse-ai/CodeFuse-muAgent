@@ -20,6 +20,7 @@ import com.alipay.muagent.model.ekg.ExeNodeResponse;
 import com.alipay.muagent.model.ekg.configuration.Config;
 import com.alipay.muagent.model.enums.ekg.ToolPlanTypeEnum;
 import com.alipay.muagent.model.enums.scheduler.TaskSchedulerTypeEnum;
+import com.alipay.muagent.model.exception.EkgToolNotFindException;
 import com.alipay.muagent.model.scheduler.SubmitTaskRequest;
 import com.alipay.muagent.model.scheduler.TaskExeResponse;
 import com.alipay.muagent.service.chat.ChatService;
@@ -34,22 +35,39 @@ import com.google.gson.JsonObject;
 import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildHangang;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildHezixuan;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildLiangjun;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildLijing;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildReferee;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildShenqiang;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildWangpeng;
 import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhangwei;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhoujie;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhouxinyi;
+import static com.alipay.muagent.model.chat.content.RoleResponseContent.buildZhuli;
 import static com.alipay.muagent.model.enums.chat.ChatExtendedKeyEnum.CHAT_UNIQUE_ID;
 import static com.alipay.muagent.model.enums.chat.ChatExtendedKeyEnum.EKG_NODE;
 
@@ -67,7 +85,6 @@ public class EkgChatServiceImpl implements ChatService {
 
     @Override
     public void chat(SseEmitter emitter, ChatRequest request) {
-        boolean wait = true;
 
         try {
             TextContent content = GsonUtils.fromString(TextContent.class, GsonUtils.toString(request.getContent()));
@@ -102,68 +119,138 @@ public class EkgChatServiceImpl implements ChatService {
             ekgRequest.setIntentionRule(Lists.newArrayList("nlp"));
             ekgRequest.setScene("NEXA");
 
-            while (wait) {
-
-                EkgAlgorithmResult response = sendRequestToEkgPlanner(ekgRequest);
-
-                if (Objects.isNull(response)) {
-                    emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses("图谱执行异常"))));
-                    LoggerUtil.warn(LOGGER, "图谱执行异常");
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(response.getSummary())) {
-                    emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses(response.getSummary()))));
-                    LoggerUtil.info(LOGGER, "游戏结束");
-                    break;
-                }
-
-                // 需要给用户反馈信息
-                if (StringUtils.isNotBlank(response.getUserInteraction())) {
-                    RoleResponseContent rrc = buildRoleResponseContent(response.getUserInteraction());
-                    String userMsg = GsonUtils.toString(ChatResponse.buildRoleResponses(rrc));
-                    LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
-                    emitter.send(SseEmitter.event().data(userMsg));
-                }
-
-                EkgNode node = response.getToolPlan().get(0);
-
-                // 需要等待用户回答，通知用户后结束轮询
-                if (ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())) {
-                    EkgQuestionDescription ques = node.getQuestionDescription();
-                    RoleResponseContent rrc = buildRoleResponseContent("<font color='#A9192d'> *请回答：* </font> \n\n >" + ques.getQuestionContent().getQuestion());
-
-                    List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
-
-                    // 将 node 和 对话id 放入上下文
-                    HashMap<String, Object> exContext = Maps.newHashMap();
-                    exContext.put(EKG_NODE.name(), GsonUtils.toString(node));
-                    exContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
-                    crs.get(0).setExtendContext(exContext);
-
-                    String userMsg = GsonUtils.toString(crs);
-                    LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
-                    emitter.send(SseEmitter.event().data(userMsg));
-                    break;
-                }
-
-                // 执行当前 node
-                ExeNodeResponse enr = executeNode(node);
-
-                EkgToolResponse toolResponse = EkgToolResponse.builder()
-                        .toolKey(enr.getToolKey())
-                        .toolResponse(enr.getOutput())
-                        .toolParam(node.getToolDescription())
-                        .build();
-                ekgRequest.setCurrentNodeId(node.getCurrentNodeId());
-                ekgRequest.setObservation(GsonUtils.toString(toolResponse));
-                ekgRequest.setType(node.getType());
-                ekgRequest.setIntentionData(null);
-                ekgRequest.setIntentionRule(null);
-            }
+            ekgHandler(emitter, ekgRequest, "1", null);
         } catch (Exception e) {
-            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}][{}][{}][{}]", request.getChatUniqueId());
+            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error][{}]", request.getChatUniqueId());
         }
+    }
+
+    private static final ExecutorService EKG_NODE_EXE = new ThreadPoolExecutor(
+            100,
+            150,
+            60L,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(1),
+            new ThreadPoolExecutor.AbortPolicy());
+
+    private boolean ekgHandler(SseEmitter emitter, EkgQueryRequest ekgRequest, String stepNum, HashMap<String, Object> exContext) {
+        try {
+            MDC.put("stepNodeId", stepNum);
+            EkgAlgorithmResult response = sendRequestToEkgPlanner(ekgRequest);
+
+            if (Objects.isNull(response)) {
+                emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses("图谱执行异常"))));
+                LoggerUtil.warn(LOGGER, "图谱执行异常");
+                return false;
+            }
+
+            if (StringUtils.isNotBlank(response.getSummary())) {
+                emitter.send(SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses(response.getSummary()))));
+                LoggerUtil.info(LOGGER, "游戏结束");
+                return false;
+            }
+
+            if (CollectionUtils.isEmpty(response.getToolPlan())) {
+                response.setToolPlan(Lists.newArrayList());
+            }
+
+            // 需要给用户反馈信息
+            if (StringUtils.isNotBlank(response.getUserInteraction())) {
+                RoleResponseContent rrc = buildRoleResponseContent(response.getUserInteraction());
+                List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
+                crs.get(0).setExtendContext(exContext);
+                String userMsg = GsonUtils.toString(crs);
+                LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
+                emitter.send(SseEmitter.event().data(userMsg));
+            }
+
+            Optional<EkgNode> userNode = response.getToolPlan().stream().filter(
+                    node -> ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())).findAny();
+
+            HashMap<String, Object> nodeContext = Maps.newHashMap();
+            if (userNode.isPresent()) {
+                // 将 node 和 对话id 放入上下文
+                nodeContext.put(EKG_NODE.name(), GsonUtils.toString(userNode.get()));
+                nodeContext.put(CHAT_UNIQUE_ID.name(), ekgRequest.getSessionId());
+            }
+
+
+            AtomicInteger step = new AtomicInteger(1);
+            List<Future<Boolean>> futures = response.getToolPlan().stream().map(node ->
+                    EKG_NODE_EXE.submit(() -> {
+                        try {
+                            String nodeStepNum = String.format("%s.%s", stepNum, step.getAndAdd(1));
+                            MDC.put("stepNodeId", nodeStepNum);
+                            LoggerUtil.info(LOGGER, "exeNode:{}", GsonUtils.toString(node));
+
+                            EkgQueryRequest copyRequest = GsonUtils.fromString(EkgQueryRequest.class, GsonUtils.toString(ekgRequest));
+
+                            // 需要等待用户回答，通知用户后结束任务
+                            if (ToolPlanTypeEnum.USER_PROBLEM.getCode().equals(node.getType())) {
+                                EkgQuestionDescription ques = node.getQuestionDescription();
+                                RoleResponseContent rrc = buildRoleResponseContent(
+                                        "<font color='#A9192d'> *请回答：* </font> \n\n >" + ques.getQuestionContent().getQuestion());
+
+                                List<ChatResponse> crs = ChatResponse.buildRoleResponses(rrc);
+                                crs.get(0).setExtendContext(nodeContext);
+
+                                String userMsg = GsonUtils.toString(crs);
+                                LoggerUtil.info(LOGGER, "notifyUser:{}", userMsg);
+                                emitter.send(SseEmitter.event().data(userMsg));
+                                return false;
+                            }
+
+                            // 执行当前 node
+                            ExeNodeResponse enr = executeNode(node);
+
+                            EkgToolResponse toolResponse = EkgToolResponse.builder()
+                                    .toolKey(enr.getToolKey())
+                                    .toolResponse(enr.getOutput())
+                                    .toolParam(node.getToolDescription())
+                                    .build();
+                            copyRequest.setCurrentNodeId(node.getCurrentNodeId());
+                            copyRequest.setObservation(GsonUtils.toString(toolResponse));
+                            copyRequest.setType(node.getType());
+                            copyRequest.setIntentionData(null);
+                            copyRequest.setIntentionRule(null);
+
+                            return ekgHandler(emitter, copyRequest, nodeStepNum, nodeContext);
+                        } catch (EkgToolNotFindException eetnfe) {
+                            try {
+                                emitter.send(
+                                        SseEmitter.event().data(GsonUtils.toString(ChatResponse.buildTextResponses(eetnfe.getMessage()))));
+                            } catch (Exception e) {
+                                LoggerUtil.error(LOGGER, e, "[EkgServiceImpl send exception to emitter error][{}]",
+                                        ekgRequest.getSessionId());
+                            }
+                            return false;
+                        } catch (Exception e) {
+                            LoggerUtil.error(LOGGER, e, "exeNodeError:{}", GsonUtils.toString(node));
+                            return false;
+                        }
+                    })
+            ).toList();
+
+            futures.parallelStream().forEach(future -> {
+                try {
+                    future.get();
+                } catch (InterruptedException e) {
+                    LoggerUtil.error(LOGGER, e, "exeNodeError:InterruptedException");
+                    throw new RuntimeException(e);
+                } catch (ExecutionException e) {
+                    LoggerUtil.error(LOGGER, e, "exeNodeError:ExecutionException");
+                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    LoggerUtil.error(LOGGER, e, "exeNodeError:Exception");
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (IOException e) {
+            LoggerUtil.error(LOGGER, e, "[EkgServiceImpl call error]");
+            return false;
+        }
+
+        return true;
     }
 
     private RoleResponseContent buildRoleResponseContent(String userInteraction) {
@@ -174,6 +261,20 @@ public class EkgChatServiceImpl implements ChatService {
             return buildLijing(userInteraction.replace("**李静:** <br>", ""));
         } else if (userInteraction.contains("**张伟:**")) {
             return buildZhangwei(userInteraction.replace("**张伟:** <br>", ""));
+        } else if (userInteraction.contains("**朱丽:**")) {
+            return buildZhuli(userInteraction.replace("**朱丽:** <br>", ""));
+        } else if (userInteraction.contains("**周杰:**")) {
+            return buildZhoujie(userInteraction.replace("**周杰:** <br>", ""));
+        } else if (userInteraction.contains("**沈强:**")) {
+            return buildShenqiang(userInteraction.replace("**沈强:** <br>", ""));
+        } else if (userInteraction.contains("**韩刚:**")) {
+            return buildHangang(userInteraction.replace("**韩刚:** <br>", ""));
+        } else if (userInteraction.contains("**梁军:**")) {
+            return buildLiangjun(userInteraction.replace("**梁军:** <br>", ""));
+        } else if (userInteraction.contains("**周欣怡:**")) {
+            return buildZhouxinyi(userInteraction.replace("**周欣怡:** <br>", ""));
+        } else if (userInteraction.contains("**贺子轩:**")) {
+            return buildHezixuan(userInteraction.replace("**贺子轩:** <br>", ""));
         }
 
         return buildReferee(userInteraction);
@@ -183,10 +284,13 @@ public class EkgChatServiceImpl implements ChatService {
     private SchedulerManager schedulerManager;
 
     private ExeNodeResponse executeNode(EkgNode node) {
+        Scheduler scheduler = schedulerManager.getScheduler(TaskSchedulerTypeEnum.COMMON);
+
         SubmitTaskRequest request = SubmitTaskRequest.builder().intention(node.getToolDescription()).build();
         request.setMemory(node.getMemory());
-        Scheduler scheduler = schedulerManager.getScheduler(TaskSchedulerTypeEnum.COMMON);
         request.setTools(config.getToolKeys());
+        request.setEkgRequest(true);
+
         TaskExeResponse toolExeResponse = scheduler.submitTask(request);
 
         ExeNodeResponse exeNodeResponse = ExeNodeResponse.builder()

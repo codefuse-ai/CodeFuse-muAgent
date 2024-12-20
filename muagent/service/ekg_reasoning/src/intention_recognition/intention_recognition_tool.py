@@ -7,7 +7,7 @@ import os
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
-
+RETRY_MAX_NUM = 3
 def intention_recognition_ekgfunc( root_node_id, rule, query, memory, start_from_root = True,
         url= os.environ['intention_url'] ):
     '''
@@ -45,15 +45,38 @@ def intention_recognition_ekgfunc( root_node_id, rule, query, memory, start_from
     }
 
     logging.info( body )
-    r = requests.post(url, json=body, headers=headers)
+    retry_num = 0
+    while retry_num <= RETRY_MAX_NUM:
+        retry_num = retry_num + 1
+        try:
+            r = requests.post(url, json=body, headers=headers)
+        
+        
+            logging.info( str((r.json() )) )  #12:00:37
+            output_1 =  (r.json())
+            # logging.info('============意图识别的结果是================')
+            # logging.info(f'意图识别结果是 {output_1}')
+            # logging.info('============================================')
+            res = json.loads(output_1['resultMap']['algorithmResult'])
+            return res
 
-    logging.info( str((r.json() )) )  #12:00:37
-    output_1 =  (r.json())
-    # logging.info('============意图识别的结果是================')
-    # logging.info(f'意图识别结果是 {output_1}')
-    # logging.info('============================================')
-    res = json.loads(output_1['resultMap']['algorithmResult'])
-    return res
+        except Exception as e:
+
+            logging.info(f'意图识别报错:{e}')
+            sleep(1)
+    raise ValueError(f'意图识别报错 超过了最大重试次数RETRY_MAX_NUM:{RETRY_MAX_NUM}')
+    return None
+
+    
+    # r = requests.post(url, json=body, headers=headers)
+
+    # logging.info( str((r.json() )) )  #12:00:37
+    # output_1 =  (r.json())
+    # # logging.info('============意图识别的结果是================')
+    # # logging.info(f'意图识别结果是 {output_1}')
+    # # logging.info('============================================')
+    # res = json.loads(output_1['resultMap']['algorithmResult'])
+    # return res
 
 
 
@@ -85,17 +108,31 @@ def intention_recognition_querypatternfunc( query,
     }
 
     logging.info( body )
-    r = requests.post(url, json=body, headers=headers)
 
-    logging.info( str((r.json() )) )  #12:00:37
-    output_1 =  (r.json())
-    # logging.info('============意图识别的结果是================')
-    # logging.info(f'意图识别结果是 {output_1}')
-    # logging.info('============================================')
-    res = json.loads(output_1['resultMap']['algorithmResult'])
-    if type(res) == 'str':
-        res = json.loads(res)
-    return res['output']
+    retry_num = 0
+    while retry_num <= RETRY_MAX_NUM:
+        retry_num = retry_num + 1
+        try:
+            r = requests.post(url, json=body, headers=headers)
+        
+        
+            logging.info( str((r.json() )) )  #12:00:37
+            output_1 =  (r.json())
+            # logging.info('============意图识别的结果是================')
+            # logging.info(f'意图识别结果是 {output_1}')
+            # logging.info('============================================')
+            res = json.loads(output_1['resultMap']['algorithmResult'])
+            if type(res) == 'str':
+                res = json.loads(res)
+            return res['output']
+        except Exception as e:
+
+            logging.info(f'意图识别报错:{e}')
+            sleep(1)
+    raise ValueError(f'意图识别报错 超过了最大重试次数RETRY_MAX_NUM:{RETRY_MAX_NUM}')
+    return None
+
+
 
 
 
@@ -133,17 +170,30 @@ def intention_recognition_querytypefunc( query,
     }
 
     logging.info( body )
-    r = requests.post(url, json=body, headers=headers)
 
-    logging.info( str((r.json() )) )  #12:00:37
-    output_1 =  (r.json())
-    # logging.info('============意图识别的结果是================')
-    # logging.info(f'意图识别结果是 {output_1}')
-    # logging.info('============================================')
-    res = json.loads(output_1['resultMap']['algorithmResult'])
-    if type(res) == 'str':
-        res = json.loads(res)
-    return res['output']
+    retry_num = 0
+    while retry_num <= RETRY_MAX_NUM:
+        retry_num = retry_num + 1
+        try:
+            r = requests.post(url, json=body, headers=headers)
+        
+        
+            logging.info( str((r.json() )) )  #12:00:37
+            output_1 =  (r.json())
+            # logging.info('============意图识别的结果是================')
+            # logging.info(f'意图识别结果是 {output_1}')
+            # logging.info('============================================')
+            res = json.loads(output_1['resultMap']['algorithmResult'])
+            if type(res) == 'str':
+                res = json.loads(res)
+            return res['output']
+        except Exception as e:
+
+            logging.info(f'意图识别报错:{e}')
+            sleep(1)
+    raise ValueError(f'意图识别报错 超过了最大重试次数RETRY_MAX_NUM:{RETRY_MAX_NUM}')
+    return None
+
 
 
 

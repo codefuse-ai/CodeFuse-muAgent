@@ -41,6 +41,10 @@ public final class StringUtils {
         return string.length() > maxLength ? string.substring(0, maxLength) : string;
     }
 
+    public static boolean equalNull(String str) {
+        return "null".equalsIgnoreCase(str);
+    }
+
     public static String truncate(String string, int maxLength, String truncationIndicator) {
         if (truncationIndicator.length() >= maxLength) {
             throw new IllegalArgumentException("maxLength must be greater than length of truncationIndicator");

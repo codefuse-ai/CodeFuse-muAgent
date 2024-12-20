@@ -21,11 +21,9 @@ import requests
 from colorama import Fore
 from Crypto.Cipher import AES
 from loguru import logger
+import logging
 
-try:
-    from call_antgroup_llm import call_antgroup_llm
-except:
-    logger.warning("it's ok")
+
 
 MOST_RETRY_TIMES = 5
 
@@ -37,6 +35,11 @@ src_dir = os.path.join(
 sys.path.append(src_dir)
 sys.path.append(src_dir + '/examples/')
 print(src_dir)
+try:
+    from muagent.service.ekg_reasoning.src.utils.call_antgroup_llm import call_antgroup_llm
+except:
+    logger.warning("加载 call_antgroup_llm 失败")
+
 from muagent.llm_models.llm_config import  LLMConfig
 from muagent.llm_models import getChatModelFromConfig
 
@@ -44,8 +47,8 @@ from muagent.llm_models import getChatModelFromConfig
 
 def call_llm(
         input_content = '中国的首都是哪儿', 
-        llm_model = 'qwen_chat_14b', 
-        stop = None, 
+        llm_model = None, 
+        stop = [], 
         temperature = 0.1,
         presence_penalty=0,
         llm_config=None
@@ -53,7 +56,7 @@ def call_llm(
     
     if os.environ['operation_mode'] == 'open_source': # 'open_source' or 'antcode'
     
-        #开源环境，call_llm 依靠用户的配置
+        logging.info('开源环境，call_llm 依靠用户的配置')
         try:
             src_dir = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -85,14 +88,35 @@ def call_llm(
             #logger.error(f"{e}")
             
         
-        print(f'os.environ["model_name"] is {os.environ["model_name"]}, llm_model is {llm_model}')
+        logger.info(f'os.environ["model_name"] is {os.environ["model_name"]}, llm_model is {llm_model}, llm_config is {llm_config}')
 
-        if llm_config is None or llm_model == 'gpt-4' or llm_model == 'gpt_4':
+        if ( llm_model == 'gpt-4' or llm_model == 'gpt_4'):
             logger.info("强制调用gpt-4 的配置")
             llm_config = LLMConfig(
-                model_name=model_name, model_engine=model_engine, api_key=api_key, api_base_url=api_base_url, 
+                model_name=model_name, model_engine=model_engine, 
+                api_key=api_key, api_base_url=api_base_url, 
                 temperature=llm_temperature)
+        elif llm_model == None:
+                logger.info("llm_config 未输入， 强制调用默认大模型配置")
+                llm_config = LLMConfig(
+                    model_name      =os.environ["model_name"], 
+                    model_engine    =os.environ["model_engine"], 
+                    api_key         =os.environ["OPENAI_API_KEY"], 
+                    api_base_url    =os.environ["API_BASE_URL"], 
+                    temperature     =os.environ["llm_temperature"] )
             
+        # elif ( llm_model == 'qwen-72B' or llm_model == 'Qwen2_72B_Instruct_OpsGPT'):
+        #     logger.info("强制调用 Qwen2_72B_Instruct_OpsGPT 的配置")
+        #     llm_config = LLMConfig(
+        #         model_name      =os.environ["qwen-model_name"], 
+        #         model_engine    =os.environ["qwen-model_engine"], 
+        #         api_key         =os.environ["qwen-OPENAI_API_KEY"], 
+        #         api_base_url    =os.environ["qwen-API_BASE_URL"], 
+        #         temperature     =os.environ["qwen-llm_temperature"] )
+        else:
+            logger.info("使用默认 llm_config 的配置") 
+        
+        logger.info(f'llm_config is {llm_config}')
         llm_model = getChatModelFromConfig(llm_config) if llm_config else None
         
 
@@ -139,9 +163,9 @@ def extract_final_result(input_string, special_str = "最终结果为：" ):
 
         #return  jiequ_str
 
-def robust_call_llm(prompt_temp, llm_model = 'useless', stop = None, temperature = 0, presence_penalty = 0):
+def robust_call_llm(prompt_temp, llm_model = None, stop = None, temperature = 0, presence_penalty = 0):
     if os.environ['operation_mode'] != 'antcode':
-        res = call_llm(input_content = prompt_temp, llm_model = 'gpt_4',  stop = stop,temperature=temperature, presence_penalty=presence_penalty)
+        res = call_llm(input_content = prompt_temp, llm_model = llm_model ,  stop = stop,temperature=temperature, presence_penalty=presence_penalty)
         return res
     else:
         try:
@@ -155,5 +179,5 @@ def robust_call_llm(prompt_temp, llm_model = 'useless', stop = None, temperature
 
 if __name__ == '__main__':
     import test_config
-    res = call_llm("你的名字是什么？")
+    res = call_llm("你的名字是什么？", llm_model = 'Qwen2_72B_Instruct_OpsGPT')
     print(res)

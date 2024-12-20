@@ -32,9 +32,9 @@ import os,  base64
 from loguru import logger
 import uuid
 
-#geabase 依赖包
-from gdbc2.geabase_client import GeaBaseClient#, Node, Edge, MutateBatchOperation, GeaBaseUtil
-from gdbc2.geabase_env import GeaBaseEnv
+# #geabase 依赖包
+# from gdbc2.geabase_client import GeaBaseClient#, Node, Edge, MutateBatchOperation, GeaBaseUtil
+# from gdbc2.geabase_env import GeaBaseEnv
 
 #muagent 依赖包
 from muagent.connector.schema import Message
@@ -72,11 +72,16 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - %(lineno
 if __name__ == '__main__':
     #1、 LLM 和 Embedding Model 配置
     llm_config = LLMConfig(
-        model_name=os.environ["model_name"], api_key=os.environ["OPENAI_API_KEY"], 
-        api_base_url=os.environ["API_BASE_URL"], temperature=0.3
-    )
-
-
+            model_name      =os.environ["model_name"], 
+            model_engine    =os.environ["model_engine"], 
+            api_key         =os.environ["OPENAI_API_KEY"], 
+            api_base_url    =os.environ["API_BASE_URL"], 
+            temperature     =float(os.environ["llm_temperature"]),
+        )
+    
+    #llm = CustomizedModel()
+    #llm_config_modelops = LLMConfig(llm=llm)
+        
     # 2、自定义向量模型配置接口
     embeddings = None
     #embeddings = CustomizedEmbeddings()
@@ -84,34 +89,56 @@ if __name__ == '__main__':
         embed_model="default",
         langchain_embeddings=embeddings
     )
-
-
-    # 3、tbase接口配置
-    tb_config = TBConfig(
-        tb_type     = os.environ["tb_type"],
-        index_name  = os.environ["tb_index_name"],
-        host        = os.environ['tb_host'],
-        port        = int(os.environ['tb_port']),
-        username    = os.environ['tb_username'],
-        password    = os.environ['tb_password'],
-        extra_kwargs={
-            'host': os.environ['tb_host'],
-            'port': int(os.environ['tb_port']),
-            'username': os.environ['tb_username'],
-            'password': os.environ['tb_password'],
-            'definition_value': os.environ['tb_definition_value'],
-            'expire_time': int(os.environ['tb_expire_time']) ,
-        }
-    )
-
     
+    
+    # 3、tbase接口配置
+    if os.environ['operation_mode'] == 'antcode': # 'open_source' or 'antcode'
+        tb_config = TBConfig(
+            tb_type     = os.environ["tb_type"],
+            index_name  = os.environ["tb_index_name"],
+            host        = os.environ['tb_host'],
+            port        = int(os.environ['tb_port']),
+            username    = os.environ['tb_username'],
+            password    = os.environ['tb_password'],
+            extra_kwargs={
+                'host': os.environ['tb_host'],
+                'port': int(os.environ['tb_port']),
+                'username': os.environ['tb_username'],
+                'password': os.environ['tb_password'],
+                'definition_value': os.environ['tb_definition_value'],
+                'expire_time': int(os.environ['tb_expire_time']) ,
+            }
+        )
+    else:
+        # 初始化 TbaseHandler 实例
+        tb_config = TBConfig(
+            tb_type="TbaseHandler",
+            index_name="shanshi_node",
+            host=os.environ['tb_host'],
+            port=os.environ['tb_port'],
+            username=os.environ['tb_username'],
+            password=os.environ['tb_password'],
+            extra_kwargs={
+                'host': os.environ['tb_host'],
+                'port': os.environ['tb_port'],
+                'username': os.environ['tb_username'] ,
+                'password': os.environ['tb_password'],
+                'definition_value': os.environ['tb_definition_value']
+            }
+        )
     # 指定index_name
     index_name = os.environ["tb_index_name"]
+    # th = TbaseHandler(TBASE_ARGS, index_name, definition_value="message")
+    # th = TbaseHandler(tb_config, index_name, definition_value="message")
+    # th = TbaseHandler(tb_config, index_name, definition_value="message_test_new")
     th = TbaseHandler(tb_config, index_name, definition_value=os.environ['tb_definition_value'])
-
-
-
-
+    
+    # # drop index
+    # th.drop_index(index_name)
+    
+    
+    
+    
     # 5、memory 接口配置
     # create tbase memory manager
     memory_manager = TbaseMemoryManager(
@@ -121,27 +148,44 @@ if __name__ == '__main__':
                 tbase_handler=th,
                 use_vector=False
             )
-
-
-
+    
+    
+    
     #6 geabase 接口配置
-    gb_config = GBConfig(
-        gb_type="GeaBaseHandler", 
-        extra_kwargs={
-            'metaserver_address': os.environ['metaserver_address'],
-            'project': os.environ['project'],
-            'city': os.environ['city'],
-            # 'lib_path':  '%s/geabase/geabase-client-0.0.1/libs'%(tar_path),
-            'lib_path': os.environ['lib_path']
-        }
-    )
-
+    if os.environ['operation_mode'] == 'antcode': # 'open_source' or 'antcode'
+        gb_config = GBConfig(
+            gb_type="GeaBaseHandler", 
+            extra_kwargs={
+                'metaserver_address': os.environ['metaserver_address'],
+                'project': os.environ['project'],
+                'city': os.environ['city'],
+                # 'lib_path':  '%s/geabase/geabase-client-0.0.1/libs'%(tar_path),
+                'lib_path': os.environ['lib_path']
+            }
+        )
+    else:
+        # 初始化 NebulaHandler 实例
+        gb_config = GBConfig(
+            gb_type="NebulaHandler",
+            extra_kwargs={
+                'host': os.environ['nb_host'],
+                'port': os.environ['nb_port'],
+                'username': os.environ['nb_username'] ,
+                'password': os.environ['nb_password'],
+                "space": os.environ['nb_space'],
+                #'definition_value': os.environ['nb_definition_value']
+    
+            }
+        )
+    
     #7 构建ekg_construct_service
+    
     ekg_construct_service = EKGConstructService(
             embed_config        =   embed_config,
             llm_config          =   llm_config,
             tb_config           =   tb_config,
             gb_config           =   gb_config,
+            initialize_space    =  False
         )
         
     intention_router = IntentionRouter(
@@ -150,15 +194,21 @@ if __name__ == '__main__':
         ekg_construct_service.tb,
         embed_config
     )
-
+    
     #8 获取main需要的内容
     memory_manager = memory_manager
-    geabase_handler    =     GeaBaseHandler(gb_config)
+    #geabase_handler    =     GeaBaseHandler(gb_config)
+    geabase_handler    =     ekg_construct_service.gb
     intention_router   =     intention_router
+    
+    
+
     
 
 
-    goc_test_sessionId = "TS_GOC_103346456601_0709001_sswd_05"
+
+    goc_test_sessionId = "TS_GOC_103346456601_1127001_sswd_099"
+
 
 
     #debugmode 调试，谁是卧底初次输入
@@ -238,7 +288,7 @@ if __name__ == '__main__':
 
     time.sleep(1)
     '''
-    {'intentionRecognitionSituation': 'None', 'sessionId': 'TS_GOC_103346456601_0709001_lrs_105', 'type': 'onlyTool', 'summary': None, 'toolPlan': [{'toolDescription': 'agent_2', 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论', 'memory': '[{"role_type": "user", "role_name": "firstUserInput", "role_content": "{\\"content\\": \\"一起来玩谁是卧底\\"}"}, {"role_type": "observation", "role_name": "function_caller", "role_content": "{\\"座位分配结果\\": [{\\"player_name\\": \\"player_1\\", \\"seat_number\\": 1}, {\\"player_name\\": \\"李四(人类玩家)\\", \\"seat_number\\": 2}, {\\"player_name\\": \\"player_2\\", \\"seat_number\\": 3}, {\\"player_name\\": \\"player_3\\", \\"seat_number\\": 4}]}"}, {"role_type": "userinput", "role_name": "user", "role_content": "分配座位"}, {"role_type": "userinput", "role_name": "user", "role_content": "通知身份"}, "主持人 : 你是player_1, 你的位置是1号， 你分配的单词是汽车", {"role_type": "userinput", "role_name": "user", "role_content": "开始新一轮的讨论"}, "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1"]', 'type': 'reactExecution'}], 'userInteraction': '["通知身份", "主持人 : 你是李四(人类玩家), 你的位置是2号， 你分配的单词是汽车", "开始新一轮的讨论", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1", "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3"]'}
+    {'intentionRecognitionSituation': 'None', 'sessionId': 'goc_test_sessionId', 'type': 'onlyTool', 'summary': None, 'toolPlan': [{'toolDescription': 'agent_2', 'currentNodeId': '剧本杀/谁是卧底/智能交互/开始新一轮的讨论', 'memory': '[{"role_type": "user", "role_name": "firstUserInput", "role_content": "{\\"content\\": \\"一起来玩谁是卧底\\"}"}, {"role_type": "observation", "role_name": "function_caller", "role_content": "{\\"座位分配结果\\": [{\\"player_name\\": \\"player_1\\", \\"seat_number\\": 1}, {\\"player_name\\": \\"李四(人类玩家)\\", \\"seat_number\\": 2}, {\\"player_name\\": \\"player_2\\", \\"seat_number\\": 3}, {\\"player_name\\": \\"player_3\\", \\"seat_number\\": 4}]}"}, {"role_type": "userinput", "role_name": "user", "role_content": "分配座位"}, {"role_type": "userinput", "role_name": "user", "role_content": "通知身份"}, "主持人 : 你是player_1, 你的位置是1号， 你分配的单词是汽车", {"role_type": "userinput", "role_name": "user", "role_content": "开始新一轮的讨论"}, "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1"]', 'type': 'reactExecution'}], 'userInteraction': '["通知身份", "主持人 : 你是李四(人类玩家), 你的位置是2号， 你分配的单词是汽车", "开始新一轮的讨论", "主持人 : 现在我们开始发言环节，按照座位顺序由小到大进行发言，首先是1号位的player_1", "主持人 : 当前存活的玩家有4位，他们是player_1, 李四(人类玩家), player_2, player_3"]'}
     '''
     #step 4 剧本杀/谁是卧底/智能交互/关键信息_1
     params_string =\
@@ -351,6 +401,9 @@ if __name__ == '__main__':
  'scene': 'UNDERCOVER'}
     res_to_lingsi = main(params_string,  memory_manager, geabase_handler, intention_router)
     print('UNDERCOVER', res_to_lingsi)
+
+
+
 
 
 # #========================

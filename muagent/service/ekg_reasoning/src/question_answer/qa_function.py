@@ -65,10 +65,9 @@ class qa_class():
         resstr = self.geabase_nodediffusion_qa()
         print(resstr)
         print(f'full_link_summary prompt的长度为 {len(resstr)}')
-        resstr_llm_summary = call_llm(input_content = resstr, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        resstr_llm_summary = call_llm(input_content = resstr, llm_model = None,llm_config=self.llm_config)
 
-        visualization_url = self.get_visualization_url()
-
+        #visualization_url = self.get_visualization_url()
 
         return resstr_llm_summary
 
@@ -96,7 +95,7 @@ class qa_class():
         print(prompt)
         print(f'prompt的长度为 {len(prompt)}')
 
-        res = call_llm(input_content = prompt, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        res = call_llm(input_content = prompt, llm_model = None, llm_config=self.llm_config)
         
         return res
 
@@ -122,7 +121,7 @@ class qa_class():
         '''
         print(prompt)
         print(f'prompt的长度为 {len(prompt)}')
-        res = call_llm(input_content = prompt, llm_model = 'Qwen2_72B_Instruct_OpsGPT',llm_config=self.llm_config)
+        res = call_llm(input_content = prompt, llm_model = None,llm_config=self.llm_config)
         # res = robust_call_llm(prompt)
         return res
 
@@ -141,137 +140,153 @@ class qa_class():
         '''
 
 
-        #resstr = '你是一个计划总结大师，可以用比较通俗易懂的语言总结一个计划。 以下计划由一个知识图谱表示。请将其总结为自然语言的方式 \n'
+        resstr = '你是一个计划总结大师，可以用比较通俗易懂的语言总结一个计划。 以下计划由一个知识图谱表示。请将其总结为自然语言的方式 \n'
 
 
-        # #1.假设当前节点已经运行完，得到后面的tool. 如果为事实节点，则需要采用大模型进行判断
-        # tool_plan = []
-        # nodeid_in_search = [{'nodeId':self.start_nodeid, 'nodeType':self.start_nodetype}]
+        #1.假设当前节点已经运行完，得到后面的tool. 如果为事实节点，则需要采用大模型进行判断
+        tool_plan = []
+        nodeid_in_search = [{'nodeId':self.start_nodeid, 'nodeType':self.start_nodetype}]
+        nodeid_in_search_all = []
 
-        # while len(nodeid_in_search)!= 0:
-        #     nodedict_now = nodeid_in_search.pop()
-        #     nodeid_now      = nodedict_now['nodeId']
-        #     nodetype_now    = nodedict_now['nodeType']
+        while len(nodeid_in_search)!= 0:
+            nodedict_now = nodeid_in_search.pop()
+            nodeid_now      = nodedict_now['nodeId']
+            nodetype_now    = nodedict_now['nodeType']
 
-        #     if nodetype_now == 'opsgptkg_analysis':
-        #         if self.gb_handler.geabaseGetOnlyOneNodeInfoWithKey( rootNodeId = nodeid_now, rootNodeType = nodetype_now, key = 'accesscriteria') == 'or':
-        #             #当链接到node_result_1节点的node_phenomena都满足时，才激活node_result_1
-        #             resstr += f'当链接到{nodeid_now}节点的node_phenomena只要满足一个时，就能激活{nodeid_now}'
-        #         else:
-        #             resstr += f'当链接到{nodeid_now}节点的node_phenomena都满足时，才能激活{nodeid_now}'
-
-        #         #nodeid_in_search.append({'nodeId':nodeid_new, 'nodeType':nodetype_new})
-        #     if nodetype_now == 'opsgptkg_phenomenon':
-        #         '''
-        #             node_phenomena_1 与 结论 node_result_1 相连，node_result_1的内容为  热点账户问题，无需应急。
-        #             node_phenomena_1 与 结论 node_result_4 相连，node_result_4的内容为  请排查其他原因
-        #         '''
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
-        #         for  i in range(len(neighbor_node_id_list)):
-        #             resstr += f'{nodeid_now}节点 与 {neighbor_node_id_list[i]} 相连，节点{neighbor_node_id_list[i]}的内容为： {next_node_description_list[i]}'
-        #     # print('==================')
-        #     # print(f'nodeid_in_search is {nodeid_in_search}')
-        #     # print('=================')
-
-
-
-            
-        #     if self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_task') == True:
-        #         # 后续节点都是task节点，
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
-
-        #         if nodetype_now == 'opsgptkg_schedule': #操作计划节点后第一次出现任务节点
-        #             if len(neighbor_node_id_list) >= 2:
-        #                 resstr += f'并行执行{len(neighbor_node_id_list)}个任务：\n'
-        #             else:
-        #                 resstr += f'执行{len(neighbor_node_id_list)}个任务：\n '
-        #             for i in range(len(neighbor_node_id_list)):
-        #                 resstr += f' {neighbor_node_id_list[i]} 的内容是 : {next_node_description_list[i]}  \n'
-        #         else:
-        #             if len(neighbor_node_id_list) >= 2:
-        #                 resstr += f'{nodeid_now}后面是并行执行{len(neighbor_node_id_list)}个任务：\n'
-        #             else:
-        #                 resstr += f'{nodeid_now}后面是执行{len(neighbor_node_id_list)}个任务：\n '
+            if nodetype_now == 'opsgptkg_analysis':
+                if self.gb_handler.geabaseGetOnlyOneNodeInfoWithKey( rootNodeId = nodeid_now, rootNodeType = nodetype_now, key = 'accesscriteria') == 'or':
+                    #当链接到node_result_1节点的node_phenomena都满足时，才激活node_result_1
+                    # nodeid_in_search_all.append(nodeid_now)
+                    resstr += f'当链接到{nodeid_now}节点的node_phenomena只要满足一个时，就能激活{nodeid_now}'
                     
-        #             for i in range(len(neighbor_node_id_list)):
-        #                 resstr += f'{nodeid_now}后面是{neighbor_node_id_list[i]}, {neighbor_node_id_list[i]}的内容是:{next_node_description_list[i]} \n'
+                else:
+                    # nodeid_in_search_all.append(nodeid_now)
+                    resstr += f'当链接到{nodeid_now}节点的node_phenomena都满足时，才能激活{nodeid_now}'
 
-        #         for i in range(len(neighbor_node_id_list)): #往后扩展
-        #             nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_task'})
-
-        #     elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_phenomenon') == True: 
-        #         #后续所有节点都是判断节点, 则进行大模型判断，选中其中一个 phenomenon 进入后续，同时在phenomenons节点上记录memory
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
-
-
-        #         resstr += f'{nodeid_now}后面有{len(neighbor_node_id_list)}种可能 '
-        #         for i in range(len(neighbor_node_id_list)): #往后扩展
-        #             resstr += f'{neighbor_node_id_list[i]}:{next_node_description_list[i]}; '
-        #             resstr += '\n'
-
-        #         for i in range(len(neighbor_node_id_list)): #往后扩展
-        #             nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_phenomenon'})
+                #nodeid_in_search.append({'nodeId':nodeid_new, 'nodeType':nodetype_new})
+            if nodetype_now == 'opsgptkg_phenomenon':
+                '''
+                    node_phenomena_1 与 结论 node_result_1 相连，node_result_1的内容为  热点账户问题，无需应急。
+                    node_phenomena_1 与 结论 node_result_4 相连，node_result_4的内容为  请排查其他原因
+                '''
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
+                for  i in range(len(neighbor_node_id_list)):
+                    resstr += f'{nodeid_now}节点 与 {neighbor_node_id_list[i]} 相连，节点{neighbor_node_id_list[i]}的内容为： {next_node_description_list[i]}'
+            # print('==================')
+            # print(f'nodeid_in_search is {nodeid_in_search}')
+            # print('=================')
 
 
 
+            
+            if self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_task') == True:
+                # 后续节点都是task节点，
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
 
-        #     elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_schedule') == True:
-        #         #后面都是操作计划节点，假设只有一个操作计划节点
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
-        #         # neighbor_node_id_list       = get_nodeid_from_res(res)
-        #         # next_node_description_list  = get_nodedescription_from_res(res)
-        #         for i in range(len(neighbor_node_id_list)):
-        #             resstr = resstr + '操作计划名：' + self.gb_handler.geabase_getDescription(neighbor_node_id_list[i], 'opsgptkg_schedule') + '\n' + '最开始，'
-        #             nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_schedule'})
+                if nodetype_now == 'opsgptkg_schedule': #操作计划节点后第一次出现任务节点
+                    if len(neighbor_node_id_list) >= 2:
+                        resstr += f'并行执行{len(neighbor_node_id_list)}个任务：\n'
+                    else:
+                        resstr += f'执行{len(neighbor_node_id_list)}个任务：\n '
+                    for i in range(len(neighbor_node_id_list)):
+                        resstr += f' {neighbor_node_id_list[i]} 的内容是 : {next_node_description_list[i]}  \n'
+                else:
+                    if len(neighbor_node_id_list) >= 2:
+                        resstr += f'{nodeid_now}后面是并行执行{len(neighbor_node_id_list)}个任务：\n'
+                    else:
+                        resstr += f'{nodeid_now}后面是执行{len(neighbor_node_id_list)}个任务：\n '
+                    
+                    for i in range(len(neighbor_node_id_list)):
+                        resstr += f'{nodeid_now}后面是{neighbor_node_id_list[i]}, {neighbor_node_id_list[i]}的内容是:{next_node_description_list[i]} \n'
+
+                for i in range(len(neighbor_node_id_list)): #往后扩展
+                    if  neighbor_node_id_list[i] not in nodeid_in_search_all:
+                        nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_task'})
+                        nodeid_in_search_all.append(neighbor_node_id_list[i])
+
+            elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_phenomenon') == True: 
+                #后续所有节点都是判断节点, 则进行大模型判断，选中其中一个 phenomenon 进入后续，同时在phenomenons节点上记录memory
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
 
 
-        #     elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opstpgkg_analysis') == True:
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
+                resstr += f'{nodeid_now}后面有{len(neighbor_node_id_list)}种可能 '
+                for i in range(len(neighbor_node_id_list)): #往后扩展
+                    resstr += f'{neighbor_node_id_list[i]}:{next_node_description_list[i]}; '
+                    resstr += '\n'
 
-        #         # neighbor_node_id_list       = get_nodeid_from_res(res)
-        #         # next_node_description_list  = get_nodedescription_from_res(res)
-        #         for i in range(len(neighbor_node_id_list)):
+                for i in range(len(neighbor_node_id_list)): #往后扩展
+                    if  neighbor_node_id_list[i] not in nodeid_in_search_all:
+                        nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_phenomenon'})
+                        nodeid_in_search_all.append(neighbor_node_id_list[i])
 
-        #             resstr += f'{nodeid_now} 与 {neighbor_node_id_list[i]} 相连，{neighbor_node_id_list[i]}的内容为 {next_node_description_list[i]} '
-        #             nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_schedule'})
 
-        #     else:
-        #         neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
-        #         neighbor_node_type_list  = self.gb_handler.get_children_type( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
 
-        #         for i in range(len(neighbor_node_id_list) ):
 
-        #                 nodeid_new = neighbor_node_id_list[i]
-        #                 nodetype_new = neighbor_node_type_list[i]
+            elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opsgptkg_schedule') == True:
+                #后面都是操作计划节点，假设只有一个操作计划节点
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
+                # neighbor_node_id_list       = get_nodeid_from_res(res)
+                # next_node_description_list  = get_nodedescription_from_res(res)
+                for i in range(len(neighbor_node_id_list)):
+                    resstr = resstr + '操作计划名：' + self.gb_handler.geabase_getDescription(neighbor_node_id_list[i], 'opsgptkg_schedule') + '\n' + '最开始，'
+                    if  neighbor_node_id_list[i] not in nodeid_in_search_all:
+                        nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_schedule'})
+                        nodeid_in_search_all.append(neighbor_node_id_list[i])
+
+
+            elif self.gb_handler.all_nodetype_check(nodeid_now, nodetype_now, 'opstpgkg_analysis') == True:
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                next_node_description_list  = self.gb_handler.get_children_description( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
+
+                # neighbor_node_id_list       = get_nodeid_from_res(res)
+                # next_node_description_list  = get_nodedescription_from_res(res)
+                for i in range(len(neighbor_node_id_list)):
+
+                    resstr += f'{nodeid_now} 与 {neighbor_node_id_list[i]} 相连，{neighbor_node_id_list[i]}的内容为 {next_node_description_list[i]} '
+                    if neighbor_node_id_list[i] not in nodeid_in_search_all:
+                        nodeid_in_search.append({'nodeId':neighbor_node_id_list[i], 'nodeType':'opsgptkg_schedule'})
+                        nodeid_in_search_all.append(neighbor_node_id_list[i])
+
+            else:
+                neighbor_node_id_list       = self.gb_handler.get_children_id( nodeid_now, nodetype_now)   #get_nodeid_from_res(res)
+                neighbor_node_type_list     = self.gb_handler.get_children_type( nodeid_now, nodetype_now)  #get_nodedescription_from_res(res)
+
+                for i in range(len(neighbor_node_id_list) ):
+
+                        nodeid_new = neighbor_node_id_list[i]
+                        nodetype_new = neighbor_node_type_list[i]
                         
-        #                 #只要后续有节点就继续扩展
-        #                 nodeid_in_search.append({'nodeId':nodeid_new, 'nodeType':nodetype_new})
+                        #只要后续有节点就继续扩展
+                        if nodeid_new not in nodeid_in_search_all:
+                            nodeid_in_search.append({'nodeId':nodeid_new, 'nodeType':nodetype_new})
+                            nodeid_in_search_all.append( nodeid_new )
 
             
         
-        full_graph_info = self.geabase_handler.get_hop_infos(attributes={"id": self.start_nodeid,}, node_type="opsgptkg_intent", hop = 15 )
-        full_graph_info_str = str(full_graph_info.nodes) + '\n' + str(full_graph_info.edges) + '\n'
-        resstr = \
-        f'''
-        你是一个计划总结大师，可以用比较通俗易懂的语言总结一个计划。  
-        计划由知识图谱的形式表示，即full_graph_info。 
+        # full_graph_info = self.geabase_handler.get_hop_infos(attributes={"id": self.start_nodeid,}, node_type="opsgptkg_intent", hop = 15 )
+        # full_graph_info_str = str(full_graph_info.nodes) + '\n' + str(full_graph_info.edges) + '\n'
+        # resstr = \
+        # f'''
+        # 你是一个计划总结大师，可以用比较通俗易懂的语言总结一个计划。  
+        # 计划由知识图谱的形式表示，即full_graph_info。 
         
         
-        ##注意##
-        full_graph_info 是一个具体的流程信息，包含了节点和边的信息
+        # ##注意##
+        # full_graph_info 是一个具体的流程信息，包含了节点和边的信息
         
 
-        full_graph_info:{full_graph_info_str}
+        # full_graph_info:{full_graph_info_str}
 
 
-        '''
+        # '''
 
-        resstr += ' \n \n 请总结上述排查计划，注意有些情况下可以概况总结处理.注意,请直接输出总结结果，不要输出其他的话:' 
+        # resstr += ' \n \n 请总结上述排查计划，注意有些情况下可以概况总结处理.注意,请直接输出总结结果，不要输出其他的话:' 
+
+
         return  resstr
 
 

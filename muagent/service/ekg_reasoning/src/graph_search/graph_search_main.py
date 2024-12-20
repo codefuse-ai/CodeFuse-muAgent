@@ -44,6 +44,11 @@ from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.schemas.db import GBConfig
 from muagent.service.ekg_construct import EKGConstructService
 from muagent.service.ekg_inference import IntentionRouter
+from muagent.schemas.ekg.ekg_reason import LingSiResponse, ResToLingsi
+if os.environ['operation_mode'] == 'antcode': # 'open_source' or 'antcode'
+    from muagent.service.web_operation.web_act_ant import WebAgent
+
+
 
 #内部其他函数
 from src.utils.call_llm import call_llm,  extract_final_result
@@ -54,9 +59,11 @@ from src.graph_search.geabase_search_plus import graph_search_tool
 if os.environ['operation_mode'] == 'antcode': # 'open_source' or 'antcode'
     #内部的意图识别接口调用函数
     from src.intention_recognition.intention_recognition_tool import intention_recognition_ekgfunc, intention_recognition_querypatternfunc, intention_recognition_querytypefunc
+    from src.generalization_reasoning.generalization_reason import GeneralizationReason
 from src.question_answer.qa_function import qa_class
 from src.memory_handler.ekg_memory_handler import memory_handler_ekg
 from src.graph_search.call_old_fuction import call_old_fuction
+
 
 
 # 配置logging模块
@@ -69,7 +76,7 @@ class graph_search_process():
     '''
         图谱推理主流程class
     '''
-    def __init__(self, geabase_handler, memory_manager,  intention_router, scene , sessionId, currentNodeId, 
+    def __init__(self, geabase_handler, memory_manager,  intention_router, lingsi_response, scene , sessionId, currentNodeId, 
                 observation, userAnswer, inputType, startRootNodeId, intentionRule, intentionData,
                 startFromRoot = True,
                 index_name = 'ekg_migration_new', unique_name="EKG",
@@ -77,6 +84,7 @@ class graph_search_process():
                 ):
         self.memory_manager =  memory_manager #memory_init(index_name = 'ekg_migration', unique_name="EKG")
 
+        self.lingsi_response = lingsi_response
         self.scene = scene
         self.sessionId = sessionId
         self.currentNodeId = currentNodeId
@@ -111,8 +119,11 @@ class graph_search_process():
 
         #计算起始时间
         self.start_datetime = int(time.time()*1000)
-    
-    def state_judgement(self):
+    # def scene_judgement(self, scene:str)->str:
+    #     if scene == 'generalizationReasoning':
+    #         return 'generalizationReasoning'
+
+    def state_judgement(self, inputType:str)->str:
         '''
             根据当前情况，判断当前算法输入所处的状态
                 {
@@ -123,24 +134,24 @@ class graph_search_process():
                 "tool_QUESTION_RETURN_ANSWER"       #task阶段，不执行tool，而是向用户问填空题/选择题
                 }
         '''
-        if self.inputType == None:
-            self.algorithm_State = 'FIRST_INPUT' 
+        if inputType == None:
+            #self.algorithm_State = 'FIRST_INPUT' 
             return 'FIRST_INPUT'
 
-        elif self.inputType == 'intentQuestion':#INTENT_QUESTION
-            self.algorithm_State = 'INTENT_QUESTION_RETURN_ANSWER'
+        elif inputType == 'intentQuestion':#INTENT_QUESTION
+            #self.algorithm_State = 'INTENT_QUESTION_RETURN_ANSWER'
             return "INTENT_QUESTION_RETURN_ANSWER"
 
-        elif self.inputType == 'onlyTool':
-            self.algorithm_State = "TOOL_EXECUTION_RESULT"
+        elif inputType == 'onlyTool':
+            #self.algorithm_State = "TOOL_EXECUTION_RESULT"
             return "TOOL_EXECUTION_RESULT"
 
-        elif self.inputType == 'reactExecution':#REACT_EXECUTION_RESULT
-            self.algorithm_State = "REACT_EXECUTION_RESULT"
+        elif inputType == 'reactExecution':#REACT_EXECUTION_RESULT
+            #self.algorithm_State = "REACT_EXECUTION_RESULT"
             return "REACT_EXECUTION_RESULT"
 
-        elif self.inputType == 'userProblem':
-            self.algorithm_State = "TOOL_QUESTION_RETURN_ANSWER"
+        elif inputType == 'userProblem':
+            #self.algorithm_State = "TOOL_QUESTION_RETURN_ANSWER"
             return "TOOL_QUESTION_RETURN_ANSWER"
 
     def intentionRecongnition(self):
@@ -214,13 +225,17 @@ class graph_search_process():
             if os.environ['operation_mode'] == 'antcode':
                 node_id = '剧本杀/狼人杀'
                 Designated_intent = [node_id]
+                self.queryPattern = 'executePattern'
+                self.intentionRecognitionSituation = 'success'
+                self.intention_recognition_path    = Designated_intent
+                self.currentNodeId = '剧本杀/狼人杀'
             else:
                 node_id = hash_id('剧本杀/狼人杀')
                 Designated_intent = [node_id]
-            self.queryPattern = 'executePattern'
-            self.intentionRecognitionSituation = 'success'
-            self.intention_recognition_path    = Designated_intent
-            self.currentNodeId = hash_id('剧本杀/狼人杀')
+                self.queryPattern = 'executePattern'
+                self.intentionRecognitionSituation = 'success'
+                self.intention_recognition_path    = Designated_intent
+                self.currentNodeId = hash_id('剧本杀/狼人杀')
             return 1 #直接结束
         if self.scene ==   'UNDERCOVER' and self.algorithm_State == "FIRST_INPUT":
             logging.info(f'现在直接到谁是卧底模式')
@@ -228,14 +243,31 @@ class graph_search_process():
             if os.environ['operation_mode'] == 'antcode':
                 node_id = '剧本杀/谁是卧底'
                 Designated_intent = [node_id]
+                logging.info(f'意图识别结果为:{Designated_intent}')
+                self.queryPattern = 'executePattern'
+                self.intentionRecognitionSituation = 'success'
+                self.intention_recognition_path    = Designated_intent
+                self.currentNodeId = '剧本杀/谁是卧底'
             else:
                 node_id = hash_id('剧本杀/谁是卧底')
                 Designated_intent = [node_id]
+                logging.info(f'意图识别结果为:{Designated_intent}')
+                self.queryPattern = 'executePattern'
+                self.intentionRecognitionSituation = 'success'
+                self.intention_recognition_path    = Designated_intent
+                self.currentNodeId = hash_id('剧本杀/谁是卧底')
+            return 1 #直接结束
+        if self.lingsi_response.usingRootNode ==  True and self.algorithm_State == "FIRST_INPUT":
+            logging.info(f'现在直接到fatherIntention {self.startRootNodeId}')
+
+            node_id = self.startRootNodeId
+            Designated_intent = [node_id]
             logging.info(f'意图识别结果为:{Designated_intent}')
             self.queryPattern = 'executePattern'
             self.intentionRecognitionSituation = 'success'
             self.intention_recognition_path    = Designated_intent
-            self.currentNodeId = hash_id('剧本杀/谁是卧底')
+            self.currentNodeId = node_id
+
             return 1 #直接结束
 
 
@@ -246,8 +278,13 @@ class graph_search_process():
                 #step 2 调用 ekg func 主函数， self.intentionRecognitionSituation ,  self.intentionRecognitionRes
                 #step 3 写入memory
             #不是第一次输入， 接受的是意图识别问题用户给的答案
+
+            self.queryPattern  有两种 'executePattern'  or  'qaPattern'
+            self.queryType     整体计划查询； 'allPlan'， 下一步任务查询；'nextStep'， 闲聊; 'justChat'
+
+
             '''
-            #step 1 判断是执行式还是答疑式输入
+            #step 1.1 判断是执行式还是答疑式输入
             if  self.intentionRule != ['nlp']:
                 self.queryPattern = 'executePattern'
             else:
@@ -261,11 +298,13 @@ class graph_search_process():
                     self.queryPattern = 'executePattern'
                 else:
                     self.queryPattern = 'qaPattern'
-                    if os.environ['operation_mode'] == 'antcode' :
-                        self.queryType    = intention_recognition_querytypefunc( self.intentionData )
-                    elif os.environ['operation_mode'] == 'open_source' :
-                        self.queryType    = self.intention_router.get_intention_consult_which( self.intentionData )
-            
+
+            #step 1.2  判断是 整体计划查询； 'allPlan'， 下一步任务查询；'nextStep'， 闲聊; 'justChat'
+            if os.environ['operation_mode'] == 'antcode' :
+                self.queryType    = intention_recognition_querytypefunc( self.intentionData )
+            elif os.environ['operation_mode'] == 'open_source' :
+                self.queryType    = self.intention_router.get_intention_consult_which( self.intentionData )
+    
 
             logging.info(f'意图分析的结果为 queryType is {self.queryType},  self.queryPattern  is {self.queryPattern}')
 
@@ -302,6 +341,8 @@ class graph_search_process():
                 #raise ValueError('意图识别noMatch ，退出')
             elif intentionRecognitionRes['intentionRecognitionSituation'] == 'toChoose':
                 self.intentionRecognitionSituation = 'toChoose'
+                #raise ValueError('反问逻辑尚未构建，退出')
+                return 'intention_error'
             else:
                 return 'intention_error'
                 #raise ValueError('意图识别得到了意料之外的状态值，退出')
@@ -407,6 +448,49 @@ class graph_search_process():
                     return False
         return True #所有task节点都有observation，则需要summary
 
+
+    def initialize_replacements(self, nodeId: str, nodeType: str) -> bool:
+        """
+        初始化变量，调用self.memory_manager.init_global_msg实现
+        """
+        # nodeId, nodeType = "剧本杀/谁是卧底/智能交互", "opsgptkg_schedule"
+        #cur_node = self.geabase_handler.get_current_node(attributes={"id": nodeId}, node_type=nodeType)
+        #cur_node_envdescription = json.loads(cur_node.attributes['envdescription'])
+        
+        try:
+            node_envdescription = self.gb_handler.get_tag(rootNodeId = nodeId, rootNodeType = nodeType, key = 'envdescription')
+            cur_node_envdescription = json.loads(node_envdescription)
+        except Exception as e:
+            logging.info(f"发生了一个错误：{e}")
+            logging.info(f"变量初始化失败，略过")
+            #logging.info(f"node_envdescription：{node_envdescription}")
+            return False
+            
+            #raise ValueError(f"node_envdescription is {node_envdescription}")
+            
+        
+        # cur_node_envdescription = json.loads('{"witch_poision": "当前女巫的毒药个数为1"}')
+
+        try:
+            node_envdescription = self.gb_handler.get_tag(rootNodeId = nodeId, rootNodeType = nodeType, key = 'envdescription')
+            cur_node_envdescription = json.loads(node_envdescription)
+        except Exception as e:
+            logging.info(f"发生了一个错误：{e}")
+            logging.info(f"输入不是json格式或者为空，变量初始化失败，略过")
+            logging.info(f"node_envdescription: {node_envdescription}")
+            return False
+
+        
+        init_flag = False
+        try:
+            for role_name, role_content in cur_node_envdescription.items():
+                if role_name and role_content:
+                    init_flag = self.memory_manager.init_global_msg(self.sessionId, role_name, role_content)
+        except Exception as e:
+            logging.info(f"变量初始化错误！{e}")
+        return init_flag
+
+
     def first_user_memory_write(self):
         #如果当前是第一次输入，memory如何填写
 
@@ -428,8 +512,23 @@ class graph_search_process():
         # logging.info(f'type(geabase_search_return_all_node) is {gsran}')
 
         nodeid_in_subtree, _ = self.gb_handler.geabase_search_return_all_nodeandedge(  last_intention_nodeid,  'opsgptkg_intent')
-        logging.info(f'整条链路上的节点个数是 len(nodeid_in_subtree) is {len(nodeid_in_subtree)}')
         nodeid_in_subtree_str = json.dumps(nodeid_in_subtree, ensure_ascii=False)
+        logging.info(f'整条链路上的节点个数是 len(nodeid_in_subtree) is {len(nodeid_in_subtree)}')
+        logging.info(f'整条连路上的节点信息是：{nodeid_in_subtree}')
+        
+        #nodeid_in_subtree_list = self.gb_handler.geabase_search_reture_nodeslist(  last_intention_nodeid,  'opsgptkg_intent')
+        #nodeid_in_subtree_list_str = json.dumps(nodeid_in_subtree_list, ensure_ascii=False)
+        
+        # 获取 `nodeType` 为 `opsgptkg_schedule` 的 `nodeId`
+        try:
+            nodeId = [item['nodeId'] for item in nodeid_in_subtree if item['nodeType'] == 'opsgptkg_schedule'][0]
+        except Exception as e:
+            logging.info("不存在opsgptkg_schedule节点")
+        init_flag = self.initialize_replacements(nodeId, nodeType='opsgptkg_schedule')
+        if init_flag:
+            logging.info('变量初始化完成！')
+        else:
+            logging.info('变量初始化失败！')
         # logging.info(f'=============================================')
         # logging.info(f'nodeid_in_subtree_str {nodeid_in_subtree_str}')
         # logging.info(f'=============================================')
@@ -502,8 +601,10 @@ class graph_search_process():
     def get_summary(self):
         #后续待优化，当前只输出所有激活的summary节点
         summary_list = [] 
-        nodeid_in_subtree_memory    = self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
-        nodeid_in_subtree           = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        #nodeid_in_subtree_memory    = self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+        #nodeid_in_subtree           = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        
+        nodeid_in_subtree = self.get_nodeid_in_subtree(self.sessionId, self.currentNodeId)
         for i in range(len(nodeid_in_subtree)):
             if nodeid_in_subtree[i]['nodeType'] == 'opsgptkg_analysis':  #从nodeid_in_subtree中找到analysis的节点
                 nodeId = nodeid_in_subtree[i]['nodeId']
@@ -555,17 +656,35 @@ class graph_search_process():
 
         return summary_str
 
-    def get_nodeid_in_subtree(self):
-        logging.info(f'self.sessionId is {self.sessionId}')
-        # nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
-        nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+    def get_nodeid_in_subtree(self, sessionId, nodeId):
+        #logging.info(f' sessionId is {self.sessionId},  nodeId is {nodeId}')
+        nodeid_in_subtree_memory    = self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+        nodeid_in_subtree           = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        return nodeid_in_subtree
+        
 
         
-        logging.info(f'nodeid_in_subtree_memory is {nodeid_in_subtree_memory}')
+        # if nodeId == None:
+        #     logging.info(f' nodeId == None, 为第一次输入，调用 geabase_search_return_all_nodeandedge  取 nodeid_in_subtree的值' )
+        #     nodeid_in_subtree, _ = self.gb_handler.geabase_search_return_all_nodeandedge(  last_intention_nodeid,  'opsgptkg_intent')
+        #     return nodeid_in_subtree
+        
 
-        nodeid_in_subtree = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
-        # logging.info(f'nodeid_in_subtree is {nodeid_in_subtree}')
-        return nodeid_in_subtree, nodeid_in_subtree_memory
+        # # nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": self.sessionId, "role_type": "nodeid_in_subtree"})
+        # nodeid_in_subtree_memory= self.memory_manager.get_memory_pool_by_all({ "chat_index": sessionId, "role_type": "nodeid_in_subtree"})
+
+        
+        # logging.info(f'nodeid_in_subtree_memory is {nodeid_in_subtree_memory}')
+
+        # nodeid_in_subtree_list = json.loads( nodeid_in_subtree_memory.get_messages()[0].role_content )
+        # if len(nodeid_in_subtree_list) == 0:
+        #     return nodeid_in_subtree_list[0]
+        # for nodeid_in_subtree in nodeid_in_subtree_list:
+        #     for one_node_info in nodeid_in_subtree:
+        #         if one_node_info['nodeId'] == nodeId:
+        #             return nodeid_in_subtree
+                    
+        # raise ValueError('len(nodeid_in_subtree_list)>0 但是当前节点不在nodeid_in_subtree_list 中')
     
     def qaProcess(self, nodeid_in_subtree):
         '''
@@ -592,6 +711,53 @@ class graph_search_process():
             res = '输入为闲聊，暂不做回复'
         return res
 
+
+    def grProcess(self, scene:str, sessionId:str, currentNodeId:str, algorithm_State:bool,
+            lingsi_response:LingSiResponse,
+            geabase_handler,
+            memory_handler, llm_config)->dict:
+            '''
+                调用 泛化推理
+            '''
+            logging.info(f'当前scene为{scene}')
+            if  scene == 'generalizationReasoning_nonretrieval':
+                generalizaiton_reasoning = GeneralizationReason(    sessionId     = sessionId,
+                    currentNodeId = currentNodeId,
+                    memory_handler = memory_handler,   
+                    geabase_handler = geabase_handler,       
+                    llm_config=llm_config,
+                    retrieval_flag = False)
+            elif scene == 'generalizationReasoning_test':
+                generalizaiton_reasoning = GeneralizationReason(    sessionId     = sessionId,
+                    currentNodeId = currentNodeId,
+                    memory_handler = memory_handler,      
+                    geabase_handler = geabase_handler,     
+                    llm_config=llm_config,
+                    retrieval_flag = True)
+            elif scene == 'generalizationReasoning' or scene =='NEXA':
+                generalizaiton_reasoning = GeneralizationReason(    sessionId     = sessionId,
+                    currentNodeId = currentNodeId,
+                    memory_handler = memory_handler,      
+                    geabase_handler = geabase_handler,     
+                    llm_config=llm_config,
+                    retrieval_flag = True)
+            else:
+                raise ValueError(f'scene if {scene}')
+            if algorithm_State == 'FIRST_INPUT':
+                if type(lingsi_response.observation) == str:
+                    lingsi_response.observation  = json.loads(lingsi_response.observation)
+                input_str_gr = lingsi_response.observation['content']
+            else:
+                if type(lingsi_response.observation) == str:
+                    lingsi_response.observation  = json.loads(lingsi_response.observation)
+                input_str_gr = lingsi_response.observation['toolResponse']
+
+            res_to_lingsi = generalizaiton_reasoning.process(
+                sessionId           = sessionId, 
+                currentNodeId       = 'generalization_reason', 
+                input_str           =  input_str_gr)
+            return res_to_lingsi
+
     def outputFuc(self):
         try:
             tool_plan  = self.tool_plan
@@ -608,7 +774,7 @@ class graph_search_process():
         if self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True'   \
             or self.gb_handler.get_extra_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'Ture' \
                 or self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') == 'True' :
-            outputinfo_str = self.memory_handler.get_output(self.sessionId, self.start_datetime, self.end_datetime)
+            outputinfo_str = self.memory_handler.get_output(self.sessionId, self.start_datetime, self.end_datetime, self.lingsi_response.agentName)
         else:
             dodisplaystr = self.gb_handler.get_tag(rootNodeId = self.currentNodeId, rootNodeType = currentNodeType, key = 'dodisplay') 
             logging.info(f" 查询dodisplay字段结果为空, 或者为{dodisplaystr}，本次不对外输出")
@@ -696,6 +862,16 @@ class graph_search_process():
                 "toolPlan":     None ,
                 "userInteraction": outputinfo_str,
                 }
+        elif self.toolResponseError_flag == True:
+            logging.info("出现了tool 执行错误，终止， 当前能返回什么summary就返回什么summary")
+            res_to_lingsi = {
+                'intentionRecognitionSituation': self.intentionRecognitionSituation,
+                "sessionId": self.sessionId,
+                "type": "summary",
+                "summary" :     self.get_summary(),
+                "toolPlan":     None ,
+                "userInteraction": outputinfo_str,
+                }
             
         else:
             raise ValueError('图谱扩散得到了预料之外的情况，退出')
@@ -705,26 +881,115 @@ class graph_search_process():
     def process(self):
         #step1  根据当前情况，判断当前算法输入所处的状态
         logging.info(f'#step1  根据当前情况，判断当前算法输入所处的状态  self.inputType is {self.inputType}')
-        self.state_judgement()  
+        self.algorithm_State = self.state_judgement(self.inputType)  
         logging.info(f'#step1 over，当前算法状态为{self.algorithm_State}')
+
+        #step1.1  其他情况， 泛化推理 或者  WebAgent
+        html = None
+        task_query = None
+
+        gr_flag =   self.memory_handler.message_get( 
+                     sessionId = self.sessionId,
+                     nodeId = 'gr', 
+                     hashpostfix='gr', 
+                     role_name='gr', 
+                     role_type='gr')
+        logging.info(f'gr_flag is {gr_flag}')
+
+        if self.scene == 'WebAgent':
+            logging.info(f'当前scene为{self.scene}')
+
+            if type(self.lingsi_response.observation) == str:
+                self.lingsi_response.observation  = json.loads(self.lingsi_response.observation)
+                
+            if self.algorithm_State == 'FIRST_INPUT':
+                task_query  = self.lingsi_response.observation['content']
+                html        = self.lingsi_response.observation['toolResponse']
+               
+            else:
+                html = self.lingsi_response.observation['toolResponse']
+            #html = html[0:50000]
+
+            agent = WebAgent(memory_manager=self.memory_manager, llm_model_name = 'Qwen2_72B_Instruct_OpsGPT')
+            logging.info(f'self.sessionId is {self.sessionId}')
+            res_to_lingsi = agent.web_action(chat_index=self.sessionId , 
+                html = html, task_query = task_query)
+
+            return res_to_lingsi
+            # example :[{
+            #     "toolDescription": "toolDescriptionA",
+            #     "currentNodeId": "INT_1",
+            #     "memory": JsonStr,
+            #     "type":"onlyTool",
+            #         }]
+
+
+
+        elif self.scene == 'generalizationReasoning_test' or  \
+            self.scene == 'generalizationReasoning_nonretrieval' or \
+            self.scene == 'generalizationReasoning' or \
+            gr_flag == 'gr':
+            #print(f'scene is {self.scene}')
+            #根据scene 直接触发 grProcess
+
+            self.memory_handler.message_save( 
+                     sessionId = self.sessionId,
+                     nodeId = 'gr', 
+                     role_content='gr',
+                     hashpostfix='gr', 
+                     user_name='gr', 
+                     role_name='gr', 
+                     role_type='gr')
+
+            res_to_lingsi = self.grProcess(scene = self.scene, sessionId = self.sessionId, 
+                currentNodeId   = self.currentNodeId, algorithm_State = self.algorithm_State,
+                lingsi_response = self.lingsi_response,
+                geabase_handler = self.geabase_handler,
+                memory_handler  = self.memory_handler,
+                llm_config      = self.llm_config)
+
+            return res_to_lingsi
+
+
 
         #step2 意图识别
         logging.info('#step2  意图识别')
         intention_error_flag = self.intentionRecongnitionProcess()  
         if intention_error_flag == 'intention_error':
-             
-        
-            logging.info("所有分支到达终点，summary")
-            res_to_lingsi = {
-                'intentionRecognitionSituation': self.intentionRecognitionSituation,
-                "sessionId": self.sessionId,
-                "type": "summary",
-                "summary" :     '意图识别未检验到相关数据，终止',
-                "toolPlan":     None ,
-                "userInteraction": None,
-                }
-            return  res_to_lingsi
+            # 意图识别查询失败
+    
+            if self.queryType != 'justChat' and os.environ['operation_mode'] == 'antcode':
+                logging.info(f'意图识别查询失败, 表示没有数据，同时现在不是闲聊 需要泛化推理')
+
+                self.memory_handler.message_save( 
+                     sessionId = self.sessionId,
+                     nodeId = 'gr', 
+                     role_content='gr',
+                     hashpostfix='gr', 
+                     user_name='gr', 
+                     role_name='gr', 
+                     role_type='gr')
+
+                res_to_lingsi = self.grProcess(scene = self.scene, sessionId = self.sessionId, 
+                    currentNodeId = self.currentNodeId, algorithm_State = self.algorithm_State,
+                    lingsi_response= self.lingsi_response,
+                    geabase_handler = self.geabase_handler,
+                    memory_handler = self.memory_handler, llm_config = self.llm_config)
+                return res_to_lingsi
             
+            else:
+                logging.info('意图识别查询失败, 表示没有数据，且现在是闲聊。直接终止')
+                res_to_lingsi = {
+                    'intentionRecognitionSituation': self.intentionRecognitionSituation,
+                    "sessionId": self.sessionId,
+                    "type": "summary",
+                    "summary" :     '意图识别未检验到相关数据，且提问和已沉淀知识无关，终止',
+                    "toolPlan":     None ,
+                    "userInteraction": None,
+                    }
+                return  res_to_lingsi
+
+
         logging.info(f'#step2 意图识别 over，')
 
         #step3 memory 写入
@@ -734,7 +999,7 @@ class graph_search_process():
 
         #step4 #get_nodeid_in_subtree
         logging.info('#step4  get_nodeid_in_subtree')
-        nodeid_in_subtree, nodeid_in_subtree_memory = self.get_nodeid_in_subtree()
+        nodeid_in_subtree = self.get_nodeid_in_subtree(self.sessionId, self.currentNodeId)
         self.nodeid_in_subtree = nodeid_in_subtree
         logging.info('#step4  get_nodeid_in_subtree')
 
@@ -742,6 +1007,11 @@ class graph_search_process():
         logging.info(f'step5 #summary_flag 判断')
         self.summary_flag = self.gst.geabase_summary_check(self.sessionId, nodeid_in_subtree)
         logging.info(f'step5 over, summary_flag is {self.summary_flag}')
+
+        #step5.1 #toolResponseError_flag 判断
+        logging.info(f'step5 #toolResponseError_flag 判断')
+        self.toolResponseError_flag = self.gst.toolResponseError_check(self.lingsi_response)
+        logging.info(f'step5 over, toolResponseError_flag is {self.summary_flag}')
         
         #step 6 self.currentNodeId 更新 得到 start_nodetype
         logging.info(f'step 6 self.currentNodeId 更新 得到 start_nodetype')
@@ -783,7 +1053,7 @@ class graph_search_process():
                 
             logging.info(f'图谱扩散的输入 self.sessionId {self.sessionId}; currentNodeId {currentNodeId}; start_nodetype {start_nodetype}')
             tool_plan, tool_plan_3 = self.gst.geabase_nodediffusion_plus(self.sessionId, 
-currentNodeId,  start_nodetype, agent_respond  )
+currentNodeId,  start_nodetype, agent_respond  , self.lingsi_response)
             self.tool_plan = tool_plan
             self.tool_plan_3 = tool_plan_3
             logging.info(f'step 8 图谱扩散 over')
@@ -813,12 +1083,24 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         params      = params_string
         if type(params) == str:
             params = json.loads(params)
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
+        logging.info(f'=======开始新一轮输入=============')
         logging.info(f'params={params}')
+        logging.info(f'llm_config={llm_config}')
 
+        lingsi_response = LingSiResponse(**params)
+        lingsi_response = lingsi_response_process(lingsi_response) # process，currentnodeid 和 agentname都放到currentnodeid里，需要分割开来
+        logging.info(f'lingsi_response is {lingsi_response}')
+        #params = lingsi_response.dict()
+        
 
         scene           = params.get('scene', None)
         sessionId       = params.get('sessionId', None) #
-        currentNodeId   = params.get('currentNodeId', None) #
+        #currentNodeId   = params.get('currentNodeId', None) #
+        currentNodeId   = lingsi_response.currentNodeId
         observation     = params.get('observation', None) #
         userAnswer      = params.get('userAnswer', None) #
         inputType       = params.get('type', None) #
@@ -827,9 +1109,13 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         intentionData   = params.get('intentionData', None) #
         startFromRoot   = params.get('startFromRoot', True) #
         
+        
+
+        
 
 
-        if scene  in ['WEREWOLF' , 'NEXA', 'UNDERCOVER']:
+        if scene  in ['WEREWOLF' , 'NEXA', 'UNDERCOVER', 
+            'generalizationReasoning_nonretrieval', 'generalizationReasoning', 'WebAgent']:
 
             #标注这个sessionId属于新逻辑
             message = Message(
@@ -901,10 +1187,11 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
         else:
             logging.info(f'当前不为graphStructureSearch模式， 正常EKG')  
 
-            state, last_res_to_lingsi = abnormal_and_retry(inputType, observation, sessionId, memory_manager)
-            if state == 'retry_now':
-                logging.info('现在进行重试，返回上一次在memory存储的结果')
-                return last_res_to_lingsi
+            # #重试逻辑，如果返回值 observation中没有toolresponse， 则进行重试
+            # state, last_res_to_lingsi = abnormal_and_retry(inputType, observation, sessionId, memory_manager)
+            # if state == 'retry_now':
+            #     logging.info('现在进行重试，返回上一次在memory存储的结果')
+            #     return last_res_to_lingsi
 
 
 
@@ -912,6 +1199,7 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
                 geabase_handler = geabase_handler, 
                 memory_manager=memory_manager, 
                 intention_router = intention_router,
+                lingsi_response = lingsi_response,
                 scene= scene, 
                 sessionId=sessionId, currentNodeId = currentNodeId, 
                 observation = observation, userAnswer = userAnswer, inputType = inputType, 
@@ -928,6 +1216,28 @@ def main(params_string,   memory_manager, geabase_handler, intention_router = No
 
 
         return res_to_lingsi
+    
+    
+def lingsi_response_process(lingsi_response:LingSiResponse)->LingSiResponse:
+    '''
+        # currentnodeid 和 agentname都放到currentnodeid里，需要分割开来
+        # 是在agentname字段未上线的临时方案
+        # 后续可以去除
+    '''
+    
+    currentNodeId_add_agentName = lingsi_response.currentNodeId
+    if currentNodeId_add_agentName == None:
+        #不做任何处理
+        return lingsi_response
+    elif '%%@@#' not in currentNodeId_add_agentName:
+        #lingsi_response.currentNodeId = lingsi_response.currentNodeId
+        #lingsi_response.agentName = None
+        return lingsi_response
+    else:
+        currentNodeId, agentName = currentNodeId_add_agentName.split('%%@@#')
+        lingsi_response.currentNodeId = currentNodeId
+        lingsi_response.agentName = agentName
+    return lingsi_response
 
 def save_res_to_memory(res_to_lingsi, sessionId, memory_manager):
     '''
