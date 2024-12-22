@@ -287,6 +287,7 @@ class IntentionRouter:
         agent = agent if agent else self.agent
         query_consult_which = itp.CONSULT_WHICH_PROMPT.format(query=query)
         ans = agent.predict(query_consult_which)
+        logger.info("ans is " + str(ans))
 
         ans = [int(x) - 1 for x in re.findall('\d+', ans) if 0 < int(x) <= len(itp.INTENTIONS_CONSULT_WHICH)]
         if ans and itp.INTENTIONS_CONSULT_WHICH[ans[0]] is not itp.INTENTION_CHAT:
