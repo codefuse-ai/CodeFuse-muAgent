@@ -7,6 +7,7 @@
 '''
 from muagent.codechat.code_analyzer.language_static_analysis import *
 
+
 class CodeStaticAnalysis:
     def __init__(self, language):
         self.language = language
@@ -19,6 +20,8 @@ class CodeStaticAnalysis:
         '''
         if self.language == 'java':
             analyzer = JavaStaticAnalysis()
+        elif self.language == 'python':
+            analyzer = PythonStaticAnalysis()
         else:
             raise ValueError('language should be one of [java]')
 

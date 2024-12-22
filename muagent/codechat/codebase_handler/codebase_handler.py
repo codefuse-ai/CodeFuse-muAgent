@@ -133,6 +133,26 @@ class CodeBaseHandler:
         '''
         if self.language == 'java':
             suffix = 'java'
+        elif self.language == 'python':
+            suffix = 'py'
+        elif self.language == 'javascript':
+            suffix = 'js'
+        elif self.language == 'csharp':
+            suffix = 'cs'
+        elif self.language == 'cpp':
+            suffix = 'cpp'
+        elif self.language == 'ruby':
+            suffix = 'rb'
+        elif self.language == 'go':
+            suffix = 'go'
+        elif self.language == 'php':
+            suffix = 'php'
+        elif self.language == 'swift':
+            suffix = 'swift'
+        elif self.language == 'kotlin':
+            suffix = 'kt'
+        else:
+            raise ValueError(f"Unsupported language: {self.language}")
 
         logger.info(f'crawl_type={self.crawl_type}')
 
