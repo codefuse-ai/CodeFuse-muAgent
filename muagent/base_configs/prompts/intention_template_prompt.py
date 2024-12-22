@@ -1,6 +1,6 @@
 from typing import Union, Optional, Sequence
 from dataclasses import dataclass
-
+## todo here
 
 RECOGNIZE_INTENTION_PROMPT = """你是一个任务决策助手，能够将理解用户意图并决策采取最合适的行动，尽可能地以有帮助和准确的方式回应人类，
 使用 JSON Blob 来指定一个返回的内容，提供一个 action（行动）。
@@ -156,6 +156,18 @@ INTENTION_QUERY = IntentionInfo(
     description='用户的主要目的是获取信息而非执行任务（比如：怎么向银行申请贷款），或只是简单闲聊。',
     name='询问'
 )
+INTENTION_BACKGROUND = IntentionInfo(
+    description='用户的主要目的是获取某个问题或方案的背景知识，规则以及流程介绍等。',
+    name='背景查询'
+)
+INTENTION_COST = IntentionInfo(
+    description='用户的主要目的是获取完成整个解决方案或者是完成下一步预估需要花费的时间、金钱等。',
+    name='成本预估'
+)
+INTENTION_NEXTSTEPRESULT = IntentionInfo(
+    description='用户的主要目的是获取执行某个方案的特定步骤后预期得到的结果。',
+    name='下一步结果查询'
+)
 INTENTION_NOMATCH = IntentionInfo(
     description='与上述意图都不匹配，属于其他类型的询问意图。'
 )
@@ -171,13 +183,16 @@ WHETHER_EXECUTE_PROMPT = get_intention_prompt(
     }
 )
 
-INTENTIONS_CONSULT_WHICH = (INTENTION_ALLPLAN, INTENTION_NEXTSTEP, INTENTION_CHAT)
+INTENTIONS_CONSULT_WHICH = (INTENTION_ALLPLAN, INTENTION_NEXTSTEP, INTENTION_CHAT, INTENTION_BACKGROUND, INTENTION_COST, INTENTION_NEXTSTEPRESULT)
 CONSULT_WHICH_PROMPT = get_intention_prompt(
     intentions=INTENTIONS_CONSULT_WHICH,
     examples={
         '如何组织一次活动？': INTENTION_ALLPLAN,
         '系统升级的整个流程是怎样的？': INTENTION_ALLPLAN,
         '为什么我没有收到红包？请告诉我方案': INTENTION_ALLPLAN,
-        '听说你们采用了新工具，能讲讲它的特点吗？': INTENTION_CHAT
+        '听说你们采用了新工具，能讲讲它的特点吗？': INTENTION_CHAT,
+        '请问下狼人杀游戏中猎人的主要职责是什么？': INTENTION_BACKGROUND,
+        '整个流程大概还有多长时间能够结束？' : INTENTION_COST,
+        '执行完该操作后预期能够得到什么结果？' : INTENTION_NEXTSTEPRESULT
     }
 )
