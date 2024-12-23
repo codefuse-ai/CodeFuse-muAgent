@@ -21,6 +21,8 @@ zdatafront*
 *log
 examples/mysql/db
 
+
+
 # frontend
 frontend/node_modules
 frontend/.env.local
@@ -38,3 +40,20 @@ frontend/.swc
 frontend/pnpm-lock.yaml
 
 *.jar
+
+
+
+
+.spyproject/
+model_config.py
+model_config_example.py
+config.py
+**/service_onlyant
+**/ekg_test
+**/generalization_reasoning
+ekg.yaml
+*.ipynb
+**/web_operation
+examples/mysql/db
+tests/service/test_*
+tests/service/replacements.py

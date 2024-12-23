@@ -5,6 +5,8 @@ import sys
 #路径增加
 import sys
 import os
+from typing import Union, Optional
+from typing import List, Dict, Optional, Union
 src_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
@@ -213,7 +215,7 @@ class memory_handler_ekg():
         hashpostfix = '-nodeid_in_subtree' 
         memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
                                                            "chat_index": sessionId, 
-                                                        #    "message_index" : hash_id( currentNodeId, sessionId, hashpostfix),
+                                                            "message_index" : hash_id( currentNodeId, sessionId, hashpostfix),
                                                         #    "role_type": "nodeid_in_subtree",
                                                           })
         get_messages_res = memory_manager_res.get_messages()
@@ -345,6 +347,15 @@ class memory_handler_ekg():
             logging.info(f'节点{sessionId} 的 count_info现在是{count_info}')
             self.nodecount_set( sessionId, currentNodeId,count_info)  #重写count数据，
 
+    ####### 泛化推理相关 ####
+    def gr_save_prompt_main(self, sessionId:str, currentNodeId:str, prompt_main:Dict, )->Dict:
+        '''
+            存储泛化推理的当前 prompt_main 到 memory中
+            gr_count: 当前交互到第几步了
+        '''
+        return react_current_history_get
+
+
     def tool_nodedescription_save(self, sessionId, currentNodeId, role_content, user_input_memory_tag=None): 
             '''
                 将 tool 的 description 存入到memory中, 分成 chapter
@@ -432,14 +443,20 @@ class memory_handler_ekg():
             self.memory_manager.append(message)
 
 
+
+        #
+
+
+
     def react_memory_save(self, sessionId, currentNodeId, llm_res):
         '''
             将一个node中  llm的返回值 解析成json，存储在memory里。 每次覆盖式存储。 存主持人说的话、其他agent说的话； 同时修改count中的计数
+            格式为 [player_name, agent_name, content, memory_tag, section]
         
         llm_str = llm_result_truncation + '":[]}]'
         llm_result_truncation = '[\n    {"action": {"agent_name": "主持人"}, "Dungeon_Master": [{"content": "狼人时刻开始，以下玩家是狼人：player_1（狼人-1），李四（人类玩家）（狼人-2）。", "memory_tag":["agent_1", "人类agent"]}]},\n    {"action": {"agent_name": "agent_1", "player_name":"player_1"}, "observation'
         '''
-
+        
         #1. 解析 llm的输出
         if type(llm_res) == str:
             llm_res_json = json.loads(llm_res)
@@ -450,35 +467,67 @@ class memory_handler_ekg():
         section = 0
         memory_save_info_list = []
         for i in range(len(llm_res_json)):
-            if llm_res_json[i]['action'] == 'taskend':
-                #任务执行完毕
-                break
-            agent_name = llm_res_json[i]['action']['agent_name']
-            if agent_name == '主持人':
-                player_name = '主持人'
-                for j in range(len(llm_res_json[i]['Dungeon_Master'])):
-                    content  = llm_res_json[i]['Dungeon_Master'][j]['content']
-                    memory_tag  = llm_res_json[i]['Dungeon_Master'][j]['memory_tag']
-                    section += 1
-                    memory_save_info_list.append([player_name, agent_name, content, memory_tag, section])
-            else:
-                logging.info(f' llm_res_json[i]是{llm_res_json[i]}')
-                if  llm_res_json[i]['observation'] == []:
+            if 'action' in llm_res_json[i].keys():
+                #react 类型 或者 是 parallel中电脑玩家的返回值
+            
+                if llm_res_json[i]['action'] == 'taskend':
+                    #任务执行完毕
+                    break
+                agent_name = llm_res_json[i]['action']['agent_name']
+                if agent_name == '主持人':
+                    player_name = '主持人'
+                    for j in range(len(llm_res_json[i]['Dungeon_Master'])):
+                        content  = llm_res_json[i]['Dungeon_Master'][j]['content']
+                        memory_tag  = llm_res_json[i]['Dungeon_Master'][j]['memory_tag']
+                        section += 1
+                        memory_save_info_list.append([player_name, agent_name, content, memory_tag, section])
+                else:
+                    #logging.info(f' llm_res_json[i]是{llm_res_json[i]}')
+                    if  llm_res_json[i]['observation'] == []:
+                        continue
+                    player_name = llm_res_json[i]['action']['player_name']
+                    for j in range(len(llm_res_json[i]['observation'])):
+                        content  = llm_res_json[i]['observation'][j]['content']
+                        memory_tag  = llm_res_json[i]['observation'][j]['memory_tag']
+                        section += 1
+                        memory_save_info_list.append([player_name, agent_name, content,  memory_tag, section])
+            
+            elif 'action_plan' in llm_res_json[i].keys():
+                #此时为    PlanningRunningAgentReply 格式，  可能为 plan 或者 parallel的第一次返回值
+                
+                if self.gb_handler.get_tag(rootNodeId = currentNodeId, rootNodeType = 'opsgptkg_task', key = 'action') == 'plan':
+                    #plan模式会略过 制定plan时说的话//现在制定plan时也不再说话了
+                    #parallel模式则不会略过制定action_plan是说的话
                     continue
-                player_name = llm_res_json[i]['action']['player_name']
-                for j in range(len(llm_res_json[i]['observation'])):
-                    content  = llm_res_json[i]['observation'][j]['content']
-                    memory_tag  = llm_res_json[i]['observation'][j]['memory_tag']
-                    section += 1
-                    memory_save_info_list.append([player_name, agent_name, content,  memory_tag, section])
+                else:
+                    if llm_res_json[i]['action_plan'] == 'taskend':
+                        #任务执行完毕
+                        break
+                    agent_name = '主持人' #只有主持人能生成plan
+                    player_name = '主持人'
+                    
+    
+                    for j in range(len(llm_res_json[i]['Dungeon_Master'])):
+                        content  = llm_res_json[i]['Dungeon_Master'][j]['content']
+                        memory_tag  = llm_res_json[i]['Dungeon_Master'][j]['memory_tag']
+                        section += 1
+                        memory_save_info_list.append([player_name, agent_name, content, memory_tag, section])
+                
+
         
 
-        if 'taskend' not in  json.dumps(llm_res,  ensure_ascii=False)   and  memory_save_info_list[-1][1] != '主持人': 
-            #现在还没有run到最后。那么            #最后一个observation，这个是幻觉，主持人替其他玩家说的话， 不能存入到memory里
-            #如果run到最后了， 那么最后一个observation是本次填充的
-            memory_save_info_list = memory_save_info_list[0:-1]
+        logging.info(f'memory_save_info_list 初步 is {memory_save_info_list}')
+        
 
-        logging.info(f'memory_save_info_list is {memory_save_info_list}')
+        if 'taskend' not in  json.dumps(llm_res,  ensure_ascii=False)   and memory_save_info_list!= [] and  memory_save_info_list[-1][1] != '主持人' and \
+            self.gb_handler.get_tag(rootNodeId = currentNodeId, rootNodeType = 'opsgptkg_task', key = 'action') == 'react': 
+                #现在还没有run到最后。那么            #最后一个observation，这个是幻觉，主持人替其他玩家说的话， 不能存入到memory里
+                #如果run到最后了， 那么最后一个observation是本次填充的
+                #这个只在react模式下生效
+                memory_save_info_list = memory_save_info_list[0:-1]
+
+
+        logging.info(f'memory_save_info_list 最终经过删减（假如是react，如果不是则不删减） is {memory_save_info_list}')
         
         #2. 将llm的输出存入到memory中，更新，已经写入的就不更新了
         hashpostfix = '_reactmemory' 
@@ -495,8 +544,9 @@ class memory_handler_ekg():
         
         for i in range(len(memory_save_info_list)):
             player_name, agent_name, content,  memory_tag, section = memory_save_info_list[i]
-            hashpostfix_all = f'_chapter{chapter}_section{section}' + hashpostfix
-
+            hashpostfix_all = f'_chapter{chapter}_section{section}_agentName{agent_name}' + hashpostfix
+            #    原来react_memory_save 的问题在于， 根据 _chapter{chapter}_section{section} 进行编码的情况会覆盖其他 并行的agent的结果
+            #   另外，取结果时，由于三个agent都是同时发生的，所以原来根据时间取结果的方式也会出现问题，造成三个agent的返回值都是一个
             
             memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
                                                 # "chat_index": sessionId, 
@@ -505,7 +555,7 @@ class memory_handler_ekg():
                                                 })
             get_messages_res = memory_manager_res.get_messages()
             if get_messages_res != []:
-                #这一条数据已经有了，不用重复写入，只更新没有写入的
+                #这一条数据已经有了，不用重复写入，只更新没有写入的,  这里根据hashpostfix_all 中的 section和chapter 来进行判断
                 continue
 
             user_input_memory_tag = self.gb_handler.user_input_memory_tag(currentNodeId, 'opsgptkg_task')
@@ -532,6 +582,223 @@ class memory_handler_ekg():
         role_content_nodeinfo['section'] = len(memory_save_info_list)  
         self.nodecount_set( sessionId, currentNodeId, role_content_nodeinfo)
 
+    def message_get(self, sessionId:str, nodeId:str, hashpostfix:str,
+                    role_name:str,role_type:str )-> Union[str, list]: 
+        '''
+        得到信息, 作为一个通用函数。如果没有检索到信息，则返回空的'', 如果检索到了信息，则返回str,只返回第0个message的str
+        注意对hashpostfix_chapter进行了特殊处理
+        '''
+        node_count_res = self.nodecount_get( sessionId, nodeId)
+        if node_count_res == []:
+            chapter = 1
+        else:
+            chapter = json.loads(node_count_res[0].role_content)['chapter'] 
+        
+        #hashpostfix = '_plan'
+        hashpostfix_chapter = f'_chapter{chapter}' 
+        hashpostfix_all = hashpostfix_chapter + hashpostfix
+        #print(nodeId, sessionId, hashpostfix_all)
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                    #    "chat_index": sessionId, 
+                                                       "message_index" : hash_id(nodeId, sessionId, hashpostfix_all),
+                                                       "role_name" : role_name,#'plan',
+                                                       "role_type" : role_type#"DM"
+                                                      })
+        get_messages_res = memory_manager_res.get_messages()
+        if len(get_messages_res) == 0:
+            #raise ValueError("执行memory查询没有找到")
+            logging.info( "执行memory查询没有找到" )
+            return ''
+            
+        return get_messages_res[0].role_content
+
+    def message_save(self, sessionId:str, nodeId:str, role_content:str,
+                     hashpostfix:str, user_name:str, role_name:str, role_type:str)->None:
+         '''
+         将message 存下来，作为一个通用函数
+         注意对hashpostfix_chapter进行了特殊处理
+         
+         for example
+             #hashpostfix = '_plan'
+             #user_name = currentNodeId
+             #role_name = 'plan'
+             #role_type = "DM"
+
+         '''
+     
+
+
+         node_count_res = self.nodecount_get( sessionId, nodeId)
+         if node_count_res == []:
+             chapter = 1
+         else:
+             chapter = json.loads(node_count_res[0].role_content)['chapter']  
+         
+         hashpostfix_chapter = f'_chapter{chapter}' 
+         hashpostfix_all = hashpostfix_chapter + hashpostfix
+         message = Message(
+             chat_index= sessionId,  
+             message_index=  hash_id(nodeId, sessionId, hashpostfix_all),  
+             user_name = hash_id(user_name + str(chapter)),
+             role_name = role_name, 
+             role_type = role_type, 
+             role_content = role_content, 
+             
+         )
+         
+         self.memory_manager.append(message)
+
+
+
+    def processed_agentname_get(self, sessionId:str, nodeId:str)-> str:
+        '''
+            得到已经处理的agentname
+        '''
+
+
+        hashpostfix = '_processedAgentName'
+        role_name = 'PAN'   #processedAgentName
+        role_type = "DM"
+    
+        node_count_res = self.nodecount_get( sessionId, nodeId)
+        if node_count_res == []:
+            chapter = 1
+        else:
+            chapter = json.loads(node_count_res[0].role_content)['chapter'] 
+        
+        #hashpostfix = '_plan'
+        #hashpostfix_chapter = f'_chapter{chapter}' 
+        #hashpostfix_all = hashpostfix_chapter + hashpostfix
+        #print(nodeId, sessionId, hashpostfix_all)
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                         "chat_index": sessionId,  
+                                                       "user_name" : hash_id(nodeId + str(chapter)),
+                                                       "role_name" : role_name,#'plan',
+                                                       "role_type" : role_type#"DM"
+                                                      })
+        get_messages_res = memory_manager_res.get_messages()
+        if len(get_messages_res) == 0:
+            #raise ValueError("执行memory查询没有找到")
+            logging.info( "执行memory查询没有找到" )
+            return ''
+            
+        processed_agentname_list_all = []
+        for i in range(len(get_messages_res)):
+            processed_agentname_list_all.append(  get_messages_res[i].role_content)
+            
+        
+        return json.dumps(processed_agentname_list_all, ensure_ascii=False)
+    
+
+    
+    def processed_agentname_save(self, sessionId:str, nodeId:str, agentName:str)->None:
+        '''
+        将这次执行完的（lingsi返回的）agentname，存下来， 
+        注意，同名的agentname 会被覆盖
+        '''
+        # processed_agentname_get_str = self.processed_agentname_get(sessionId, nodeId) 
+        # logging.info(f'已有的processed_agentname_get_str  is  {processed_agentname_get_str}，  当前要存入的agentName is {agentName}')
+        # if processed_agentname_get_str == '': #第一次有工具返回时，processed_agentname_get_str 值为’‘
+        #     processed_agentname_list = []
+        # else:
+        #     processed_agentname_list = json.loads( processed_agentname_get_str )
+            
+        # processed_agentname_list.append(agentName)
+        # processed_agentname_list_str = json.dumps(processed_agentname_list, ensure_ascii=False)
+        
+        processed_agentname_list = agentName
+        hashpostfix = f'_processedAgentName_{agentName}'
+        user_name = nodeId
+        role_name = 'PAN'
+        role_type = "DM"
+        
+        return self.message_save( sessionId, nodeId, processed_agentname_list,
+                     hashpostfix, user_name, role_name, role_type)
+
+        
+
+    def current_plan_save(self, sessionId:str, currentNodeId:str, role_content:str)->None:
+            '''
+            将current_plan 存下来
+            
+            Parameters
+            ----------
+            sessionId : str
+                DESCRIPTION.
+            currentNodeId : str
+                DESCRIPTION.
+            role_content : str
+                DESCRIPTION.
+    
+            Returns
+            -------
+            None
+                DESCRIPTION.
+    
+            '''
+        
+            hashpostfix = '_plan'
+            user_name = currentNodeId
+            role_name = 'plan'
+            role_type = "DM"
+
+            node_count_res = self.nodecount_get( sessionId, currentNodeId)
+            if node_count_res == []:
+                chapter = 1
+            else:
+                chapter = json.loads(node_count_res[0].role_content)['chapter']  
+            
+            hashpostfix_all = f'_chapter{chapter}' + hashpostfix
+            message = Message(
+                chat_index= sessionId,  
+                message_index=  hash_id(currentNodeId, sessionId, hashpostfix_all),  
+                user_name = hash_id(user_name),
+                role_name = role_name, 
+                role_type = role_type, 
+                role_content = role_content, 
+                
+            )
+            
+            self.memory_manager.append(message)
+
+    def current_plan_get(self, sessionId:str, currentNodeId:str)-> str: 
+            '''
+        
+            得到当前的current_plan
+            Parameters
+            ----------
+            sessionId : str
+                DESCRIPTION.
+            currentNodeId : str
+                DESCRIPTION.
+    
+            Returns
+            -------
+            str
+                DESCRIPTION.
+    
+            '''
+            node_count_res = self.nodecount_get( sessionId, currentNodeId)
+            if node_count_res == []:
+                chapter = 1
+            else:
+                chapter = json.loads(node_count_res[0].role_content)['chapter'] 
+            
+            hashpostfix = '_plan'
+            hashpostfix_all = f'_chapter{chapter}' + hashpostfix
+            print(currentNodeId, sessionId, hashpostfix_all)
+            memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                        #    "chat_index": sessionId, 
+                                                           "message_index" : hash_id(currentNodeId, sessionId, hashpostfix_all),
+                                                           "role_name" : 'plan',
+                                                           "role_type" : "DM"
+                                                          })
+            get_messages_res = memory_manager_res.get_messages()
+            return get_messages_res[0].role_content
+
+
+
+            
     def react_current_history_save(self, sessionId, currentNodeId, role_content):
             hashpostfix = '_his'
             user_name = currentNodeId
@@ -557,7 +824,7 @@ class memory_handler_ekg():
             
             self.memory_manager.append(message)
 
-    def react_current_history_get(self, sessionId, currentNodeId): 
+    def react_current_history_get(self, sessionId:str, currentNodeId:str)->str: 
             '''
                 得到当前的current_history
             '''
@@ -569,7 +836,7 @@ class memory_handler_ekg():
             
             hashpostfix = '_his'
             hashpostfix_all = f'_chapter{chapter}' + hashpostfix
-            print(currentNodeId, sessionId, hashpostfix_all)
+            #print(currentNodeId, sessionId, hashpostfix_all)
             memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
                                                         #    "chat_index": sessionId, 
                                                            "message_index" : hash_id(currentNodeId, sessionId, hashpostfix_all),
@@ -634,19 +901,63 @@ class memory_handler_ekg():
 
             #logging.info(f'sessionId {sessionId} start_nodeid {start_nodeid} 的 memory 是 {memory}')
 
-    def get_output(self,sessionId, start_datetime, end_datetime):
+    def get_output(self,sessionId, start_datetime, end_datetime, agent_name):
+        
+        #首先提取主持人可能的返回
+        get_messages_res_all = []
         memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : '主持人', 
                                                             "chat_index": sessionId, 
                                                             'role_tags': ['all', '人类'],
                                                             "start_datetime":[start_datetime, end_datetime],
                                                           })
         get_messages_res = memory_manager_res.get_messages()
-        if get_messages_res == []:
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        #再提取 标题 user可能的返回
+        get_messages_res = []
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : 'user', 
+                                                            "chat_index": sessionId, 
+                                                            'role_tags': ['all', '人类'],
+                                                            "start_datetime":[start_datetime, end_datetime],
+                                                          })
+        get_messages_res = memory_manager_res.get_messages()
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        
+        #再提取 agent 可能的返回
+        if agent_name != None and type(agent_name) == str:
+            get_messages_res = []
+            memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                                "role_name" : agent_name, 
+                                                                "chat_index": sessionId, 
+                                                                'role_tags': ['all', '人类'],
+                                                                "start_datetime":[start_datetime, end_datetime],
+                                                          })
+            get_messages_res = memory_manager_res.get_messages()
+            get_messages_res_all = get_messages_res_all + get_messages_res
+            
+        
+        #再提取 tool 可能的返回
+        get_messages_res = []
+        memory_manager_res= self.memory_manager.get_memory_pool_by_all({ 
+                                                            "role_name" : 'function_caller', 
+                                                            "chat_index": sessionId, 
+                                                            'role_tags': ['all', '人类'],
+                                                            "start_datetime":[start_datetime, end_datetime],
+                                                          })
+        get_messages_res = memory_manager_res.get_messages()
+        get_messages_res_all = get_messages_res_all + get_messages_res
+        
+        get_messages_res_all = sorted(get_messages_res_all, key=lambda msg: msg.start_datetime)#按照时间进行排序
+        
+        if get_messages_res_all == []:
             logging.info('本阶段没有能给用户看的信息')
             return None
         outputinfo = []
-        for i in range(len(get_messages_res)):
-            outputinfo.append( get_messages_res[i].role_content   )
+        for i in range(len(get_messages_res_all)):
+            outputinfo.append( get_messages_res_all[i].role_content   )
         logging.info(f'outputinfo is {outputinfo}')
 
         # outputinfo_str = json.dumps(outputinfo, ensure_ascii=False)
