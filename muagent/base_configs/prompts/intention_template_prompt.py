@@ -140,9 +140,17 @@ INTENTION_ALLPLAN = IntentionInfo(
     description='用户想要获取某个问题的答案，或某个解决方案的完整流程（步骤）。',
     name='整体计划查询', tag='allPlan'
 )
-INTENTION_NEXTSTEP = IntentionInfo(
-    description='用户询问某个问题或方案的特定步骤，通常会提及“下一步”、“具体操作”等。',
-    name='下一步任务查询', tag='nextStep'
+INTENTION_ONESTEP = IntentionInfo(
+    description='用户询问某个问题或方案中其中某一个步骤。',
+    name='某一步任务查询', tag='oneStep'
+)
+INTENTION_SEVERALSTEPS = IntentionInfo(
+    description='用户询问某个问题或方案中其中某几个步骤。',
+    name='某几步任务查询', tag='severalSteps'
+)
+INTENTION_BACKGROUND = IntentionInfo(
+    description='用户询问某个问题或方案的背景知识，规则以及流程介绍等。',
+    name='背景查询', tag='background'
 )
 INTENTION_CHAT = IntentionInfo(
     description='用户询问的内容与当前的技术问题或解决方案无关，更多是出于兴趣或社交性质的交流。',
@@ -171,13 +179,16 @@ WHETHER_EXECUTE_PROMPT = get_intention_prompt(
     }
 )
 
-INTENTIONS_CONSULT_WHICH = (INTENTION_ALLPLAN, INTENTION_NEXTSTEP, INTENTION_CHAT)
+INTENTIONS_CONSULT_WHICH = (INTENTION_ALLPLAN, INTENTION_ONESTEP, INTENTION_SEVERALSTEPS, INTENTION_BACKGROUND, INTENTION_CHAT)
 CONSULT_WHICH_PROMPT = get_intention_prompt(
     intentions=INTENTIONS_CONSULT_WHICH,
     examples={
         '如何组织一次活动？': INTENTION_ALLPLAN,
         '系统升级的整个流程是怎样的？': INTENTION_ALLPLAN,
         '为什么我没有收到红包？请告诉我方案': INTENTION_ALLPLAN,
+        '如果我想学习一门新语言，第一步我需要先做些什么？': INTENTION_ONESTEP,
+        '项目开发中代码开发完成后需要经过哪几步测试才能发布到生产呢？': INTENTION_SEVERALSTEPS,
+        '请问下狼人杀游戏中猎人的主要职责是什么？': INTENTION_BACKGROUND,
         '听说你们采用了新工具，能讲讲它的特点吗？': INTENTION_CHAT
     }
 )
