@@ -383,13 +383,12 @@ class IntentionRouter:
                 if child in nodes:
                     if ancestor in out:
                         out.pop(ancestor)
+                    visited.add(ancestor)
                     temp_ancestor = child
                 else:
                     temp_ancestor = ancestor
                 child_path = split.join((path, child))
                 _dfs(child, temp_ancestor, child_path, out, visited)
-                if s in nodes:
-                    visited.add(s)
 
         if len(nodes) == 0:
             return dict()

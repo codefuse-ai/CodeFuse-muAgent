@@ -1,5 +1,5 @@
 import re
-import Levenshtein
+import edit_distance as ed
 from muagent.schemas.common import GNode
 
 
@@ -13,13 +13,13 @@ class MatchRule:
         desc: str = node.attributes.get('description', '')
 
         if pattern is None:
-            return -Levenshtein.distance(desc, s)
+            return -ed.edit_distance(desc, s)[0]
 
         desc_list = re.findall(pattern, desc)
         if not desc_list:
             return -float('inf')
 
-        return max([-Levenshtein.distance(x, s) for x in desc_list])
+        return max([-ed.edit_distance(x, s)[0] for x in desc_list])
     
     
     @classmethod
