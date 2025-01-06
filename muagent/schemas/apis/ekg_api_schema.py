@@ -1,8 +1,9 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Literal
+from typing import List, Dict, Optional, Literal, Union
 from enum import Enum
 
 from muagent.schemas.common import GNode, GEdge
+from muagent.schemas.models import ChatMessage, Choice
 
 
 
@@ -40,6 +41,20 @@ class EmbeddingsRequest(BaseModel):
 class LLMRequest(BaseModel):
     text: str
     stop: Optional[str]
+
+
+class LLMFCRequest(BaseModel):
+    messages: List[ChatMessage]
+    system_prompt: Optional[str] = None
+    tools: List[Union[str, object]] = []
+    tool_choice: Optional[Literal["auto", "required"]] = "auto"
+    parallel_tool_calls: bool = False
+    stop: Optional[str]
+
+
+class LLMFCResponse(EKGResponse):
+    choices: List[Choice]
+
 
 class LLMResponse(EKGResponse):
     successCode: int
@@ -123,7 +138,7 @@ class SearchAncestorRequest(BaseModel):
 class LLMParamsResponse(BaseModel):
     url: Optional[str] = None
     model_name: str
-    model_type: Literal["openai", "ollama", "lingyiwanwu", "kimi", "moonshot", "qwen"] = "ollama"
+    model_type: str = "ollama"
     api_key: str = ""
     stop: Optional[str] = None
     temperature: float = 0.3
@@ -137,7 +152,7 @@ class LLMParamsRequest(LLMParamsResponse):
 class EmbeddingsParamsResponse(BaseModel):
     # ollama embeddings
     url: Optional[str] = None
-    embedding_type: Literal["openai", "ollama"] = "ollama"
+    embedding_type: str = "ollama"
     model_name: str = "qwen2.5:0.5b"
     api_key: str = ""
 

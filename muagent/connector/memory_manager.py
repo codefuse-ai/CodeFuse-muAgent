@@ -19,7 +19,8 @@ from muagent.llm_models import getChatModelFromConfig
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.retrieval.utils import load_embeddings_from_path
 from muagent.utils.common_utils import *
-from muagent.orm import table_init
+# from muagent.orm import table_init
+from muagent.db_handler import table_init
 from muagent.base_configs.env_config import KB_ROOT_PATH
 # from configs.model_config import KB_ROOT_PATH, EMBEDDING_MODEL, EMBEDDING_DEVICE, SCORE_THRESHOLD
 # from configs.model_config import embedding_model_dict

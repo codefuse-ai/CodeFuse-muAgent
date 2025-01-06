@@ -1,5 +1,6 @@
 import os
-from typing import Union, Optional, List
+import re
+from typing import Union, Optional, List, Dict, Literal
 from loguru import logger
 
 from langchain.callbacks import AsyncIteratorCallbackHandler
@@ -8,7 +9,20 @@ from langchain_openai import ChatOpenAI
 from langchain.llms.base import LLM
 
 from .llm_config import LLMConfig
+from .llm_shemas import *
+
+try:
+    import ollama
+except:
+    pass
+
 # from configs.model_config import (llm_model_dict, LLM_MODEL)
+def replacePrompt(prompt: str, keys: list[str] = []):
+    prompt = prompt.replace("{", "{{").replace("}", "}}")
+    for key in keys:
+        prompt = prompt.replace(f"{{{{{key}}}}}", f"{{{key}}}")
+    return prompt
+
 
 
 class CustomLLMModel:
@@ -32,6 +46,100 @@ class CustomLLMModel:
                   stop: Optional[List[str]] = None):
         return [self(prompt, stop) for prompt in prompts]
 
+    def fc(
+        self, 
+        messages: List[ChatMessage],
+        tools: List[Union[str, object]] = [],
+        system_prompt: Optional[str] = None,
+        tool_choice: Optional[Literal["auto", "required"]] = "auto",
+        parallel_tool_calls: Optional[bool] = None,
+        stop: Optional[List[str]] = None,
+        **kwargs
+    ) -> LLMResponse:
+        '''
+        '''
+        from muagent.base_configs.prompts.functioncall_template_prompt import (
+            FUNCTION_CALL_PROMPT_en,
+            FC_AUTO_PROMPT_en,
+            FC_REQUIRED_PROMPT_en,
+            FC_PARALLEL_PROMPT_en,
+            FC_RESPONSE_PROMPT_en
+        )
+
+        use_tools = len(tools) > 0
+
+        prompts = []
+        if use_tools:
+            prompts.append(FUNCTION_CALL_PROMPT_en)
+
+        if system_prompt:
+            prompts.append(system_prompt)
+        
+        if use_tools and tool_choice =="auto":
+            prompts.append(FC_AUTO_PROMPT_en)
+        elif use_tools and tool_choice =="required":
+            prompts.append(FC_REQUIRED_PROMPT_en)
+        
+        if use_tools and parallel_tool_calls:
+            prompts.append(FC_PARALLEL_PROMPT_en)
+        
+        prompts.append("you are a helpful assistant to respond user's question:\n## Question Input\n{content}")
+
+        if use_tools:
+            prompts.append(FC_RESPONSE_PROMPT_en)
+
+        system_prompt = "\n".join(prompts)
+        # 
+        content = "\n\n".join([f"{i.role}: {i.content}" for i in messages])
+        content = "\n\n".join([f"{i.content}" for i in messages])
+        if use_tools:
+            system_prompt = replacePrompt(system_prompt, keys=["content", "tool_desc"])
+            prompt = system_prompt.format(content=content, tool_desc="\n".join(tools))
+        else:
+            system_prompt = replacePrompt(system_prompt, keys=["content"])
+            prompt = system_prompt.format(content=content)
+
+        llm_output = self.predict(prompt)
+
+        # logger.info(f"prompt: {prompt}")
+        # logger.info(f"llm_output: {llm_output}")
+        # parse llm functioncall
+        if "```json" in llm_output:
+            match_value = re.search(r'```json\n(.*?)```', llm_output, re.DOTALL)
+        else:
+            match_value = llm_output
+
+        try:
+            function_call_output = json.loads(match_value.group(1).strip())
+        except:
+            function_call_output = eval(match_value.group(1).strip())
+
+        function_call_output = function_call_output if isinstance(function_call_output, list) \
+              else [function_call_output]
+        # 
+        fc_response = LLMResponse(
+            choices=[Choice(
+                finish_reason="tool_calls",
+                message=LLMOuputMessage(
+                    content=None,
+                    role="assistant",
+                    tool_calls=[
+                        ToolCall(
+                            function=FunctionCallData(
+                                name=fco["name"],
+                                arguments=fco["arguments"],
+                            )
+                        )
+                        for fco in function_call_output
+                    ],
+                )
+            )],
+            id="",
+            model="",
+            object="chat.completion",
+            usage=None
+        )
+        return fc_response
 
 
 class OpenAILLMModel(CustomLLMModel):
@@ -128,6 +236,24 @@ class LYWWLLMModel(OpenAILLMModel):
             )
 
 
+class OllamaLLMModel(CustomLLMModel):
+    def __init__(self, llm_config: LLMConfig, callBack: AsyncIteratorCallbackHandler = None,):
+        self.llm = ollama.Client()
+        self.model_name = llm_config.model_name
+
+    def __call__(self, prompt: str,
+                  stop: Optional[List[str]] = None):
+        stream = self.llm.generate(
+                model=self.model_name,
+                prompt=prompt,
+                stream=True,
+            )
+        answer = ""
+        for chunk in stream:
+            answer += chunk['response']
+        return answer
+
+
 class KIMILLMModel(LYWWLLMModel):
     pass
 
@@ -143,7 +269,7 @@ def getChatModelFromConfig(llm_config: LLMConfig, callBack: AsyncIteratorCallbac
         model_class_dict = {
             "openai": OpenAILLMModel, "lingyiwanwu": LYWWLLMModel, 
             "kimi": KIMILLMModel, "moonshot": KIMILLMModel,
-            "qwen": QwenLLMModel,
+            "qwen": QwenLLMModel, "ollama": OllamaLLMModel
         }
         model_class = model_class_dict[llm_config.model_engine]
         model = model_class(llm_config, callBack)

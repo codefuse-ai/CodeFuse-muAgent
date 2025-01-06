@@ -35,8 +35,12 @@ setuptools.setup(
         "notebook",
         "docker",
         "sseclient",
-        "Levenshtein",
+        "edit_distance",
         "urllib3==1.26.6",
+        "ollama",
+        "colorama",
+        "pycryptodome",
+        "dashscope"
         # 
         "chromadb==0.4.17",
         "javalang==0.13.0",

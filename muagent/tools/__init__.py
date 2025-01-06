@@ -12,12 +12,14 @@ from .cb_query_tool import CodeRetrieval
 from .ocr_tool import BaiduOcrTool
 from .stock_tool  import StockInfo, StockName
 from .codechat_tools import CodeRetrievalSingle, RelatedVerticesRetrival, Vertex2Code
+from .undercover import *
+from .werewolf import *
 
 
 IMPORT_TOOL = [
     WeatherInfo, DistrictInfo, Multiplier, WorldTimeGetTimezoneByArea,
     KSigmaDetector, MetricsQuery, DDGSTool, DocRetrieval, CodeRetrieval,
-    BaiduOcrTool, StockInfo, StockName, CodeRetrievalSingle, RelatedVerticesRetrival, Vertex2Code
+    BaiduOcrTool, StockInfo, StockName, CodeRetrievalSingle, RelatedVerticesRetrival, Vertex2Code,
 ]
 
 TOOL_SETS = [tool.__name__ for tool in IMPORT_TOOL]
@@ -29,3 +31,6 @@ __all__ = [
     "toLangchainTools", "get_tool_schema",  "tool_sets", "BaseToolModel"
 ] + TOOL_SETS
 
+
+def get_tool(tool_name: str) -> BaseToolModel:
+    return BaseToolModel._from_name(tool_name)

@@ -33,10 +33,10 @@ def decode_biznodes(
             **{**{"id": node.id, "type": node.type}, **node.attributes}
         )
 
-        if node.type == "opsgptkg_task":
-            logger.debug(f"schema:{ schema}")
-            logger.debug(f"node_data:{ type(node_data)}")
-            logger.debug(f"node_data:{ node_data}")
+        # if node.type == "opsgptkg_task":
+        #     logger.debug(f"schema:{ schema}")
+        #     logger.debug(f"node_data:{ type(node_data)}")
+        #     logger.debug(f"node_data:{ node_data}")
             
         node_data = {
             k:v
@@ -44,8 +44,8 @@ def decode_biznodes(
             if k not in ["type", "ID", "id", "extra"]
         }
 
-        if node.type == "opsgptkg_task":
-            logger.debug(f"node_data:{ node_data}")
+        # if node.type == "opsgptkg_task":
+        #     logger.debug(f"node_data:{ node_data}")
 
         # update agent/tool nodes and edges
         agents = node_data.pop("agents", [])
@@ -70,9 +70,9 @@ def decode_biznodes(
                 attributes={}
             ))
 
-        if node.type == "opsgptkg_task":
-            logger.debug(f"node_data:{ node_data}")
-            logger.debug(f"node.attributes:{ node.attributes}")
+        # if node.type == "opsgptkg_task":
+        #     logger.debug(f"node_data:{ node_data}")
+        #     logger.debug(f"node.attributes:{ node.attributes}")
 
         new_nodes.append(GNode(**{
             "id": node.id, 

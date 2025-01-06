@@ -15,7 +15,8 @@ from muagent.db_handler import *
 from muagent.connector.memory_manager import BaseMemoryManager
 from muagent.llm_models import *
 from muagent.base_configs.env_config import KB_ROOT_PATH
-from muagent.orm import table_init
+# from muagent.orm import table_init
+from muagent.db_handler import table_init
 
 from muagent.utils.common_utils import *
 

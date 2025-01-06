@@ -60,7 +60,8 @@ embed_config = EmbedConfig(
 # create your knowledge base
 from muagent.service.kb_api import create_kb, upload_files2kb
 from muagent.utils.server_utils import run_async
-from muagent.orm import create_tables
+# from muagent.orm import create_tables
+from muagent.db_handler import create_tables
 
 
 # use to test, don't create some directory

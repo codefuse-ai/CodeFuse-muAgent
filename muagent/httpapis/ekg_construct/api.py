@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from typing import Dict
-import asyncio
 import uvicorn
 from loguru import logger
-import tqdm
 import ollama
 import json
 import os
@@ -124,6 +122,34 @@ def init_app(
         return LLMResponse(
             successCode=successCode, errorMessage=errorMessage,
             answer=answer
+        )
+    
+    # ~/llm/generate
+    @app.post("/functioncall/chat", response_model=LLMFCResponse)
+    async def fc_chat(request: LLMFCRequest):
+        # 添加预测逻辑的代码
+        errorMessage = "ok"
+        successCode = True
+        choices = []
+        try:
+            model_names = [i["name"] for i in ollama.list()["models"]]
+            if llm.model_type=="ollama" and llm.model_name not in model_names:
+                errorMessage = f"{llm.model_name} not in ollama.list {model_names}. " \
+                f"please request llm/ollama/pull for downloading the ollama model"
+                successCode = False
+            else:
+                fc_output = llm.fc(request)
+                choices = fc_output.choices
+        except Exception as e:
+            logger.exception(e)
+            errorMessage = str(e)
+            successCode = False
+            
+        logger.info(f"choices.type: {type(choices)}")
+        logger.info(f"choices {choices}")
+        return LLMFCResponse(
+            successCode=successCode, errorMessage=errorMessage,
+            choices=choices
         )
     
     # ~/embeddings/params

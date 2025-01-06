@@ -12,19 +12,19 @@ LOG_PATH = os.environ.get("LOG_PATH", None) or os.path.join(executable_path, "lo
 # SOURCE_PATH = os.environ.get("SOURCE_PATH", None) or os.path.join(executable_path, "sources")
 
 # 知识库默认存储路径
-KB_ROOT_PATH = os.environ.get("KB_ROOT_PATH", None) or os.path.join(executable_path, "knowledge_base")
+KB_ROOT_PATH = os.environ.get("KB_ROOT_PATH", None) or os.path.join(executable_path, "data/knowledge_base")
 
 # 代码库默认存储路径
-CB_ROOT_PATH = os.environ.get("CB_ROOT_PATH", None) or os.path.join(executable_path, "code_base")
+CB_ROOT_PATH = os.environ.get("CB_ROOT_PATH", None) or os.path.join(executable_path, "data/code_base")
 
 # # nltk 模型存储路径
 # NLTK_DATA_PATH = os.environ.get("NLTK_DATA_PATH", None) or os.path.join(executable_path, "nltk_data")
 
 # 代码存储路径
-JUPYTER_WORK_PATH = os.environ.get("JUPYTER_WORK_PATH", None) or os.path.join(executable_path, "jupyter_work")
+JUPYTER_WORK_PATH = os.environ.get("JUPYTER_WORK_PATH", None) or os.path.join(executable_path, "data/jupyter_work")
 
-# WEB_CRAWL存储路径
-WEB_CRAWL_PATH = os.environ.get("WEB_CRAWL_PATH", None) or os.path.join(executable_path, "knowledge_base")
+# # WEB_CRAWL存储路径
+# WEB_CRAWL_PATH = os.environ.get("WEB_CRAWL_PATH", None) or os.path.join(executable_path, "knowledge_base")
 
 # NEBULA_DATA存储路径
 NEBULA_PATH = os.environ.get("NEBULA_PATH", None) or os.path.join(executable_path, "data/nebula_data")
@@ -32,7 +32,7 @@ NEBULA_PATH = os.environ.get("NEBULA_PATH", None) or os.path.join(executable_pat
 # CHROMA 存储路径
 CHROMA_PERSISTENT_PATH = os.environ.get("CHROMA_PERSISTENT_PATH", None) or os.path.join(executable_path, "data/chroma_data")
 
-for _path in [LOG_PATH, KB_ROOT_PATH, CB_ROOT_PATH, JUPYTER_WORK_PATH, WEB_CRAWL_PATH, NEBULA_PATH, CHROMA_PERSISTENT_PATH]:
+for _path in [LOG_PATH, KB_ROOT_PATH, CB_ROOT_PATH, JUPYTER_WORK_PATH, NEBULA_PATH, CHROMA_PERSISTENT_PATH]:
     if not os.path.exists(_path) and int(os.environ.get("do_create_dir", True)):
         os.makedirs(_path, exist_ok=True)
 
@@ -83,8 +83,8 @@ VECTOR_SEARCH_TOP_K = os.environ.get("VECTOR_SEARCH_TOP_K") or 5
 
 # 知识库匹配相关度阈值，取值范围在0-1之间，SCORE越小，相关度越高，取到1相当于不筛选，建议设置在0.5左右
 # Mac 可能存在无法使用normalized_L2的问题，因此调整SCORE_THRESHOLD至 0~1100
-FAISS_NORMALIZE_L2 = True if system_name in ["Linux", "Windows"] else False
-SCORE_THRESHOLD = 1 if system_name in ["Linux", "Windows"] else 1100
+FAISS_NORMALIZE_L2 = True if system_name in ["Darwin", "Linux", "Windows"] else False
+SCORE_THRESHOLD = 1 if system_name in ["Darwin", "Linux", "Windows"] else 1100
 
 # 搜索引擎匹配结题数量
 SEARCH_ENGINE_TOP_K = os.environ.get("SEARCH_ENGINE_TOP_K") or 5

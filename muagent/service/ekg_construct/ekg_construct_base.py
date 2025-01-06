@@ -22,7 +22,8 @@ from muagent.schemas.ekg import *
 from muagent.schemas.db import *
 from muagent.schemas.common import *
 from muagent.db_handler import *
-from muagent.orm import table_init
+# from muagent.orm import table_init
+from muagent.db_handler import table_init
 from muagent.base_configs.env_config import EXTRA_KEYWORDS_PATH
 
 from muagent.connector.configs.generate_prompt import *
@@ -193,6 +194,12 @@ class EKGConstructService:
                 self.create_gb_tags_and_edgetypes()
                 self.waiting_tags_edgetypes_initialize()
 
+                # print('Node Tags和Edge Types初始化中，等待20秒......')
+                # time.sleep(20)
+            else:
+                self.gb.add_hosts('storaged0', 9779)
+                # 创建node tags和edge types
+                self.create_gb_tags_and_edgetypes()
         else:
             self.gb = None
 
@@ -323,6 +330,28 @@ class EKGConstructService:
 
 
     def create_gb_tags_and_edgetypes(self):
+
+        def _check():
+            node_types = [i for i in TYPE2SCHEMA.keys() if i!='edge']
+            tags = self.gb.show_tags()
+            tag_names = [tag["Name"] for tag in tags]
+            tag_flag = set(tag_names) == set(node_types)
+
+            edges = self.gb.show_edge_type()
+            edge_names = [edge["Name"] for edge in edges]
+            inset_edges = [f"{i}{k}{j}"
+                for i in node_types
+                for j in node_types
+                for k in ["_route_", "_extend_", "_conclude_"]
+            ]
+            edge_flag = set(edge_names) == set(inset_edges)
+            logger.info(f"tag_flag={tag_flag}, edge_flag={edge_flag}")
+            # 
+            return tag_flag and edge_flag
+
+        # if tags is existed and edge is existed, return
+        if _check(): return 
+        
         # 节点标签和属性 (done)
         for node_type, schema in TYPE2SCHEMA.items():
             if node_type == 'edge':
@@ -364,7 +393,7 @@ class EKGConstructService:
 
         # 边类型(名称)
         node_types = list(TYPE2SCHEMA.keys())
-        logger.info(node_types)
+        node_types = [i for i in TYPE2SCHEMA.keys() if i!='edge']
         for i in range(len(node_types)):
             for j in range(len(node_types)):
                 if node_types[i] != 'edge' and node_types[j] != 'edge':  # 排除 node_type 为 'edge'
@@ -374,9 +403,11 @@ class EKGConstructService:
                     self.gb.create_edge_type(edge_type2, edge_attributes_dict)
                     edge_type3 = f"{node_types[i]}_conclude_{node_types[j]}"
                     self.gb.create_edge_type(edge_type3, edge_attributes_dict)
-
-
         
+        time.sleep(5)
+        while not _check():
+            logger.info('Node Tags和Edge Types初始化中，等待5秒......')
+            time.sleep(5)
 
     def update_graph(
             self, 
@@ -874,6 +905,7 @@ class EKGConstructService:
         ) -> GNode:
         if service_type=="gbase":
             node = self.gb.get_current_node({'id': nodeid}, node_type=node_type)
+            if node is None: return node
             node = self._normalized_nodes_type(nodes=[node])[0]
         else:
             node = GNode(id=nodeid, type="", attributes={})

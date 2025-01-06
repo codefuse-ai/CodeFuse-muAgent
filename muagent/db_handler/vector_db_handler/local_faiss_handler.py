@@ -1,10 +1,14 @@
 from loguru import logger
-from typing import List
+from typing import List, Union
 from functools import lru_cache
 import os, shutil
 
 from langchain.embeddings.base import Embeddings
 from langchain_community.docstore.document import Document
+
+
+from muagent.models import get_model
+from muagent.schemas.models import ModelConfig
 
 from muagent.utils.server_utils import torch_gc
 from muagent.retrieval.base_service import SupportedVSType
@@ -23,17 +27,20 @@ class LocalFaissHandler:
 
     def __init__(
             self,
-            embed_config: EmbedConfig,
+            embed_config: Union[EmbedConfig, ModelConfig],
             vb_config: VBConfig = None
         ):
 
         self.vb_config = vb_config
         self.embed_config = embed_config
-        self.embeddings = load_embeddings_from_path(
-            self.embed_config.embed_model_path, 
-            self.embed_config.model_device, 
-            self.embed_config.langchain_embeddings
-        )
+        if isinstance(self.embed_config, ModelConfig):
+            self.embeddings = get_model(self.embed_config)
+        else:
+            self.embeddings = load_embeddings_from_path(
+                self.embed_config.embed_model_path, 
+                self.embed_config.model_device, 
+                self.embed_config.langchain_embeddings
+            )
         
         # INIT
         self.search_index: FAISS = None

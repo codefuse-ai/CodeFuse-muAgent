@@ -103,8 +103,7 @@ class IntentionRouter:
         return select_node, error_msg
 
     def get_intention_by_node_info_match(
-        self, root_node_id: str, filter_attribute: Optional[dict] = None,
-        gb_handler: Optional[GBHandler] = None,
+        self, root_node_id: str, gb_handler: Optional[GBHandler] = None,
         rule: Union[Rule_type, list[Rule_type]] = None, **kwargs
     ) -> dict[str, Any]:
         gb_handler = gb_handler if gb_handler is not None else self.gb_handler
@@ -124,10 +123,7 @@ class IntentionRouter:
                 RuleRetInfo(node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value))
 
         if not (root_node_id and self._node_exist(root_node_id, gb_handler)):
-            if not root_node_id:
-                error_msg = f'No node matches attribute {filter_attribute}.'
-            else:
-                error_msg = f'Node(id={root_node_id}, type={self._node_type}) does not exist!'
+            error_msg = f'Node(id={root_node_id}, type={self._node_type}) does not exist!'
             return asdict(
                 RuleRetInfo(node_id=root_node_id, error_msg=error_msg, status=RouterStatus.OTHERS.value))
 
@@ -284,6 +280,8 @@ class IntentionRouter:
         return False
 
     def get_intention_consult_which(self, query: str, agent=None, root_node_id: Optional[str]=None) -> str:
+        if isinstance(query, (list, tuple)):
+            query = query[0]
         agent = agent if agent else self.agent
         query_consult_which = itp.CONSULT_WHICH_PROMPT.format(query=query)
         ans = agent.predict(query_consult_which)
@@ -386,13 +384,12 @@ class IntentionRouter:
                 if child in nodes:
                     if ancestor in out:
                         out.pop(ancestor)
+                    visited.add(ancestor)
                     temp_ancestor = child
                 else:
                     temp_ancestor = ancestor
                 child_path = split.join((path, child))
                 _dfs(child, temp_ancestor, child_path, out, visited)
-                if s in nodes:
-                    visited.add(s)
 
         if len(nodes) == 0:
             return dict()
