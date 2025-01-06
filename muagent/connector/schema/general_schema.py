@@ -26,7 +26,7 @@ class ActionStatus(Enum):
 
     def __eq__(self, other):
         if isinstance(other, str):
-            return self.value.lower() == other.lower()
+            return self.value.strip().lower() == other.strip().lower()
         return super().__eq__(other)
     
 
@@ -197,6 +197,10 @@ class LogVerboseEnum(Enum):
     
     @classmethod
     def ge(self, enum_value: 'LogVerboseEnum', other: Union[str, 'LogVerboseEnum']):
+        return enum_value <= other
+
+    @classmethod
+    def le(self, enum_value: 'LogVerboseEnum', other: Union[str, 'LogVerboseEnum']):
         return enum_value <= other
     
 

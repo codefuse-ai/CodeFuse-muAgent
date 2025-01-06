@@ -11,8 +11,8 @@ jobs:
         architecture: [amd64, arm64]
         os: [linux]
         service:
-          - name: runtime:0.1.0
-          - name: muagent:0.1.0
+          - name: runtime:0.1.1
+          - name: muagent:0.1.1
           - name: ekgfrontend:0.1.0
 
     steps:

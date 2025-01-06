@@ -190,7 +190,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ekgservice
-    image: muagent:0.1.0
+    image: muagent:0.1.1
     environment:
       USER: root
       TZ:   "${TZ}"

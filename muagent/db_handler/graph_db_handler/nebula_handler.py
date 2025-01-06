@@ -57,7 +57,6 @@ class NebulaHandler:
         self.connection_pool = ConnectionPool()
 
         if gb_config == None:
-            
             self.connection_pool.init([('graphd', '9669')], config)
             self.username = '' or 'root'
             self.nb_pw = '' or 'nebula'
@@ -116,7 +115,7 @@ class NebulaHandler:
             
             if ignore_log == False:
                 if resp.is_succeeded():
-                    #logger.info(f"Successfully executed Cypher query: {cypher}")
+                    # logger.info(f"Successfully executed Cypher query: {cypher}")
                     
                     pass
                     
@@ -165,18 +164,20 @@ class NebulaHandler:
                 errorMessage=resp.error_msg(), 
                 errorCode=resp.error_code(), 
                 )
-            
 
     def add_hosts(self, hostname, port):
+        while not self.is_host_connected(hostname, port):
             with self.connection_pool.session_context(self.username, self.nb_pw) as session:
                 cypher = f'ADD HOSTS "{hostname}":{port}'
                 resp = session.execute(cypher)
-            return resp
+                print('增加NebulaGraph Storage主机中，等待20秒')
+                time.sleep(20)
+        return 
 
     def close_connection(self):
         self.connection_pool.close()
 
-    def create_space(self, space_name: str, vid_type: str = 'FIXED_STRING(32)', comment: str = ''):
+    def create_space(self, space_name: str, vid_type: str = 'FIXED_STRING(1024)', comment: str = ''):
         '''
         create space
         @param space_name: cannot startwith number
@@ -277,6 +278,20 @@ class NebulaHandler:
         resp = self.execute_cypher(cypher, self.space_name)
         return resp
 
+    def is_host_connected(self, hostname, port):
+        # 查询系统表以检查主机的连接状态
+        with self.connection_pool.session_context(self.username, self.nb_pw) as session:
+            cypher = 'SHOW HOSTS'
+            resp = session.execute(cypher)
+
+        resp = resp.as_primitive()
+        # 假设返回结果中包含一个名为 'host' 的字段
+        for i in resp:
+            if hostname==i['Host'] and port == i['Port'] and i["Status"] =="ONLINE":
+                return True
+        
+        return False
+    
     def delete_edge_type(self, edge_type_name: str):
         cypher = f'DROP EDGE {edge_type_name}'
         return self.execute_cypher(cypher, self.space_name)

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, func
 
-from muagent.orm.db import Base
+from muagent.db_handler.db import Base
 
 
 class KnowledgeBaseSchema(Base):

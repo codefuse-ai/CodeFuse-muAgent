@@ -1,6 +1,8 @@
 import os, openai, base64
 from loguru import logger
 
+os.environ["DM_llm_name"] = 'Qwen2_72B_Instruct_OpsGPT'  #or  gpt_4
+
 # 兜底大模型配置
 OPENAI_API_BASE = "https://api.openai.com/v1"
 os.environ["API_BASE_URL"] = OPENAI_API_BASE
@@ -18,6 +20,78 @@ os.environ["gpt4-model_engine"] = "openai"
 os.environ["gpt4-llm_temperature"] = "0.0"
 
 
+
+MODEL_CONFIGS = {
+    # old llm config
+    "default": {
+        "model_name": "gpt-3.5-turbo",
+        "model_engine": "qwen",
+        "temperature": "0", 
+        "api_key": "",
+        "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    },
+    "codefuser":{
+        "model_name": "gpt-4",
+        "model_engine": "openai",
+        "temperature": "0", 
+        "api_key": "",
+        "api_base_url": OPENAI_API_BASE,
+    },
+    # new llm config
+    "dashscope_chat": {
+        "model_type": "dashscope_chat",
+        "model_name": "qwen2.5-72b-instruct" ,
+        "api_key": "",
+    },
+    "moonshot_chat": {
+        "model_type": "moonshot_chat",
+        "model_name": "moonshot-v1-8k" ,
+        "api_key": "",
+    },
+    "ollama_chat": {
+        "model_type": "ollama_chat",
+        "model_name": "qwen2.5-0.5b",
+        "api_key": "",
+    },
+    "openai_chat": {
+        "model_type": "openai_chat",
+        "model_name": "gpt-4",
+        "api_key": "",
+    },
+    "qwen_chat": {
+        "model_type": "qwen_chat",
+        "model_name": "qwen2.5-72b-instruct",
+        "api_key": "",
+    },
+    "yi_chat": {
+        "model_type": "yi_chat",
+        "model_name": "yi-lightning" ,
+        "api_key": "",
+    },
+    # embedding configs
+    "dashscope_text_embedding": {
+        "model_type": "dashscope_text_embedding",
+        "model_name": "text-embedding-v3",
+        "api_key": "",
+    },
+    "ollama_embedding": {
+        "model_type": "ollama_embedding",
+        "model_name": "qwen2.5-0.5b",
+        "api_key": "",
+    },
+    "openai_embedding": {
+        "model_type": "openai_embedding",
+        "model_name": "text-embedding-ada-002",
+        "api_key": "",
+    },
+    "qwen_text_embedding": {
+        "model_type": "dashscope_text_embedding",
+        "model_name": "text-embedding-v3",
+        "api_key": "",
+    },
+}
+
+os.environ["MODEL_CONFIGS"] = json.dumps(MODEL_CONFIGS)
 
 ####   NebulaHandler   ####
 os.environ['nb_host'] = 'graphd'
@@ -40,6 +114,36 @@ os.environ["tb_type"] = "TbaseHandler"
 os.environ["tb_index_name"] = "ekg_migration_new"
 os.environ['tb_definition_value'] = 'message_test_new'
 os.environ['tb_expire_time'] = '604800' #86400*7
+
+
+#################
+##  DB_CONFIGS ##
+#################
+DB_CONFIGS = {
+    "gb_config": {
+        "gb_type": "NebulaHandler",
+        "extra_kwargs": {
+            'host':'graphd',
+            'port': '9669',
+            'username': os.environ['nb_username'],
+            'password': os.environ['nb_password'],
+            'space': "client"
+        }
+    },
+    "tb_config": {
+        "tb_type": 'TBaseHandler',
+        "index_name": "opsgptkg",
+        "host": 'redis-stack',
+        "port": '6379',
+        "username": os.environ['tb_username'],
+        "password": os.environ['tb_password'],
+        "extra_kwargs": {
+            "definition_value": "opsgptkg",
+            "memory_definition_value": "opsgptkg_message"
+        }
+    }
+}
+os.environ["DB_CONFIGS"] = json.dumps(DB_CONFIGS)
 
 
 

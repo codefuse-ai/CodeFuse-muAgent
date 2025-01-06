@@ -37,6 +37,7 @@ except Exception as e:
     import test_config
 
 from muagent.schemas.db import *
+from muagent.schemas.apis.ekg_api_schema import LLMFCRequest
 from muagent.db_handler import *
 from muagent.llm_models.llm_config import EmbedConfig, LLMConfig
 from muagent.service.ekg_construct.ekg_construct_base import EKGConstructService
@@ -46,7 +47,8 @@ from muagent.llm_models import getChatModelFromConfig
 
 from pydantic import BaseModel
 
-
+from muagent.schemas.models import ModelConfig
+from muagent.models import get_model
 
 
 cur_dir = os.path.dirname(__file__)
@@ -92,41 +94,14 @@ class CustomLLM(LLM, BaseModel):
 
     def _llm_type(self, *args):
         return ""
-
-    def predict(self, prompt: str, stop = None) -> str:
-        return self._call(prompt, stop)
-
-    def _call(self, prompt: str,
-              stop = None) -> str:
+    
+    def _get_model(self):
         """_call
         """
-        return_str = ""
-        stop = stop or self.stop
-
-        if self.model_type == "ollama":
-            stream = ollama.chat(
-                model=self.model_name,
-                messages=[{'role': 'user', 'content': prompt}],
-                stream=True,
-            )
-            answer = ""
-            for chunk in stream:
-                answer += chunk['message']['content']
-
-            return answer
-        elif self.model_type == "openai":
-            from muagent.llm_models.openai_model import getChatModelFromConfig
-            llm_config = LLMConfig(
-                model_name=self.model_name,
-                model_engine="openai",
-                api_key=self.api_key,
-                api_base_url=self.url,
-                temperature=self.temperature,
-                stop=self.stop
-            )
-            model = getChatModelFromConfig(llm_config)
-            return model.predict(prompt, stop=self.stop)
-        elif self.model_type in ["lingyiwanwu", "kimi", "moonshot", "qwen"]:
+        if self.model_type in [
+            "ollama", "qwen", "openai", "lingyiwanwu",
+            "kimi", "moonshot",
+        ]:
             from muagent.llm_models.openai_model import getChatModelFromConfig
             llm_config = LLMConfig(
                 model_name=self.model_name,
@@ -137,11 +112,57 @@ class CustomLLM(LLM, BaseModel):
                 stop=self.stop
             )
             model = getChatModelFromConfig(llm_config)
-            return model.predict(prompt, stop=self.stop)
         else:
-            pass
+            model_config = ModelConfig(
+                model_type=self.model_type,
+                model_name=self.model_name,
+                api_key=self.api_key,
+                api_url=self.url,
+                temperature=self.temperature,
+            )
+            model = get_model(model_config)
+        return model
 
-        return return_str
+    def predict(self, prompt: str, stop = None) -> str:
+        return self._call(prompt, stop)
+
+    def fc(self, request: LLMFCRequest) -> str:
+        """_function_call
+        """
+        if self.model_type not in [
+            "openai", "ollama", "lingyiwanwu", "kimi", "moonshot", "qwen"
+        ]:
+            return f"{self.model_type} not in valid model range"
+        
+        model = self._get_model()
+        return model.fc(
+            messages=request.messages, 
+            tools=request.tools, 
+            tool_choice=request.tool_choice, 
+            parallel_tool_calls=request.parallel_tool_calls, 
+        )
+    
+    def _call(self, prompt: str,
+              stop = None) -> str:
+        """_call
+        """
+        return_str = ""
+        stop = stop or self.stop
+        if self.model_type not in [
+            "openai", "ollama", "lingyiwanwu", "kimi", "moonshot", "qwen"
+        ]:
+            pass
+        elif self.model_type not in [
+            "dashscope_chat", "moonshot_chat", "ollama_chat",
+            "openai_chat", "qwen_chat", "yi_chat",
+            "dashscope_text_embedding", "ollama_embedding", "openai_embedding", "qwen_text_embedding"
+        ]:
+            pass
+        else:
+            return f"{self.model_type} not in valid model range"
+        
+        model = self._get_model()
+        return model.predict(prompt, stop=self.stop)
 
 
 class CustomEmbeddings(Embeddings):
@@ -185,6 +206,17 @@ class CustomEmbeddings(Embeddings):
             )
             text2vector_dict = get_embedding("openai", [sentence], embed_config=embed_config)
             return text2vector_dict[sentence]
+        elif self.embedding_type in [
+            "dashscope_text_embedding", "ollama_embedding", "openai_embedding", "qwen_text_embedding"
+        ]:
+            model_config = ModelConfig(
+                model_type=self.embedding_type,
+                model_name=self.model_name,
+                api_key=self.api_key,
+                api_url=self.url,
+            )
+            model = get_model(model_config)
+            return model.embed_query(sentence)
         else:
             pass
 
@@ -280,6 +312,7 @@ ekg_construct_service = EKGConstructService(
     llm_config=llm_config,
     tb_config=tb_config,
     gb_config=gb_config,
+    initialize_space=True,
     clear_history_data=clear_history_data
 )
 

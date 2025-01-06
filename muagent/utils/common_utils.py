@@ -31,6 +31,13 @@ def addMinutesToTime(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
     new_time_after = dt + timedelta(minutes=n)
     return new_time_before.strftime(dateformat), new_time_after.strftime(dateformat)
 
+def addMinutesToTimestamp(input_time: str, n: int = 5, dateformat=DATE_FORMAT):
+    dt = datetime.strptime(input_time, dateformat)
+
+    # 前后加N分钟
+    new_time_before = dt - timedelta(minutes=n)
+    new_time_after = dt + timedelta(minutes=n)
+    return new_time_before.timestamp(), new_time_after.timestamp()
 
 def timestampToDateformat(ts, interval=1000, dateformat=DATE_FORMAT):
     '''将标准时间戳转换标准指定时间格式'''
@@ -129,6 +136,44 @@ def double_hashing(s: str, modulus: int = 10e12) -> int:
     hash1 = string_to_long_sha256(s)
     hash2 = string_to_long_sha256(s[::-1])  # 用字符串的反序进行第二次hash
     return int((hash1 + hash2) % modulus)
+
+
+def _convert_to_str(content: Any) -> str:
+    """Convert the content to string.
+
+    The implementation of this _convert_to_str are borrowed from
+    https://github.com/modelscope/agentscope/blob/main/src/agentscope/utils/common.py
+
+    Note:
+        For prompt engineering, simply calling `str(content)` or
+        `json.dumps(content)` is not enough.
+
+        - For `str(content)`, if `content` is a dictionary, it will turn double
+        quotes to single quotes. When this string is fed into prompt, the LLMs
+        may learn to use single quotes instead of double quotes (which
+        cannot be loaded by `json.loads` API).
+
+        - For `json.dumps(content)`, if `content` is a string, it will add
+        double quotes to the string. LLMs may learn to use double quotes to
+        wrap strings, which leads to the same issue as `str(content)`.
+
+        To avoid these issues, we use this function to safely convert the
+        content to a string used in prompt.
+
+    Args:
+        content (`Any`):
+            The content to be converted.
+
+    Returns:
+        `str`: The converted string.
+    """
+
+    if isinstance(content, str):
+        return content
+    elif isinstance(content, (dict, list, int, float, bool, tuple)):
+        return json.dumps(content, ensure_ascii=False)
+    else:
+        return str(content)
 
 
 @contextlib.contextmanager

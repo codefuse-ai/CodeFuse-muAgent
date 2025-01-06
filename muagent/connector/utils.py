@@ -1,3 +1,6 @@
+from typing import (
+    Dict,
+)
 import re, copy, json
 from loguru import logger
 
@@ -70,8 +73,9 @@ def parse_section_to_dict(text, section_name):
     
 
 def parse_text_to_dict(text):
-    # Define a regular expression pattern to capture the key and value
-    main_pattern = r"\*\*(.+?):\*\*\s*(.*?)\s*(?=\*\*|$)"
+    """through a regular expression pattern to capture the key and value"""
+    # main_pattern = r"\*\*(.+?):\*\*\s*(.*?)\s*(?=\*\*|$)"
+    main_pattern = r'\*\*([^*]+):\*\*\s*(.*?)(?=\*\*([^*]+):\*\*|$)'
     list_pattern = r'```python\n(.*?)```'
     plan_pattern = r'(\[\s*.*?\s*\])'
 
@@ -79,7 +83,10 @@ def parse_text_to_dict(text):
     main_matches = re.findall(main_pattern, text, re.DOTALL)
 
     # Convert main matches to a dictionary
-    parsed_dict = {key.strip(): value.strip() for key, value in main_matches}
+    parsed_dict = {
+        v[0].strip(): v[1].strip() 
+        for v in main_matches
+    }
 
     for k, v in parsed_dict.items():
         for pattern in [list_pattern, plan_pattern]:
@@ -94,12 +101,13 @@ def parse_text_to_dict(text):
     return parsed_dict
 
 
-def parse_dict_to_dict(parsed_dict) -> dict:
+def parse_dict_to_dict(parsed_dict: Dict) -> Dict:
+    """through a regular expression pattern to decode ```python/json/java``` into fragment"""
     code_pattern = r'```python\n(.*?)```'
     tool_pattern = r'```json\n(.*?)```'
     java_pattern = r'```java\n(.*?)```'
     
-    pattern_dict = {"code": code_pattern, "json": tool_pattern, "java": java_pattern}
+    pattern_dict = {"python": code_pattern, "json": tool_pattern, "java": java_pattern}
     spec_parsed_dict = copy.deepcopy(parsed_dict)
     for key, pattern in pattern_dict.items():
         for k, text in parsed_dict.items():

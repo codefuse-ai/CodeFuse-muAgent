@@ -12,7 +12,7 @@ jobs:
           - name: runtime
             context: ./runtime
             dockerfile: ./runtime/Dockerfile.no-package
-            tag: ghcr.io/codefuse-ai/runtime:0.1.0
+            tag: ghcr.io/codefuse-ai/runtime:0.1.1
             tag_latest: ghcr.io/codefuse-ai/runtime:latest
           - name: ekgfrontend
             context: .
@@ -22,7 +22,7 @@ jobs:
           - name: ekgservice
             context: .
             dockerfile: ./Dockerfile_gh
-            tag: ghcr.io/codefuse-ai/muagent:0.1.0
+            tag: ghcr.io/codefuse-ai/muagent:0.1.1
             tag_latest: ghcr.io/codefuse-ai/muagent:latest
 
     steps:

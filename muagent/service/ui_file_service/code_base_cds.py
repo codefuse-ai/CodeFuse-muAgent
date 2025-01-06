@@ -6,7 +6,7 @@
 @desc:
 '''
 from loguru import logger
-from muagent.orm.db import with_session
+from muagent.db_handler.db import with_session
 from muagent.schemas.kb.base_schema import CodeBaseSchema
 
 
