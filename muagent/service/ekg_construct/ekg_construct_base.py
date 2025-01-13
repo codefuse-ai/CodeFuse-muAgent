@@ -64,7 +64,7 @@ class EKGConstructService:
             do_init: bool = False,
             kb_root_path: str = KB_ROOT_PATH,
             initialize_space=True,
-            clear_history_data=True
+            clear_history_data=False
         ):
 
         self.db_config = db_config

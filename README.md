@@ -15,7 +15,7 @@
 </p>
 
 ## 🔔 News
-
+- [2025.01.13] Released muAgent v2.2, providing muAgent-sdk v0.1.0, supporting ekg-sdk and parallel execution of ekg.
 - [2024.10.28] The release of muAgent V2.1, which offers one-click deployment capabilities, including KG-based agent orchestration, Java-based tool and agent registration and management, as well as a user-friendly drag-and-drop front-end product UI.
 - [2024.09.05] we release muAgent v2.0: An Innovative Agent Framework Driven By KG Engine.
 - [2024.04.01] muAgent is now open source, focusing on multi-agent orchestration and collaborating with technologies such as FunctionCall, RAG, and CodeInterpreter.

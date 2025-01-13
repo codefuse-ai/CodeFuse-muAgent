@@ -15,7 +15,7 @@
 </p>
 
 ## 🔔 更新
-
+- [2025.01.13] 发布 muAgent v2.2, 提供muAgent-sdk v0.1.0，支持 ekg-sdk 和 ekg并行执行。
 - [2024.11.06] 量子位公众号专题报道：[文章链接](https://mp.weixin.qq.com/s/di_joj2NInGAGNqjDIsleA )
 - [2024.10.28] 发布 muAgent v2.1，提供一键式部署能力，包括基于 KG 的 Agent 编排、基于 Java 的工具/Agent 注册和管理、可拖拉拽编辑的前端产品 UI
 - [2024.09.05] 发布 muAgent v2.0 - EKG：一款由知识图谱引擎驱动的创新 Agent 产品框架
