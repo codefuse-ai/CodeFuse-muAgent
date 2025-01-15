@@ -4,9 +4,9 @@ import requests
 import logging
 import copy
 import os
-
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG)
+from ..utils.logger import logging
+# logger = logging.getLogger()
+# logging.basicConfig(level=logging.DEBUG)
 RETRY_MAX_NUM = 3
 def intention_recognition_ekgfunc( root_node_id, rule, query, memory, start_from_root = True,
         url= os.environ['intention_url'] ):

@@ -1,5 +1,6 @@
 import os, openai, base64
 from loguru import logger
+import json
 
 os.environ["DM_llm_name"] = 'Qwen2_72B_Instruct_OpsGPT'  #or  gpt_4
 
@@ -123,7 +124,7 @@ DB_CONFIGS = {
     "gb_config": {
         "gb_type": "NebulaHandler",
         "extra_kwargs": {
-            'host':'graphd',
+            'host': os.environ['nb_host'],
             'port': '9669',
             'username': os.environ['nb_username'],
             'password': os.environ['nb_password'],
@@ -133,7 +134,7 @@ DB_CONFIGS = {
     "tb_config": {
         "tb_type": 'TBaseHandler',
         "index_name": "opsgptkg",
-        "host": 'redis-stack',
+        "host": os.environ['tb_host'],
         "port": '6379',
         "username": os.environ['tb_username'],
         "password": os.environ['tb_password'],
@@ -146,6 +147,7 @@ DB_CONFIGS = {
 os.environ["DB_CONFIGS"] = json.dumps(DB_CONFIGS)
 
 
+os.environ["clear_history_data"] = "False" # 'True'
 
 ########################################
 ########## 以下参数暂不涉及无需配置 ########

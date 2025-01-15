@@ -21,8 +21,8 @@ import requests
 from colorama import Fore
 from Crypto.Cipher import AES
 from loguru import logger
-import logging
-
+# import logging
+from loguru import logger as logging
 
 
 MOST_RETRY_TIMES = 5

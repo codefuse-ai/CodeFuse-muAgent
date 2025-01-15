@@ -179,7 +179,8 @@ class NoteBookExecutor:
         asyncio.run(self._restart_client())
         return "Reset notebook"
     
-
+    async def close_client(self):
+        await self.nb_client.km.shutdown_kernel(now=True)
 
 
 
@@ -291,7 +292,7 @@ class NBClientBox(BaseBox):
         return CodeBoxStatus(status="restared")
     
     def stop(self, ) -> CodeBoxStatus:
-        pass
+        asyncio.run(self.nbe.close_client())
     
     def __del__(self):
         self.stop()

@@ -15,6 +15,9 @@ import concurrent.futures
 import time
 import random
 
+os.environ["operation_mode"] = "open_source"
+os.environ["intention_url"] = ""
+
 from .llm_models import LLMConfig, EmbedConfig
 from .schemas.db import TBConfig, GBConfig
 from .schemas.models import ModelConfig
@@ -228,7 +231,6 @@ def get_ekg_project_config_from_env(
         model_type = random.choice(embedding_list)
         default_model_config = project_configs["model_configs"][model_type]
         project_configs["model_configs"]["default_embed"] = default_model_config
-    project_configs[k] = v
 
     # init embedding configs
     if embed_configs:
@@ -286,7 +288,7 @@ def get_ekg_project_config_from_env(
         project_configs["prompt_configs"] = prompt_configs
     else:
         logger.warning(
-            f"Cant't init any AGENT_CONFIGS in this env."
+            f"Cant't init any PROMPT_CONFIGS in this env."
         ) 
         
 

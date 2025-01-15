@@ -5,10 +5,10 @@ import setuptools
 
 setuptools.setup(
     name="codefuse-muagent",
-    version="0.1.0",
+    version="0.1.1",
     author="shanshi",
     author_email="wyp311395@antgroup.com",
-    description="A multi-agent framework that facilitates the rapid construction of collaborative teams of agents.",
+    description="An Innovative Agent Framework Driven by KG Engine",
     # long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/codefuse-ai/CodeFuse-muAgent",
@@ -40,7 +40,7 @@ setuptools.setup(
         "ollama",
         "colorama",
         "pycryptodome",
-        "dashscope"
+        "dashscope",
         # 
         "chromadb==0.4.17",
         "javalang==0.13.0",

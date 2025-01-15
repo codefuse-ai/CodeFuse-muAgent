@@ -1021,7 +1021,7 @@ class NebulaHandler:
     def check_edge_exist(self, src_id: str, dst_id: str) -> bool:
         try:
             if self.get_current_edge(src_id, dst_id):
-                print('Edge already exists!')
+                # print('Edge already exists!')
                 return True
         except Exception as e:
             print('Edge not exists!')
@@ -1041,7 +1041,7 @@ class NebulaHandler:
             )
         # 节点是否存在: 1.删除时节点存在不报错 2.添加时节点存在报错 3.update时节点存在不报错
         if self.is_nodeid_exist(nodeid) and action == "add":
-            logger.info('Node already exits!')
+            # logger.info('Node already exits!')
             return GbaseExecStatus(
             errorMessage='GDB_ENGINE_PRIMARY_KEY_DUPLICATE', 
             errorCode=1, 
