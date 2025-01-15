@@ -24,9 +24,9 @@ sys.path.append(src_dir)
 
 
 
-
-import logging
-logging.basicConfig(level=logging.INFO)
+from ..utils.logger import logging
+# import logging
+# logging.basicConfig(level=logging.INFO)
 
 
 

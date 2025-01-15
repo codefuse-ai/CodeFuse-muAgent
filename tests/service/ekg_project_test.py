@@ -19,9 +19,10 @@ src_dir = os.path.join(
 )
 sys.path.append(src_dir)
 
-import logging
+# import logging
+from loguru import logger as logging
 # Set the logging level to WARNING, which will suppress INFO and DEBUG messages
-logging.basicConfig(level=logging.ERROR)
+# logging.basicConfig(level=logging.ERROR)
 
 
 from muagent import EKG, get_ekg_project_config_from_env

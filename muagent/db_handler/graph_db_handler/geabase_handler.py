@@ -7,7 +7,8 @@ try:
     from gdbc2.geabase_client import GeaBaseClient, Node, Edge, MutateBatchOperation, GeaBaseUtil
     from gdbc2.geabase_env import GeaBaseEnv
 except:
-    logger.error("ignore this sdk")
+    pass
+    # logger.error("ignore this sdk")
 
 from .base_gb_handler import GBHandler
 from muagent.db_handler.utils import deduplicate_dict

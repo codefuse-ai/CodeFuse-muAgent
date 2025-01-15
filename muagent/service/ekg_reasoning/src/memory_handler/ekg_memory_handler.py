@@ -22,8 +22,9 @@ sys.path.append(src_dir)
 
 from muagent.connector.schema import Message
 from src.utils.call_llm import call_llm,extract_final_result
-import logging
-logging.basicConfig(level=logging.INFO)
+from ..utils.logger import logging
+# import logging
+# logging.basicConfig(level=logging.INFO)
 
 # from loguru import logger as logging
 from src.geabase_handler.geabase_handlerplus import GB_handler

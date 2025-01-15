@@ -17,8 +17,9 @@ from muagent.schemas.db import GBConfig
 from muagent.connector.schema import Message
 from src.utils.call_llm import call_llm, extract_final_result, robust_call_llm
 
-import logging
-logging.basicConfig(level=logging.INFO)
+from ..utils.logger import logging
+# import logging
+# logging.basicConfig(level=logging.INFO)
 
 from src.geabase_handler.geabase_handlerplus import GB_handler
 from src.utils.normalize import hash_id

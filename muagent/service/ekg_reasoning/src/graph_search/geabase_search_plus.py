@@ -28,7 +28,8 @@ sys.path.append(src_dir)
 import json
 import requests
 import time
-import logging
+# import logging
+from ..utils.logger import logging
 import copy
 import sys
 import os,  base64

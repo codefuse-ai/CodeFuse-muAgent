@@ -26,7 +26,8 @@ sys.path.append(src_dir)
 import json
 import requests
 import time
-import logging
+# import logging
+from ..utils.logger import logging
 import copy
 import sys
 import os,  base64
@@ -63,8 +64,8 @@ from src.graph_search.call_old_fuction import call_old_fuction
 
 
 
-# 配置logging模块
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - %(lineno)d', level=logging.INFO)
+# # 配置logging模块
+# logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - %(lineno)d', level=logging.INFO)
 
 
 

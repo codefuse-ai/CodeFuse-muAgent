@@ -1,13 +1,14 @@
 # lingsi 游走推理服务 old
 import json
 import requests
-import logging
+# import logging
+from ..utils.logger import logging
 import copy
 import sys
 import os
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG)
+# logger = logging.getLogger()
+# logging.basicConfig(level=logging.DEBUG)
 
 #step 1  retriver
 
